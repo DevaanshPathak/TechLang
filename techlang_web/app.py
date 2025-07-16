@@ -1,5 +1,7 @@
+import sys
 import os
-from flask import Flask, render_template, request
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from techlang.interpreter import run
 
 app = Flask(__name__)
