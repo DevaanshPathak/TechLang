@@ -1,6 +1,10 @@
 from techlang.parser import parse
+import os
 
-def run(code: str, inputs: list[str] = None) -> str:
+def run(code: str, inputs: list[str] = None, loaded_files: set[str] = None) -> str:
+    if loaded_files is None:
+        loaded_files = set()
+
     tokens = parse(code)
     value = 0
     stack = []
@@ -9,6 +13,19 @@ def run(code: str, inputs: list[str] = None) -> str:
     functions = {}
     aliases = {}
     input_queue = inputs or []
+
+    def handle_import(filename_token):
+        if not filename_token.endswith(".tl"):
+            filename_token += ".tl"
+        if filename_token in loaded_files:
+            return []
+        loaded_files.add(filename_token)
+        try:
+            with open(filename_token, "r") as f:
+                imported_code = f.read()
+            return parse(imported_code)
+        except FileNotFoundError:
+            return [f"[import error: file not found {filename_token}]"]
 
     # First pass: extract alias definitions
     i = 0
@@ -42,6 +59,12 @@ def run(code: str, inputs: list[str] = None) -> str:
     while i < len(tokens):
         token = tokens[i]
 
+        if token == "import" and i + 1 < len(tokens):
+            filename = tokens[i + 1]
+            imported_tokens = handle_import(filename)
+            tokens = tokens[:i] + imported_tokens + tokens[i + 2:]
+            continue
+
         if token == "boot":
             value = 0
 
@@ -60,7 +83,7 @@ def run(code: str, inputs: list[str] = None) -> str:
                 known_commands = {
                     "boot", "ping", "crash", "reboot", "print", "upload",
                     "download", "debug", "hack", "lag", "fork", "set", "add",
-                    "loop", "end", "if", "def", "call", "input", "alias"
+                    "mul", "sub", "div", "loop", "end", "if", "def", "call", "input", "alias", "import"
                 }
                 if lookahead.isalpha() and lookahead not in known_commands:
                     output.append(str(variables.get(lookahead, f"[undefined variable: {lookahead}]")))
@@ -82,20 +105,27 @@ def run(code: str, inputs: list[str] = None) -> str:
             else:
                 output.append("[syntax error: set <var> <value>]")
 
-        elif token == "add":
+        elif token in {"add", "mul", "sub", "div"}:
             if i + 2 < len(tokens):
                 varname = tokens[i + 1]
                 try:
                     amount = int(tokens[i + 2])
                     if varname in variables:
-                        variables[varname] += amount
+                        if token == "add":
+                            variables[varname] += amount
+                        elif token == "mul":
+                            variables[varname] *= amount
+                        elif token == "sub":
+                            variables[varname] -= amount
+                        elif token == "div":
+                            variables[varname] //= amount
                     else:
                         output.append(f"[undefined variable: {varname}]")
                     i += 2
                 except ValueError:
                     output.append(f"[invalid number: {tokens[i+2]}]")
             else:
-                output.append("[syntax error: add <var> <value>]")
+                output.append(f"[syntax error: {token} <var> <value>]")
 
         elif token == "input":
             if i + 1 < len(tokens):
@@ -156,13 +186,20 @@ def run(code: str, inputs: list[str] = None) -> str:
                                 except:
                                     output.append(f"[invalid number in loop: {block[inner_i+2]}]")
                                 inner_i += 2
-                        elif inner_token == "add":
+                        elif inner_token in {"add", "mul", "sub", "div"}:
                             if inner_i + 2 < len(block):
                                 var = block[inner_i + 1]
                                 try:
                                     amt = int(block[inner_i + 2])
                                     if var in variables:
-                                        variables[var] += amt
+                                        if inner_token == "add":
+                                            variables[var] += amt
+                                        elif inner_token == "mul":
+                                            variables[var] *= amt
+                                        elif inner_token == "sub":
+                                            variables[var] -= amt
+                                        elif inner_token == "div":
+                                            variables[var] //= amt
                                     else:
                                         output.append(f"[undefined variable: {var}]")
                                 except:
@@ -204,7 +241,7 @@ def run(code: str, inputs: list[str] = None) -> str:
                     break
 
                 if condition_met:
-                    output.extend(run(" ".join(block), inputs=input_queue).splitlines())
+                    output.extend(run(" ".join(block), inputs=input_queue, loaded_files=loaded_files).splitlines())
             else:
                 output.append("[syntax error: if <var> <op> <value>]")
 

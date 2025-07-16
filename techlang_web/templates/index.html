@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TechLang Playground</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
+    textarea, input { width: 100%; background: #000; color: #0f0; border: 1px solid #0f0; margin-top: 10px; }
+    .output { background: #000; padding: 10px; white-space: pre-wrap; border: 1px solid #0f0; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>🖥️ TechLang Playground</h1>
+  <form method="post" enctype="multipart/form-data">
+    <label>💻 Code (.tl):</label><br>
+    <textarea name="code" rows="10"></textarea><br>
+
+    <label>🔢 Inputs (one per line):</label><br>
+    <textarea name="inputs" rows="3"></textarea><br>
+
+    <label>📂 Upload .tl Files (for import):</label><br>
+    <input type="file" name="files" multiple><br><br>
+
+    <button type="submit">▶️ Run</button>
+  </form>
+
+  {% if output %}
+    <div class="output">{{ output }}</div>
+  {% endif %}
+</body>
+</html>
