@@ -29,3 +29,43 @@ def test_looping():
     code = "set x 3 loop x ping print end"
     output = run(code).strip().splitlines()
     assert output == ["1", "2", "3"]
+
+def test_if_condition():
+    code = "set x 2 if x > 1 ping print end"
+    output = run(code).strip().splitlines()
+    assert output == ["1"]
+
+def test_function_call():
+    code = """
+    def hello
+        ping ping print
+    end
+
+    call hello
+    """
+    output = run(code).strip().splitlines()
+    assert output == ["2"]
+
+def test_input_output():
+    result = run("input user print user", inputs=["Alice"])
+    assert result.strip() == "Alice"
+
+def test_alias():
+    code = """
+    alias start boot
+    alias inc ping
+    start
+    inc inc print
+    """
+    assert run(code).strip().splitlines() == ["2"]
+
+def test_alias_expansion():
+    code = """
+    alias start boot
+    alias inc ping
+    start
+    inc inc print
+    """
+    from techlang.interpreter import run
+    output = run(code).strip().splitlines()
+    assert output == ["2"]
