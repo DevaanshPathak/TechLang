@@ -1,5 +1,3 @@
-# .github/workflows/python-app.yml
-
 name: Python application
 
 on:
@@ -13,12 +11,10 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
@@ -33,11 +29,8 @@ jobs:
 
     - name: Lint with flake8
       run: |
-        # stop the build on syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # show warnings but do not fail the workflow
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Run tests with pytest
-      run: |
-        pytest run_tests.py
+      run: pytest tests
