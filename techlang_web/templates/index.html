@@ -83,11 +83,106 @@
         .file-upload {
             color: #d4d4d4;
         }
+
+        /* Flash messages */
+        .flash-messages {
+            margin-bottom: 1rem;
+        }
+
+        .flash {
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .flash.success {
+            background-color: #2d5a2d;
+            color: #4caf50;
+            border: 1px solid #4caf50;
+        }
+
+        .flash.error {
+            background-color: #5a2d2d;
+            color: #f44336;
+            border: 1px solid #f44336;
+        }
+
+        /* Output with scrollbar */
+        .output {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border: 1px solid #3c3c3c;
+            padding: 1rem;
+            border-radius: 5px;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        /* Scrollbar styling */
+        .output::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .output::-webkit-scrollbar-track {
+            background: #2c2c2c;
+            border-radius: 4px;
+        }
+
+        .output::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .output::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Uploaded files display */
+        .uploaded-files {
+            background-color: #252526;
+            border: 1px solid #3c3c3c;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+        }
+
+        .uploaded-files h4 {
+            margin-top: 0;
+            color: #4caf50;
+        }
+
+        .file-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .file-list li {
+            padding: 0.25rem 0;
+            color: #d4d4d4;
+        }
     </style>
 </head>
 <body>
     <header>TechLang Playground</header>
     <main>
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <form method="POST" enctype="multipart/form-data">
             <label for="files">Upload .tl files (optional):</label>
             <input type="file" name="files" multiple class="file-upload">
@@ -103,6 +198,18 @@
 
         <h3>Output:</h3>
         <div class="output">{{ output|default('') }}</div>
+
+        <!-- Display uploaded files -->
+        {% if uploaded_files %}
+            <div class="uploaded-files">
+                <h4>Recently Uploaded Files:</h4>
+                <ul class="file-list">
+                    {% for file in uploaded_files %}
+                        <li>✓ {{ file }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
     </main>
 </body>
 </html>

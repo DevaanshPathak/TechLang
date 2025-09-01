@@ -1,5 +1,6 @@
 # techlang/parser.py
 
+import re
 from typing import List
 
 def parse(code: str) -> List[str]:
@@ -9,6 +10,7 @@ def parse(code: str) -> List[str]:
     - Supports comments (lines starting with '#')
     - Ignores blank lines
     - Handles both space-separated and newline-separated commands
+    - Preserves quoted strings as single tokens
 
     Args:
         code (str): The TechLang source code as a string.
@@ -21,6 +23,8 @@ def parse(code: str) -> List[str]:
         line = line.strip()
         if not line or line.startswith('#'):
             continue  # skip empty or commented lines
-        parts = line.split()  # split by spaces
+        
+        # Use regex to split by spaces but preserve quoted strings
+        parts = re.findall(r'"[^"]*"|\S+', line)
         commands.extend(parts)
     return commands

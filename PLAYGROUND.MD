@@ -66,10 +66,11 @@ python app.py
 
 The page will let you:
 
-* 💻 **Paste .tl Code**
-* 🔢 **Enter inputs** (one per line)
-* 📂 **Upload `.tl` files** for `import` statements
-* ▶️ **Run** the program and see output immediately
+* 💻 **Paste .tl Code** - Write TechLang programs directly in the browser
+* 🔢 **Enter inputs** (one per line) - Provide input values for `input` commands
+* 📂 **Upload `.tl` files** for `import` statements - Import external TechLang modules
+* 🗄️ **Database operations** - Full SQLite3 integration with CRUD operations
+* ▶️ **Run** the program and see output immediately - Real-time execution results
 
 ---
 
@@ -82,6 +83,38 @@ techlang_web/uploads/
 ```
 
 They're accessible to the interpreter if you use the `import filename` command in your `.tl` code.
+
+**Database files** created by `db_*` commands are saved in the current working directory as `techlang.db`.
+
+### Database Features in Playground
+
+* **Create Tables**: Use `db_create` to define table schemas
+* **Insert Data**: Use `db_insert` to add records
+* **Query Data**: Use `db_select` to retrieve and display results
+* **Update Records**: Use `db_update` to modify existing data
+* **Delete Records**: Use `db_delete` to remove data
+* **Execute SQL**: Use `db_execute` for custom SQL statements
+* **Connection Management**: Use `db_close` to clean up connections
+
+### Example Database Code
+
+```bash
+# Create a simple user table
+db_create users "id INTEGER PRIMARY KEY, name TEXT, age INTEGER"
+
+# Add some users
+db_insert users "1, Alice, 25"
+db_insert users "2, Bob, 30"
+
+# Query all users
+db_select "SELECT * FROM users"
+
+# Update a user's age
+db_update "UPDATE users SET age = 26 WHERE name = 'Alice'"
+
+# Close database connections
+db_close
+```
 
 ---
 
@@ -129,6 +162,8 @@ If something doesn't work, double-check:
 * Python version is 3.10+
 * Flask is installed (`pip install flask`)
 * No syntax error in your `.tl` file
+* Database files are properly closed with `db_close`
+* SQL syntax is correct for database operations
 
 ---
 

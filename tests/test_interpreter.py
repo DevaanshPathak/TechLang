@@ -23,7 +23,7 @@ def test_hack_command():
 def test_unknown_command():
     code = "boot xyz print"
     output = run(code).strip().splitlines()
-    assert "[Error: Unknown command 'xyz']" in output
+    assert "[Error: Unknown command 'xyz'. Check your syntax and make sure all commands are spelled correctly.]" in output
 
 # ---------------------------
 # Variable Operations
@@ -125,3 +125,87 @@ def test_div_by_zero():
     code = "set x 5 div x 0 print"
     output = run(code).strip().splitlines()
     assert any("Division by zero" in line or "Error" in line for line in output)
+
+# ---------------------------
+# Security and Edge Case Tests
+# ---------------------------
+def test_lag_in_loop():
+    """Test lag command in a loop to ensure it doesn't cause infinite delays."""
+    code = "set x 2 loop x lag ping print end"
+    output = run(code).strip().splitlines()
+    assert output == ["1", "2"]
+
+def test_boundary_math_operations():
+    """Test boundary values for mathematical operations."""
+    # Test large numbers
+    code = "set x 999999999 add x 1 print x"
+    output = run(code).strip()
+    assert output == "1000000000"
+    
+    # Test negative numbers
+    code = "set x -5 add x 10 print x"
+    output = run(code).strip()
+    assert output == "5"
+
+def test_deep_nesting():
+    """Test deeply nested loops and conditions."""
+    code = """
+    set x 2
+    loop x
+        if x > 0
+            set y 2
+            loop y
+                ping
+            end
+        end
+    end
+    print
+    """
+    output = run(code).strip().splitlines()
+    assert output[-1] == "4"  # 2 loops * 2 iterations = 4 pings
+
+def test_import_security():
+    """Test import functionality with base directory."""
+    # Test with base directory
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    code = "import nonexistent"
+    output = run(code, base_dir=base_dir).strip()
+    assert "[IMPORT ERROR" in output
+
+def test_circular_alias():
+    """Test circular alias detection."""
+    code = """
+    alias a b
+    alias b c
+    alias c a
+    a
+    """
+    output = run(code).strip()
+    # Should not cause infinite loop
+    assert "ping" in output or "Error" in output
+
+def test_malicious_input():
+    """Test handling of potentially malicious input."""
+    # Test with very long variable names
+    code = "set " + "x" * 1000 + " 5 print " + "x" * 1000
+    output = run(code).strip()
+    assert "5" in output or "Error" in output
+    
+    # Test with special characters in variable names
+    code = "set x<y 5 print x<y"
+    output = run(code).strip()
+    assert "Error" in output
+
+def test_stack_overflow_prevention():
+    """Test prevention of stack overflow attacks."""
+    # Create a very deep stack
+    code = "boot " + "upload " * 1000 + "download print"
+    output = run(code).strip()
+    assert output == "0" or "Error" in output
+
+def test_memory_efficient_loops():
+    """Test memory efficiency with large loops."""
+    # Test with a large loop that should complete
+    code = "set x 1000 loop x ping end print"
+    output = run(code).strip()
+    assert output == "1000"

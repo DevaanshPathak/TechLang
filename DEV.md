@@ -16,11 +16,20 @@ TechLang/
 ├─ requirements.txt       # Python dependencies
 ├─ README.md              # Project overview
 ├─ DEV.md                 # This developer guide
+├─ PLAYGROUND.MD          # Playground guide
 ├─ techlang/              # Core interpreter and parser
 │   ├─ __init__.py
 │   ├─ interpreter.py
 │   ├─ parser.py
-│   └─ temp.py
+│   ├─ database.py        # SQLite3 database operations
+│   ├─ core.py
+│   ├─ basic_commands.py
+│   ├─ variables.py
+│   ├─ stack.py
+│   ├─ control_flow.py
+│   ├─ imports.py
+│   ├─ aliases.py
+│   └─ blocks.py
 ├─ techlang_web/          # Flask playground site
 │   ├─ app.py
 │   ├─ templates/
@@ -28,8 +37,14 @@ TechLang/
 │   ├─ static/
 │   └─ uploads/
 ├─ tests/                 # Unit tests
-│   └─ test_interpreter.py
+│   ├─ test_interpreter.py
+│   └─ test_database.py
 ├─ examples/              # Sample TechLang programs
+│   ├─ hello.tl
+│   ├─ loop.tl
+│   ├─ if.tl
+│   ├─ database.tl        # SQLite3 example
+│   └─ ...
 └─ playground/            # GUI-based local playground
 ```
 
@@ -45,6 +60,7 @@ TechLang/
 * **Loops:** `loop ... end` blocks are executed multiple times.
 * **Functions:** Defined with `def ... end` and called using `call`.
 * **Aliases:** `alias` allows shorthand commands.
+* **Database:** SQLite3 integration with `db_create`, `db_insert`, `db_select`, `db_update`, `db_delete`, `db_execute`, and `db_close` commands.
 
 ### Command Execution Flow
 
@@ -195,6 +211,7 @@ Parse & Validate             Resolve alias/var
 * All tests reside in `tests/`.
 * Use `pytest` or `python run_tests.py`.
 * Make sure to add tests for any new commands or features.
+* Database tests include cleanup functions to prevent conflicts.
 * Example:
 
   ```python
@@ -202,6 +219,15 @@ Parse & Validate             Resolve alias/var
 
   def test_example():
       assert run("boot ping print").strip() == "1"
+  
+  def test_database():
+      code = """
+      db_create users "id INTEGER, name TEXT"
+      db_insert users "1, Alice"
+      db_select "SELECT * FROM users"
+      """
+      output = run(code)
+      assert "Table 'users' created successfully" in output
   ```
 
 ---
@@ -214,6 +240,49 @@ Parse & Validate             Resolve alias/var
   ```python
   print("DEBUG:", stack, vars)
   ```
+
+## 🗄️ Database Operations
+
+TechLang now includes SQLite3 database support with the following commands:
+
+* `db_create table "columns"` - Creates a new table with specified columns
+* `db_insert table "values"` - Inserts data into a table
+* `db_select "query"` - Executes SELECT queries and displays results
+* `db_update "query"` - Executes UPDATE queries
+* `db_delete "query"` - Executes DELETE queries
+* `db_execute "sql"` - Executes any SQL statement
+* `db_close` - Closes all database connections
+
+### Database Features
+
+* **Connection Management**: Singleton pattern ensures proper connection handling
+* **Error Handling**: Graceful error messages for SQL syntax and constraint violations
+* **Quote Handling**: Automatic removal of quotes from SQL strings
+* **Column Parsing**: Supports complex column definitions like `"id INTEGER PRIMARY KEY"`
+* **Data Types**: Full SQLite3 data type support (INTEGER, TEXT, REAL, BLOB, etc.)
+* **File Management**: Database files created as `techlang.db` in current directory
+
+### Example Usage
+
+```bash
+# Create a table
+db_create users "id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT"
+
+# Insert data
+db_insert users "1, Alice, 25, alice@example.com"
+
+# Query data
+db_select "SELECT * FROM users WHERE age > 20"
+
+# Update data
+db_update "UPDATE users SET age = 26 WHERE name = 'Alice'"
+
+# Delete data
+db_delete "DELETE FROM users WHERE name = 'Charlie'"
+
+# Close connections
+db_close
+```
 
 ---
 

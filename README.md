@@ -22,22 +22,32 @@ TechLang/
 ├── techlang/            # Interpreter & parser logic
 │   ├── interpreter.py
 │   ├── parser.py
-│   ├── **init**.py
-│   └── temp.py
+│   ├── database.py      # SQLite3 database operations
+│   ├── core.py
+│   ├── basic_commands.py
+│   ├── variables.py
+│   ├── stack.py
+│   ├── control_flow.py
+│   ├── imports.py
+│   ├── aliases.py
+│   ├── blocks.py
+│   └── __init__.py
 │
 ├── tests/               # Pytest-based unit tests
-│   └── test\_interpreter.py
+│   ├── test_interpreter.py
+│   └── test_database.py
 │
 ├── examples/            # Sample TechLang programs
 │   ├── hello.tl
 │   ├── loop.tl
 │   ├── if.tl
+│   ├── database.tl      # SQLite3 example
 │   └── ...
 │
 ├── playground/          # Optional GUI playground (Tkinter)
 │   └── gui.py
 │
-├── techlang\_web/        # Flask-based web playground
+├── techlang_web/        # Flask-based web playground
 │   ├── app.py
 │   ├── templates/
 │   │   └── index.html
@@ -47,12 +57,13 @@ TechLang/
 ├── uploads/             # Uploaded .tl files for testing
 │
 ├── cli.py               # CLI for running .tl files
-├── run\_tests.py         # Runs all tests
+├── run_tests.py         # Runs all tests
 ├── requirements.txt     # Dependencies
 ├── README.md            # This file
+├── DEV.md               # Developer guide
+├── PLAYGROUND.MD        # Playground guide
 └── .venv/               # Python virtual environment
-
-````
+```
 
 ---
 
@@ -121,7 +132,7 @@ python playground/gui.py
 python run_tests.py
 ```
 
-* Covers interpreter logic, variables, loops, stack, conditions, functions, input, and more.
+* Covers interpreter logic, variables, loops, stack, conditions, functions, input, database operations, and more.
 
 ---
 
@@ -146,6 +157,13 @@ python run_tests.py
 | `import x`  | Imports a `.tl` file (e.g., `x.tl`) |
 | `alias a b` | Creates a shorthand (a → b)         |
 | `hack`      | Doubles current value               |
+| `db_create table "cols"` | Creates a SQLite table with columns |
+| `db_insert table "vals"` | Inserts data into a table |
+| `db_select "query"` | Executes a SELECT query |
+| `db_update "query"` | Executes an UPDATE query |
+| `db_delete "query"` | Executes a DELETE query |
+| `db_execute "sql"` | Executes any SQL statement |
+| `db_close` | Closes database connections |
 
 ---
 
@@ -156,6 +174,7 @@ All in the `examples/` folder:
 ```bash
 python cli.py examples/loop.tl
 python cli.py examples/input.tl
+python cli.py examples/database.tl
 ```
 
 Or try them in the web playground.
@@ -168,6 +187,7 @@ Or try them in the web playground.
 * `flask` (for web)
 * `pytest` (for tests)
 * `tkinter` (optional GUI)
+* `sqlite3` (built-in Python module)
 
 Install all with:
 
@@ -183,6 +203,8 @@ pip install -r requirements.txt
 * CLI flags for debug mode or stack tracing
 * Bytecode version of TechLang
 * Language transpiler to Python
+* Additional database features (transactions, indexes, foreign keys)
+* Database schema introspection
 
 ---
 
