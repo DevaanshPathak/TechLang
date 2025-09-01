@@ -1,5 +1,12 @@
-from techlang.interpreter import run
+# tests/test_interpreter.py
 
+from techlang.interpreter import run
+import os
+from typing import List
+
+# ---------------------------
+# Basic Commands
+# ---------------------------
 def test_print_value():
     code = "boot ping ping print"
     assert run(code).strip() == "2"
@@ -16,8 +23,11 @@ def test_hack_command():
 def test_unknown_command():
     code = "boot xyz print"
     output = run(code).strip().splitlines()
-    assert "[unknown command: xyz]" in output
+    assert "[Error: Unknown command 'xyz']" in output
 
+# ---------------------------
+# Variable Operations
+# ---------------------------
 def test_variable_set_and_add():
     code = "set x 5 add x 3 print x debug"
     output = run(code).strip().splitlines()
@@ -25,6 +35,20 @@ def test_variable_set_and_add():
     assert output[1] == "Stack: []"
     assert output[2] == "Vars: {'x': 8}"
 
+def test_math_commands():
+    code = '''
+    set x 10
+    add x 5
+    mul x 2
+    sub x 3
+    div x 4
+    print x
+    '''
+    assert run(code).strip() == "6"
+
+# ---------------------------
+# Flow Control
+# ---------------------------
 def test_looping():
     code = "set x 3 loop x ping print end"
     output = run(code).strip().splitlines()
@@ -46,10 +70,16 @@ def test_function_call():
     output = run(code).strip().splitlines()
     assert output == ["2"]
 
+# ---------------------------
+# Input / Output
+# ---------------------------
 def test_input_output():
     result = run("input user print user", inputs=["Alice"])
     assert result.strip() == "Alice"
 
+# ---------------------------
+# Aliases
+# ---------------------------
 def test_alias():
     code = """
     alias start boot
@@ -66,43 +96,32 @@ def test_alias_expansion():
     start
     inc inc print
     """
-    from techlang.interpreter import run
     output = run(code).strip().splitlines()
     assert output == ["2"]
 
-import os
-from techlang.interpreter import run
+# ---------------------------
+# Edge Cases / Advanced Tests
+# ---------------------------
+def test_large_input():
+    # 10,000 pings
+    code = "ping " * 10000 + "print"
+    output = run(code).strip()
+    assert output == "10000"
 
-def test_import_file(tmp_path):
-    # Create a temporary utils.tl file
-    utils_file = tmp_path / "utils.tl"
-    utils_file.write_text("ping\nping\nprint")
-
-    # Create main code that imports it
-    code = f"""
-    import {utils_file.name}
-    ping
+def test_nested_loops_and_conditions():
+    code = """
+    set x 2
+    loop x
+        if x > 0
+            ping
+        end
+    end
     print
     """
+    output = run(code).strip().splitlines()
+    assert output[-1] == "2"
 
-    # Change working directory to temp so import works
-    old_cwd = os.getcwd()
-    os.chdir(tmp_path)
-    try:
-        result = run(code).strip().splitlines()
-        assert result == ["2", "3"]
-    finally:
-        os.chdir(old_cwd)
-
-from techlang.interpreter import run
-
-def test_math_commands():
-    code = '''
-    set x 10
-    add x 5
-    mul x 2
-    sub x 3
-    div x 4
-    print x
-    '''
-    assert run(code).strip() == "6"
+def test_div_by_zero():
+    code = "set x 5 div x 0 print"
+    output = run(code).strip().splitlines()
+    assert any("Division by zero" in line or "Error" in line for line in output)

@@ -1,13 +1,22 @@
 # techlang/parser.py
 
-def parse(code: str) -> list:
+from typing import List
+
+def parse(code: str) -> List[str]:
     """
     Parses TechLang code into a list of commands.
+
     - Supports comments (lines starting with '#')
     - Ignores blank lines
     - Handles both space-separated and newline-separated commands
+
+    Args:
+        code (str): The TechLang source code as a string.
+
+    Returns:
+        List[str]: A flat list of command tokens.
     """
-    commands = []
+    commands: List[str] = []
     for line in code.strip().splitlines():
         line = line.strip()
         if not line or line.startswith('#'):

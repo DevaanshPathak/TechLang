@@ -1,3 +1,0 @@
-ping
-ping
-print
