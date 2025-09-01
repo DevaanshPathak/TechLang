@@ -1,60 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>TechLang Playground</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.0.1/codemirror.min.css">
-  <style>
-    body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
-    input { width: 100%; background: #000; color: #0f0; border: 1px solid #0f0; margin-top: 10px; }
-    .output {
-      background: #000;
-      padding: 10px;
-      white-space: pre-wrap;
-      border: 1px solid #0f0;
-      margin-top: 20px;
-      max-height: 400px;
-      overflow-y: auto;
-    }
-    #editor {
-      border: 1px solid #0f0;
-      margin-top: 10px;
-      height: 200px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechLang Playground</title>
+    <style>
+        /* General dark background */
+        body {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Fira Code', monospace;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #2c2c2c;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        form {
+            width: 90%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        textarea {
+            background-color: #252526;
+            color: #d4d4d4;
+            border: 1px solid #3c3c3c;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 1rem;
+            border-radius: 5px;
+            resize: vertical;
+            min-height: 200px;
+        }
+
+        input[type="submit"], button {
+            background-color: #0e639c;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        input[type="submit"]:hover, button:hover {
+            background-color: #1177bb;
+        }
+
+        .output {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border: 1px solid #3c3c3c;
+            padding: 1rem;
+            border-radius: 5px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            font-family: 'Fira Code', monospace;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        .file-upload {
+            color: #d4d4d4;
+        }
+    </style>
 </head>
 <body>
-  <h1>🖥️ TechLang Playground</h1>
-  <form method="post" enctype="multipart/form-data">
-    <label>💻 Code (.tl):</label><br>
-    <div id="editor"></div>
+    <header>TechLang Playground</header>
+    <main>
+        <form method="POST" enctype="multipart/form-data">
+            <label for="files">Upload .tl files (optional):</label>
+            <input type="file" name="files" multiple class="file-upload">
 
-    <label>🔢 Inputs (one per line):</label><br>
-    <textarea name="inputs" rows="3"></textarea><br>
+            <label for="code">Enter TechLang Code:</label>
+            <textarea name="code" id="code" placeholder="Write your TechLang code here...">{{ code|default('') }}</textarea>
 
-    <label>📂 Upload .tl Files (for import):</label><br>
-    <input type="file" name="files" multiple><br><br>
+            <label for="inputs">Inputs (one per line):</label>
+            <textarea name="inputs" id="inputs" placeholder="Enter input values...">{{ inputs|default('') }}</textarea>
 
-    <button type="submit">▶️ Run</button>
-  </form>
+            <input type="submit" value="Run Code">
+        </form>
 
-  {% if output %}
-    <div class="output">{{ output }}</div>
-  {% endif %}
-
-  <script type="module">
-    import {EditorView, basicSetup} from "https://cdn.jsdelivr.net/npm/@codemirror/basic-setup@6.0.1/dist/index.js";
-    import {EditorState} from "https://cdn.jsdelivr.net/npm/@codemirror/state@6.0.1/dist/index.js";
-
-    const startState = EditorState.create({ doc: "", extensions: [basicSetup] });
-    const view = new EditorView({ state: startState, parent: document.getElementById('editor') });
-
-    document.querySelector('form').addEventListener('submit', (e) => {
-      let hiddenTextarea = document.createElement('textarea');
-      hiddenTextarea.name = "code";
-      hiddenTextarea.style.display = "none";
-      hiddenTextarea.value = view.state.doc.toString();
-      e.target.appendChild(hiddenTextarea);
-    });
-  </script>
+        <h3>Output:</h3>
+        <div class="output">{{ output|default('') }}</div>
+    </main>
 </body>
 </html>
