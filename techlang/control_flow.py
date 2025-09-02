@@ -1,27 +1,13 @@
-# techlang/control_flow.py
-
 from typing import List, Tuple, Callable
 from .core import InterpreterState
 from .blocks import BlockCollector
 
 
 class ControlFlowHandler:
-    """Handles control flow operations in TechLang."""
+    # Loops, conditionals, and simple function defs/calls
     
     @staticmethod
     def handle_loop(state: InterpreterState, tokens: List[str], index: int, execute_block: Callable) -> int:
-        """
-        Handle the 'loop' command to repeat a block of code.
-        
-        Args:
-            state: The interpreter state
-            tokens: List of tokens
-            index: Current token index
-            execute_block: Function to execute code blocks
-            
-        Returns:
-            Number of tokens consumed
-        """
         if index + 1 >= len(tokens):
             state.add_error("Invalid 'loop' command. Use: loop <count> ... end")
             return 0
@@ -29,14 +15,14 @@ class ControlFlowHandler:
         loop_count_token = tokens[index + 1]
         start_index = index + 2  # Start after 'loop' and count token
         
-        # Collect the loop block
+        # Grab the block of tokens to be repeated
         loop_block, end_index = BlockCollector.collect_block(start_index, tokens)
         
         # Determine loop count
         try:
             loop_count = int(loop_count_token)
         except ValueError:
-            # Try to get from variables
+            # Fallback: allow using a variable as the loop count
             loop_count = state.get_variable(loop_count_token)
             if not isinstance(loop_count, int):
                 state.add_error(f"Loop count must be a number or existing variable, but got '{loop_count_token}'. Please provide a valid integer or variable name.")
@@ -51,18 +37,6 @@ class ControlFlowHandler:
     
     @staticmethod
     def handle_if(state: InterpreterState, tokens: List[str], index: int, execute_block: Callable) -> int:
-        """
-        Handle the 'if' command for conditional execution.
-        
-        Args:
-            state: The interpreter state
-            tokens: List of tokens
-            index: Current token index
-            execute_block: Function to execute code blocks
-            
-        Returns:
-            Number of tokens consumed
-        """
         if index + 3 >= len(tokens):
             state.add_error("Invalid 'if' command. Use: if <variable> <operator> <value> ... end")
             return 0
@@ -99,17 +73,6 @@ class ControlFlowHandler:
     
     @staticmethod
     def handle_def(state: InterpreterState, tokens: List[str], index: int) -> int:
-        """
-        Handle the 'def' command to define functions.
-        
-        Args:
-            state: The interpreter state
-            tokens: List of tokens
-            index: Current token index
-            
-        Returns:
-            Number of tokens consumed
-        """
         if index + 1 >= len(tokens):
             state.add_error("Invalid 'def' command. Use: def <function_name> ... end")
             return 0
@@ -117,10 +80,9 @@ class ControlFlowHandler:
         func_name = tokens[index + 1]
         start_index = index + 2  # Start after 'def' and function name
         
-        # Collect the function block (but don't execute it)
+        # Store the function body tokens for later calls
         func_block, end_index = BlockCollector.collect_block(start_index, tokens)
         
-        # Store the function body (the tokens inside the function)
         state.functions[func_name] = func_block
         
         # Return total tokens consumed: 'def' + func_name + func_body + 'end'
@@ -128,18 +90,6 @@ class ControlFlowHandler:
     
     @staticmethod
     def handle_call(state: InterpreterState, tokens: List[str], index: int, execute_block: Callable) -> int:
-        """
-        Handle the 'call' command to execute functions.
-        
-        Args:
-            state: The interpreter state
-            tokens: List of tokens
-            index: Current token index
-            execute_block: Function to execute code blocks
-            
-        Returns:
-            Number of tokens consumed
-        """
         if index + 1 >= len(tokens):
             state.add_error("Invalid 'call' command. Use: call <function_name>")
             return 0
@@ -155,17 +105,6 @@ class ControlFlowHandler:
     
     @staticmethod
     def _evaluate_condition(var_value: int, op: str, compare_val: int) -> bool:
-        """
-        Evaluate a comparison condition.
-        
-        Args:
-            var_value: The variable value to compare
-            op: The comparison operator
-            compare_val: The value to compare against
-            
-        Returns:
-            True if condition is met, False otherwise
-        """
         if op == "==":
             return var_value == compare_val
         elif op == "!=":

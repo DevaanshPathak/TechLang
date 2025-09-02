@@ -1,25 +1,12 @@
-# techlang/variables.py
-
 from typing import List, Optional
 from .core import InterpreterState
 
 
 class VariableHandler:
-    """Handles variable operations in TechLang."""
+    # Variable commands: assign values, do math, and read input
     
     @staticmethod
     def handle_set(state: InterpreterState, tokens: List[str], index: int) -> int:
-        """
-        Handle the 'set' command to assign values to variables.
-        
-        Args:
-            state: The interpreter state
-            tokens: List of tokens
-            index: Current token index
-            
-        Returns:
-            Number of tokens consumed
-        """
         if index + 2 >= len(tokens):
             state.add_error("Invalid 'set' command. Use: set <variable_name> <number>")
             return 0
@@ -35,18 +22,6 @@ class VariableHandler:
     
     @staticmethod
     def handle_math_operation(state: InterpreterState, tokens: List[str], index: int, operation: str) -> int:
-        """
-        Handle mathematical operations (add, mul, sub, div).
-        
-        Args:
-            state: The interpreter state
-            tokens: List of tokens
-            index: Current token index
-            operation: The operation to perform ('add', 'mul', 'sub', 'div')
-            
-        Returns:
-            Number of tokens consumed
-        """
         if index + 2 >= len(tokens):
             state.add_error(f"Invalid '{operation}' command. Use: {operation} <variable_name> <number>")
             return 0
@@ -71,6 +46,7 @@ class VariableHandler:
                 state.set_variable(varname, current_value - amount)
             elif operation == "div":
                 if amount == 0:
+                    # Friendly guardrail for division by zero
                     state.add_error("Cannot divide by zero. Please provide a non-zero number.")
                     return 0
                 state.set_variable(varname, current_value // amount)
@@ -82,17 +58,6 @@ class VariableHandler:
     
     @staticmethod
     def handle_input(state: InterpreterState, tokens: List[str], index: int) -> int:
-        """
-        Handle the 'input' command to get user input.
-        
-        Args:
-            state: The interpreter state
-            tokens: List of tokens
-            index: Current token index
-            
-        Returns:
-            Number of tokens consumed
-        """
         if index + 1 >= len(tokens):
             state.add_error("Invalid 'input' command. Use: input <variable_name>")
             return 0
@@ -103,7 +68,6 @@ class VariableHandler:
             if state.has_input():
                 value = state.get_input()
             else:
-                # This would typically prompt the user, but for testing we'll use a default
                 value = input(f"Enter value for {varname}: ")
             
             state.set_variable(varname, value)

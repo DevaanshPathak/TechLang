@@ -8,7 +8,7 @@ def run_code():
     output_box.delete("1.0", tk.END)
     output_box.insert(tk.END, result)
 
-# GUI window
+# Minimal local playground for quick manual testing
 app = tk.Tk()
 app.title("💻 TechLang Playground")
 

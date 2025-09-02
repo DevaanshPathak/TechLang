@@ -1,5 +1,3 @@
-# tests/test_database.py
-
 import os
 import tempfile
 import shutil
@@ -7,9 +5,7 @@ from techlang.interpreter import run
 
 
 def cleanup_database():
-    """Clean up any existing database file."""
     if os.path.exists("techlang.db"):
-        # Close any existing connections first
         try:
             from techlang.database import DatabaseHandler
             db_handler = DatabaseHandler()
@@ -23,7 +19,6 @@ def cleanup_database():
 
 
 def test_db_create_table():
-    """Test creating a table."""
     code = """
     db_create users "id INTEGER PRIMARY KEY, name TEXT, age INTEGER"
     """
@@ -32,7 +27,6 @@ def test_db_create_table():
 
 
 def test_db_insert_and_select():
-    """Test inserting and selecting data."""
     cleanup_database()
     
     code = """
@@ -50,7 +44,6 @@ def test_db_insert_and_select():
 
 
 def test_db_update():
-    """Test updating data."""
     cleanup_database()
     
     code = """
@@ -65,7 +58,6 @@ def test_db_update():
 
 
 def test_db_delete():
-    """Test deleting data."""
     cleanup_database()
     
     code = """
@@ -82,7 +74,6 @@ def test_db_delete():
 
 
 def test_db_execute():
-    """Test executing custom SQL."""
     cleanup_database()
     
     code = """
@@ -97,7 +88,6 @@ def test_db_execute():
 
 
 def test_db_close():
-    """Test closing database connections."""
     cleanup_database()
     
     code = """
@@ -109,7 +99,6 @@ def test_db_close():
 
 
 def test_database_error_handling():
-    """Test error handling for invalid SQL."""
     code = """
     db_select "SELECT * FROM nonexistent_table"
     """
@@ -118,11 +107,9 @@ def test_database_error_handling():
 
 
 if __name__ == "__main__":
-    # Clean up any existing database files
     if os.path.exists("techlang.db"):
         os.remove("techlang.db")
     
-    # Run tests
     test_db_create_table()
     test_db_insert_and_select()
     test_db_update()
@@ -133,6 +120,5 @@ if __name__ == "__main__":
     
     print("All database tests passed!")
     
-    # Clean up
     if os.path.exists("techlang.db"):
         os.remove("techlang.db")

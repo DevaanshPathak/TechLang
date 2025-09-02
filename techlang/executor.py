@@ -1,5 +1,3 @@
-# techlang/executor.py
-
 from typing import List, Callable
 from .core import InterpreterState
 from .basic_commands import BasicCommandHandler
@@ -11,26 +9,14 @@ from .database import DatabaseHandler
 
 
 class CommandExecutor:
-    """Main executor that coordinates all command handlers."""
+    # Walks the token list and dispatches to the right handler
     
     def __init__(self, state: InterpreterState, base_dir: str):
-        """
-        Initialize the command executor.
-        
-        Args:
-            state: The interpreter state
-            base_dir: Base directory for imports
-        """
         self.state = state
         self.base_dir = base_dir
     
     def execute_block(self, tokens: List[str]) -> None:
-        """
-        Execute a block of tokens.
-        
-        Args:
-            tokens: List of tokens to execute
-        """
+        # Simple loop with lookahead consumption via returned counts
         i = 0
         while i < len(tokens):
             token = tokens[i]
@@ -102,7 +88,7 @@ class CommandExecutor:
             
             # End of block
             elif token == "end":
-                pass  # Just consume the token
+                pass
             
             # Unknown command
             else:

@@ -1,12 +1,7 @@
-# tests/test_interpreter.py
-
 from techlang.interpreter import run
 import os
 from typing import List
 
-# ---------------------------
-# Basic Commands
-# ---------------------------
 def test_print_value():
     code = "boot ping ping print"
     assert run(code).strip() == "2"
@@ -25,9 +20,6 @@ def test_unknown_command():
     output = run(code).strip().splitlines()
     assert "[Error: Unknown command 'xyz'. Check your syntax and make sure all commands are spelled correctly.]" in output
 
-# ---------------------------
-# Variable Operations
-# ---------------------------
 def test_variable_set_and_add():
     code = "set x 5 add x 3 print x debug"
     output = run(code).strip().splitlines()
@@ -46,9 +38,6 @@ def test_math_commands():
     '''
     assert run(code).strip() == "6"
 
-# ---------------------------
-# Flow Control
-# ---------------------------
 def test_looping():
     code = "set x 3 loop x ping print end"
     output = run(code).strip().splitlines()
@@ -70,16 +59,10 @@ def test_function_call():
     output = run(code).strip().splitlines()
     assert output == ["2"]
 
-# ---------------------------
-# Input / Output
-# ---------------------------
 def test_input_output():
     result = run("input user print user", inputs=["Alice"])
     assert result.strip() == "Alice"
 
-# ---------------------------
-# Aliases
-# ---------------------------
 def test_alias():
     code = """
     alias start boot
@@ -99,11 +82,7 @@ def test_alias_expansion():
     output = run(code).strip().splitlines()
     assert output == ["2"]
 
-# ---------------------------
-# Edge Cases / Advanced Tests
-# ---------------------------
 def test_large_input():
-    # 10,000 pings
     code = "ping " * 10000 + "print"
     output = run(code).strip()
     assert output == "10000"
@@ -126,17 +105,12 @@ def test_div_by_zero():
     output = run(code).strip().splitlines()
     assert any("Division by zero" in line or "Error" in line for line in output)
 
-# ---------------------------
-# Security and Edge Case Tests
-# ---------------------------
 def test_lag_in_loop():
-    """Test lag command in a loop to ensure it doesn't cause infinite delays."""
     code = "set x 2 loop x lag ping print end"
     output = run(code).strip().splitlines()
     assert output == ["1", "2"]
 
 def test_boundary_math_operations():
-    """Test boundary values for mathematical operations."""
     # Test large numbers
     code = "set x 999999999 add x 1 print x"
     output = run(code).strip()
@@ -148,7 +122,6 @@ def test_boundary_math_operations():
     assert output == "5"
 
 def test_deep_nesting():
-    """Test deeply nested loops and conditions."""
     code = """
     set x 2
     loop x
@@ -165,7 +138,6 @@ def test_deep_nesting():
     assert output[-1] == "4"  # 2 loops * 2 iterations = 4 pings
 
 def test_import_security():
-    """Test import functionality with base directory."""
     # Test with base directory
     base_dir = os.path.dirname(os.path.abspath(__file__))
     code = "import nonexistent"
@@ -173,7 +145,6 @@ def test_import_security():
     assert "[IMPORT ERROR" in output
 
 def test_circular_alias():
-    """Test circular alias detection."""
     code = """
     alias a b
     alias b c
@@ -185,7 +156,6 @@ def test_circular_alias():
     assert "ping" in output or "Error" in output
 
 def test_malicious_input():
-    """Test handling of potentially malicious input."""
     # Test with very long variable names
     code = "set " + "x" * 1000 + " 5 print " + "x" * 1000
     output = run(code).strip()
@@ -197,14 +167,12 @@ def test_malicious_input():
     assert "Error" in output
 
 def test_stack_overflow_prevention():
-    """Test prevention of stack overflow attacks."""
     # Create a very deep stack
     code = "boot " + "upload " * 1000 + "download print"
     output = run(code).strip()
     assert output == "0" or "Error" in output
 
 def test_memory_efficient_loops():
-    """Test memory efficiency with large loops."""
     # Test with a large loop that should complete
     code = "set x 1000 loop x ping end print"
     output = run(code).strip()

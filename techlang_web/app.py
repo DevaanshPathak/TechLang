@@ -12,64 +12,50 @@ from techlang.interpreter import run
 
 app = Flask(__name__)
 
-# Security: Generate a strong SECRET_KEY for CSRF protection and session security
 if os.environ.get("SECRET_KEY"):
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 else:
-    # Generate a secure random key if not provided
     app.config["SECRET_KEY"] = secrets.token_hex(32)
 
-# Security: Use a dedicated upload directory outside of web root
 UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "uploads"))
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-# Security: Ensure upload directory exists and is not executable
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Security: Allowed file extensions
 ALLOWED_EXTENSIONS = {'.tl'}
 
 def is_allowed_file(filename):
-    """Validate file extension and name for security."""
     if not filename:
         return False
     
-    # Check file extension
     file_ext = Path(filename).suffix.lower()
     if file_ext not in ALLOWED_EXTENSIONS:
         return False
     
-    # Validate filename using secure_filename
     safe_filename = secure_filename(filename)
     if safe_filename != filename:
         return False
     
-    # Additional security checks
-    # Prevent directory traversal attempts
+    # Basic hardening for filenames
     if '..' in filename or '/' in filename or '\\' in filename:
         return False
     
-    # Prevent potentially dangerous characters
     dangerous_chars = ['<', '>', ':', '"', '|', '?', '*']
     if any(char in filename for char in dangerous_chars):
         return False
     
-    # Limit filename length
     if len(filename) > 100:
         return False
     
     return True
 
 def sanitize_filename(filename):
-    """Sanitize filename for safe storage."""
-    # Use secure_filename as base
+    # Normalize to a safe, unique .tl filename
     safe_name = secure_filename(filename)
     
-    # Ensure .tl extension
     if not safe_name.endswith('.tl'):
         safe_name += '.tl'
     
-    # Generate unique filename if needed
     base_name = safe_name[:-3]  # Remove .tl
     counter = 1
     final_name = safe_name
@@ -77,7 +63,7 @@ def sanitize_filename(filename):
     while os.path.exists(os.path.join(UPLOAD_FOLDER, final_name)):
         final_name = f"{base_name}_{counter}.tl"
         counter += 1
-        if counter > 1000:  # Prevent infinite loop
+        if counter > 1000:
             raise ValueError("Too many files with similar names")
     
     return final_name
@@ -91,21 +77,17 @@ def index():
     uploaded_files = []
 
     if request.method == "POST":
-        # Security: Handle file uploads with validation
         if "files" in request.files:
             for file in request.files.getlist("files"):
                 if file and file.filename:
-                    # Validate file
                     if not is_allowed_file(file.filename):
                         flash(f"Invalid file: {file.filename}. Only .tl files with safe names are allowed.", "error")
                         continue
                     
                     try:
-                        # Sanitize filename and save file
                         safe_filename = sanitize_filename(file.filename)
                         filepath = os.path.join(app.config["UPLOAD_FOLDER"], safe_filename)
                         
-                        # Security: Ensure we're saving to the upload directory
                         if not os.path.abspath(filepath).startswith(os.path.abspath(app.config["UPLOAD_FOLDER"])):
                             flash(f"Security violation: Cannot save file outside upload directory", "error")
                             continue
@@ -117,14 +99,11 @@ def index():
                     except Exception as e:
                         flash(f"Error uploading {file.filename}: {str(e)}", "error")
 
-        # Get code from textarea
         code = request.form.get("code", "")
 
-        # Get input values (one per line)
         input_text = request.form.get("inputs", "")
         inputs = input_text.strip().splitlines() if input_text.strip() else []
 
-        # Security: Limit input size to prevent DoS
         if len(code) > 10000:  # 10KB limit
             flash("Code too large. Please keep it under 10KB.", "error")
             code = code[:10000]
@@ -133,10 +112,8 @@ def index():
             flash("Input too large. Please keep it under 1KB.", "error")
             inputs = inputs[:50]  # Limit to 50 input lines
 
-        # Run TechLang interpreter with security context
         if code.strip():
             try:
-                # Security: Use base directory for imports to prevent path traversal
                 base_dir = app.config["UPLOAD_FOLDER"]
                 output = run(code, inputs, base_dir=base_dir)
             except Exception as e:

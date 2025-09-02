@@ -1,24 +1,12 @@
-# techlang/aliases.py
-
 from typing import List, Set
 from .core import InterpreterState
 
 
 class AliasHandler:
-    """Handles alias processing in TechLang."""
+    # Two-pass aliasing: collect definitions, then expand recursively
     
     @staticmethod
     def process_aliases(tokens: List[str], state: InterpreterState) -> List[str]:
-        """
-        Process alias definitions and expand aliases in tokens.
-        
-        Args:
-            tokens: List of tokens to process
-            state: The interpreter state
-            
-        Returns:
-            List of tokens with aliases expanded
-        """
         # First pass: collect alias definitions
         AliasHandler._collect_aliases(tokens, state)
         
@@ -27,13 +15,6 @@ class AliasHandler:
     
     @staticmethod
     def _collect_aliases(tokens: List[str], state: InterpreterState) -> None:
-        """
-        Collect alias definitions from tokens.
-        
-        Args:
-            tokens: List of tokens
-            state: The interpreter state
-        """
         i = 0
         while i < len(tokens):
             if tokens[i] == "alias" and i + 2 < len(tokens):
@@ -44,16 +25,6 @@ class AliasHandler:
     
     @staticmethod
     def _expand_aliases(tokens: List[str], state: InterpreterState) -> List[str]:
-        """
-        Expand aliases in tokens, handling recursive aliases.
-        
-        Args:
-            tokens: List of tokens
-            state: The interpreter state
-            
-        Returns:
-            List of tokens with aliases expanded
-        """
         expanded_tokens = []
         
         for token in tokens:
@@ -65,16 +36,7 @@ class AliasHandler:
     
     @staticmethod
     def _expand_single_alias(token: str, state: InterpreterState) -> str:
-        """
-        Expand a single alias token, handling recursive aliases.
-        
-        Args:
-            token: The token to expand
-            state: The interpreter state
-            
-        Returns:
-            The expanded token value
-        """
+        # Detect cycles to avoid infinite expansion
         seen: Set[str] = set()
         current_token = token
         
