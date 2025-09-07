@@ -72,7 +72,7 @@ TechLang/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/techlang.git
+git clone https://github.com/devaanshpathak/techlang.git
 cd techlang
 ````
 
