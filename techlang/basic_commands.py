@@ -15,14 +15,16 @@ class BasicCommandHandler:
     KNOWN_COMMANDS: Set[str] = {
         "boot", "ping", "crash", "reboot", "print", "upload",
         "download", "debug", "hack", "lag", "fork", "set", "add",
-        "mul", "sub", "div", "loop", "end", "if", "def", "call", "input", "alias", "import",
+        "mul", "sub", "div", "loop", "while", "switch", "try", "catch", "default", "case", "end", "if", "def", "call", "input", "alias", "import",
         "db_create", "db_insert", "db_select", "db_update", "db_delete", "db_execute", "db_close",
         # Array commands - for working with lists
         "array_create", "array_set", "array_get", "array_push", "array_pop",
         # String commands - for working with text
         "str_create", "str_concat", "str_length", "str_substring",
         # Dictionary commands - for working with key-value pairs
-        "dict_create", "dict_set", "dict_get", "dict_keys"
+        "dict_create", "dict_set", "dict_get", "dict_keys",
+        # File I/O commands
+        "file_read", "file_write", "file_append", "file_exists", "file_delete", "file_list"
     }
     
     @staticmethod

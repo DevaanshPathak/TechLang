@@ -7,6 +7,7 @@ from .control_flow import ControlFlowHandler
 from .imports import ImportHandler
 from .database import DatabaseHandler
 from .data_types import DataTypesHandler
+from .file_ops import FileOpsHandler
 
 
 class CommandExecutor:
@@ -72,8 +73,12 @@ class CommandExecutor:
             # Control flow - loops, conditions, and functions
             elif token == "loop":
                 consumed = ControlFlowHandler.handle_loop(self.state, tokens, i, self.execute_block)
+            elif token == "while":
+                consumed = ControlFlowHandler.handle_while(self.state, tokens, i, self.execute_block)
             elif token == "if":
                 consumed = ControlFlowHandler.handle_if(self.state, tokens, i, self.execute_block)
+            elif token == "switch":
+                consumed = ControlFlowHandler.handle_switch(self.state, tokens, i, self.execute_block)
             elif token == "def":
                 consumed = ControlFlowHandler.handle_def(self.state, tokens, i)
             elif token == "call":
@@ -131,6 +136,24 @@ class CommandExecutor:
             elif token == "dict_keys":
                 consumed = DataTypesHandler.handle_dict_keys(self.state, tokens, i)
             
+            # File I/O
+            elif token == "file_read":
+                consumed = FileOpsHandler.handle_file_read(self.state, tokens, i, self.base_dir)
+            elif token == "file_write":
+                consumed = FileOpsHandler.handle_file_write(self.state, tokens, i, self.base_dir)
+            elif token == "file_append":
+                consumed = FileOpsHandler.handle_file_append(self.state, tokens, i, self.base_dir)
+            elif token == "file_exists":
+                consumed = FileOpsHandler.handle_file_exists(self.state, tokens, i, self.base_dir)
+            elif token == "file_delete":
+                consumed = FileOpsHandler.handle_file_delete(self.state, tokens, i, self.base_dir)
+            elif token == "file_list":
+                consumed = FileOpsHandler.handle_file_list(self.state, tokens, i, self.base_dir)
+
+            # Try/Catch
+            elif token == "try":
+                consumed = ControlFlowHandler.handle_try(self.state, tokens, i, self.execute_block)
+
             # End of block - marks the end of loops, functions, etc.
             elif token == "end":
                 pass

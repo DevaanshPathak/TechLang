@@ -46,31 +46,47 @@ class DataTypesHandler:
             return 0
         
         array_name = tokens[index + 1]
+        
+        # Try to get array index - could be a number or variable
         try:
             array_index = int(tokens[index + 2])
-            value = tokens[index + 3]
-            
-            if array_name not in state.arrays:
-                state.add_error(f"Array '{array_name}' does not exist")
-                return 0
-            
-            if array_index < 0 or array_index >= len(state.arrays[array_name]):
-                state.add_error(f"Array index {array_index} out of bounds for array '{array_name}'")
-                return 0
-            
-            # Try to convert to number, otherwise keep as text
-            try:
-                value = int(value)
-            except ValueError:
-                # Remove quotes if it's a quoted string
-                if value.startswith('"') and value.endswith('"'):
-                    value = value[1:-1]
-            
-            state.arrays[array_name][array_index] = value
-            return 3  # Tell the interpreter we used 3 tokens
         except ValueError:
-            state.add_error("Array index must be a number")
+            # Check if it's a variable
+            if state.has_variable(tokens[index + 2]):
+                array_index = state.get_variable(tokens[index + 2])
+                if not isinstance(array_index, int):
+                    state.add_error(f"Variable '{tokens[index + 2]}' is not a number. Array index must be a number.")
+                    return 0
+            else:
+                state.add_error(f"Array index must be a number or variable, but got '{tokens[index + 2]}'")
+                return 0
+        
+        value = tokens[index + 3]
+        
+        if array_name not in state.arrays:
+            state.add_error(f"Array '{array_name}' does not exist")
             return 0
+        
+        if array_index < 0 or array_index >= len(state.arrays[array_name]):
+            state.add_error(f"Array index {array_index} out of bounds for array '{array_name}'")
+            return 0
+        
+        # Try to convert to number, otherwise keep as text
+        try:
+            value = int(value)
+        except ValueError:
+            # Check if it's a variable
+            if state.has_variable(value):
+                value = state.get_variable(value)
+                if not isinstance(value, int) and not isinstance(value, str):
+                    state.add_error(f"Variable '{value}' has invalid type for array value")
+                    return 0
+            elif value.startswith('"') and value.endswith('"'):
+                # Remove quotes if it's a quoted string
+                value = value[1:-1]
+        
+        state.arrays[array_name][array_index] = value
+        return 3  # Tell the interpreter we used 3 tokens
     
     @staticmethod
     def handle_array_get(state: InterpreterState, tokens: List[str], index: int) -> int:
