@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TechLang Playground</title>
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/monokai.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/hint/show-hint.min.css" />
     <style>
         /* General dark background */
         body {
@@ -28,6 +32,37 @@
             flex-direction: column;
             align-items: center;
             padding: 2rem;
+        }
+
+        .toolbar {
+            width: 90%;
+            max-width: 900px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tabs {
+            width: 90%;
+            max-width: 900px;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
+        }
+
+        .tab {
+            background: #2c2c2c;
+            color: #d4d4d4;
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            background: #0e639c;
         }
 
         form {
@@ -183,12 +218,29 @@
             {% endif %}
         {% endwith %}
 
-        <form method="POST" enctype="multipart/form-data">
+        <div class="toolbar">
+            <div>
+                <button type="button" id="addTabBtn">+ Tab</button>
+                <button type="button" id="closeTabBtn">Close Tab</button>
+            </div>
+            <div>
+                <label style="margin-right:0.5rem;">Theme</label>
+                <select id="themeSelect">
+                    <option value="default">Light</option>
+                    <option value="monokai" selected>Dark</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="tabs" id="tabs"></div>
+
+        <form method="POST" enctype="multipart/form-data" id="mainForm">
             <label for="files">Upload .tl files (optional):</label>
             <input type="file" name="files" multiple class="file-upload">
 
             <label for="code">Enter TechLang Code:</label>
-            <textarea name="code" id="code" placeholder="Write your TechLang code here...">{{ code|default('') }}</textarea>
+            <textarea name="code" id="code" placeholder="Write your TechLang code here..." style="display:none;">{{ code|default('') }}</textarea>
+            <div id="editor" style="border:1px solid #3c3c3c;"></div>
 
             <label for="inputs">Inputs (one per line):</label>
             <textarea name="inputs" id="inputs" placeholder="Enter input values...">{{ inputs|default('') }}</textarea>
@@ -197,7 +249,7 @@
         </form>
 
         <h3>Output:</h3>
-        <div class="output">{{ output|default('') }}</div>
+        <div class="output" id="outputBox">{{ output|default('') }}</div>
 
         <!-- Display uploaded files -->
         {% if uploaded_files %}
@@ -212,4 +264,95 @@
         {% endif %}
     </main>
 </body>
+<!-- CodeMirror JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/hint/show-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/hint/anyword-hint.min.js"></script>
+<script>
+  (function(){
+    const defaultCode = document.getElementById('code').value || '';
+
+    const commands = [
+      'boot','ping','crash','print','set','add','sub','mul','div','loop','end','if','def','call',
+      'upload','download','debug','alias','import','while','switch','case','default','try','catch',
+      'db_create','db_insert','db_select','db_update','db_delete','db_execute','db_close','db_begin','db_commit','db_rollback','db_tables','db_schema','db_indexes','db_connect','db_disconnect',
+      'array_create','array_set','array_get','array_push','array_pop','str_create','str_concat','str_length','str_substring','dict_create','dict_set','dict_get','dict_keys',
+      'file_read','file_write','file_append','file_exists','file_delete','file_list',
+      'http_get','http_post','http_status','server_start','server_route','server_stop',
+      'graphics_init','graphics_draw_line','graphics_draw_circle','graphics_draw_text','graphics_show',
+      'math_sin','math_cos','math_sqrt','math_pow','math_random','math_pi','math_e',
+      'mem_alloc','mem_free','mem_read','mem_write','mem_dump','help'
+    ];
+
+    // Initialize CodeMirror
+    const editor = CodeMirror(document.getElementById('editor'), {
+      value: defaultCode,
+      lineNumbers: true,
+      mode: 'null',
+      theme: localStorage.getItem('tl_theme') || 'monokai',
+      extraKeys: { 'Ctrl-Space': 'autocomplete' }
+    });
+
+    // Simple autocomplete using anyword plus commands
+    editor.on('inputRead', function(cm, change){
+      if (change.text[0] && /[A-Za-z_]/.test(change.text[0])) {
+        const cursor = cm.getCursor();
+        const token = cm.getTokenAt(cursor);
+        const list = Array.from(new Set(commands.concat(cm.getValue().match(/[A-Za-z_][A-Za-z0-9_]*/g)||[])));
+        CodeMirror.showHint(cm, function(){
+          return { list: list.filter(w => w.toLowerCase().startsWith(token.string.toLowerCase())), from: {line:cursor.line, ch:token.start}, to: {line:cursor.line, ch:token.end} };
+        }, { completeSingle: false });
+      }
+    });
+
+    // Tabs management (in-memory)
+    const tabsEl = document.getElementById('tabs');
+    const addTabBtn = document.getElementById('addTabBtn');
+    const closeTabBtn = document.getElementById('closeTabBtn');
+    let tabs = [{ name: 'main.tl', content: editor.getValue() }];
+    let active = 0;
+
+    function renderTabs(){
+      tabsEl.innerHTML = '';
+      tabs.forEach((t, i) => {
+        const el = document.createElement('div');
+        el.className = 'tab' + (i===active ? ' active' : '');
+        el.textContent = t.name;
+        el.onclick = ()=>{ tabs[active].content = editor.getValue(); active = i; editor.setValue(tabs[active].content); };
+        tabsEl.appendChild(el);
+      });
+    }
+    renderTabs();
+
+    addTabBtn.onclick = ()=>{
+      tabs[active].content = editor.getValue();
+      tabs.push({ name: `file${tabs.length+1}.tl`, content: '' });
+      active = tabs.length-1; renderTabs(); editor.setValue('');
+    };
+    closeTabBtn.onclick = ()=>{
+      if (tabs.length<=1) return; 
+      tabs.splice(active,1); active = Math.max(0, active-1); renderTabs(); editor.setValue(tabs[active].content);
+    };
+
+    // Theme toggle
+    const themeSelect = document.getElementById('themeSelect');
+    themeSelect.value = editor.getOption('theme');
+    themeSelect.onchange = ()=>{ editor.setOption('theme', themeSelect.value); localStorage.setItem('tl_theme', themeSelect.value); };
+
+    // Submit handling: put active editor content into hidden textarea
+    document.getElementById('mainForm').addEventListener('submit', function(){
+      tabs[active].content = editor.getValue();
+      document.getElementById('code').value = tabs.map(t=>t.content).join('\n');
+    });
+
+    // Error highlighting: if output contains [Error:, briefly flash editor border
+    const out = document.getElementById('outputBox').innerText || '';
+    if (out.includes('[Error:')) {
+      const ed = document.getElementById('editor');
+      const old = ed.style.boxShadow;
+      ed.style.boxShadow = '0 0 0 2px #f44336 inset';
+      setTimeout(()=>{ ed.style.boxShadow = old; }, 1200);
+    }
+  })();
+</script>
 </html>

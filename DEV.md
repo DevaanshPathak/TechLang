@@ -243,15 +243,21 @@ Parse & Validate             Resolve alias/var
 
 ## 🗄️ Database Operations
 
-TechLang now includes SQLite3 database support with the following commands:
+SQLite3 support includes CRUD, transactions, introspection, and connection management.
 
-* `db_create table "columns"` - Creates a new table with specified columns
-* `db_insert table "values"` - Inserts data into a table
-* `db_select "query"` - Executes SELECT queries and displays results
-* `db_update "query"` - Executes UPDATE queries
-* `db_delete "query"` - Executes DELETE queries
-* `db_execute "sql"` - Executes any SQL statement
-* `db_close` - Closes all database connections
+Core:
+* `db_create table "columns"`
+* `db_insert table "values"`
+* `db_select "query"`
+* `db_update "query"`
+* `db_delete "query"`
+* `db_execute "sql"`
+* `db_close`
+
+Advanced:
+* Transactions: `db_begin`, `db_commit`, `db_rollback`
+* Introspection: `db_tables`, `db_schema table`, `db_indexes table`
+* Connections: `db_connect "path"`, `db_disconnect`
 
 ### Database Features
 
@@ -287,6 +293,59 @@ db_close
 ---
 
 ## 🌐 Web Playground
+## 📦 New Modules Overview
+
+* `data_types.py`: arrays, strings, dictionaries
+* `file_ops.py`: file I/O commands
+* `net_ops.py`: HTTP client and server stubs
+* `graphics_ops.py`: simple canvas drawing (Pillow)
+* `math_ops.py`: math functions/constants
+* `help_ops.py`: built-in help system
+* `memory_ops.py`: memory allocator/read-write/dump
+* `thread_ops.py`: threading & async wrappers
+* `system_ops.py`: system commands and subprocess management
+
+## 🧠 Memory Management (planned)
+
+Proposed commands:
+* `mem_alloc size`
+* `mem_free address`
+* `mem_read address`
+* `mem_write address value`
+* `mem_dump`
+
+Implemented simple heap dictionary in `InterpreterState` mapping integer addresses to integer cells. Allocator returns sequential base addresses; `mem_write`/`mem_read` operate on single cells; `mem_dump` prints current contents.
+
+## 🧵 Concurrency & Async
+
+Lightweight threading wrappers:
+* `thread_create <func>`: runs `call <func>` in background; outputs thread id
+* `thread_join <id>`: waits and prints that thread’s output
+* `thread_sleep <ms>`: sleep utility
+* `async_start`/`async_wait`: aliases of thread_create/join
+
+Note: threads run independent `run(code)` calls and collect outputs in `InterpreterState.thread_results`.
+
+## 🖥 CLI
+
+* `tl <file.tl>` to run a file (or `python cli.py <file.tl>`)
+* `tl -i` starts a REPL (multi-line blocks supported)
+* `tl -v` verbose
+
+To expose `tl`, install in editable mode: `pip install -e .` (entry point in `setup.cfg`).
+
+## 🧩 System Integration
+
+System safe wrappers:
+* `sys_exec "cmd"` — runs without shell, captures stdout/stderr, `_status`
+* `sys_env NAME` — prints environment variable
+* `sys_time` / `sys_date` — epoch seconds / ISO timestamp
+* `sys_exit code` — stores desired exit code in `_exit`
+
+Process management:
+* `proc_spawn "cmd"` — returns pid (internal id)
+* `proc_wait pid` — waits up to 30s, prints output, stores `proc_<pid>_status`
+* `proc_kill pid` — terminates process
 
 * TechLang includes a Flask-based playground in `techlang_web/`.
 * Features:

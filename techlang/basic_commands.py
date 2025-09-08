@@ -17,6 +17,8 @@ class BasicCommandHandler:
         "download", "debug", "hack", "lag", "fork", "set", "add",
         "mul", "sub", "div", "loop", "while", "switch", "try", "catch", "default", "case", "end", "if", "def", "call", "input", "alias", "import",
         "db_create", "db_insert", "db_select", "db_update", "db_delete", "db_execute", "db_close",
+        # Advanced DB
+        "db_begin", "db_commit", "db_rollback", "db_tables", "db_schema", "db_indexes", "db_connect", "db_disconnect",
         # Array commands - for working with lists
         "array_create", "array_set", "array_get", "array_push", "array_pop",
         # String commands - for working with text
@@ -24,7 +26,21 @@ class BasicCommandHandler:
         # Dictionary commands - for working with key-value pairs
         "dict_create", "dict_set", "dict_get", "dict_keys",
         # File I/O commands
-        "file_read", "file_write", "file_append", "file_exists", "file_delete", "file_list"
+        "file_read", "file_write", "file_append", "file_exists", "file_delete", "file_list",
+        # Network commands
+        "http_get", "http_post", "http_status", "server_start", "server_route", "server_stop",
+        # Graphics commands
+        "graphics_init", "graphics_draw_line", "graphics_draw_circle", "graphics_draw_text", "graphics_show"
+        ,
+        # Memory commands
+        "mem_alloc", "mem_free", "mem_read", "mem_write", "mem_dump",
+        # Help
+        "help",
+        # Threading & Async
+        "thread_create", "thread_join", "thread_sleep", "async_start", "async_wait",
+        # System & Processes
+        "sys_exec", "sys_env", "sys_time", "sys_date", "sys_exit",
+        "proc_spawn", "proc_kill", "proc_wait"
     }
     
     @staticmethod

@@ -40,6 +40,19 @@ class InterpreterState:
     
     # Dictionaries that store key-value pairs (like a phone book)
     dictionaries: Dict[str, Dict[str, Union[int, str]]] = None
+
+    # Simple memory model
+    memory: Dict[int, int] = None
+    next_address: int = 1
+
+    # Threading/Async bookkeeping
+    threads: Dict[int, object] = None
+    thread_results: Dict[int, str] = None
+    next_thread_id: int = 1
+
+    # Subprocess management
+    processes: Dict[int, object] = None
+    next_process_id: int = 1
     
     def __post_init__(self):
         """
@@ -66,6 +79,14 @@ class InterpreterState:
             self.strings = {}
         if self.dictionaries is None:
             self.dictionaries = {}
+        if self.memory is None:
+            self.memory = {}
+        if self.threads is None:
+            self.threads = {}
+        if self.thread_results is None:
+            self.thread_results = {}
+        if self.processes is None:
+            self.processes = {}
     
     def reset(self) -> None:
         """
@@ -83,6 +104,13 @@ class InterpreterState:
         self.arrays.clear()
         self.strings.clear()
         self.dictionaries.clear()
+        self.memory.clear()
+        self.next_address = 1
+        self.threads.clear()
+        self.thread_results.clear()
+        self.next_thread_id = 1
+        self.processes.clear()
+        self.next_process_id = 1
     
     def get_output(self) -> str:
         """

@@ -8,6 +8,12 @@ from .imports import ImportHandler
 from .database import DatabaseHandler
 from .data_types import DataTypesHandler
 from .file_ops import FileOpsHandler
+from .net_ops import NetOpsHandler, NetServerHandler
+from .graphics_ops import GraphicsOpsHandler
+from .memory_ops import MemoryOpsHandler
+from .help_ops import HelpOpsHandler
+from .thread_ops import ThreadOpsHandler
+from .system_ops import SystemOpsHandler, ProcessOpsHandler
 
 
 class CommandExecutor:
@@ -103,6 +109,22 @@ class CommandExecutor:
                 consumed = DatabaseHandler.handle_db_execute(self.state, tokens, i)
             elif token == "db_close":
                 DatabaseHandler.handle_db_close(self.state)
+            elif token == "db_connect":
+                consumed = DatabaseHandler.handle_db_connect(self.state, tokens, i)
+            elif token == "db_disconnect":
+                DatabaseHandler.handle_db_disconnect(self.state)
+            elif token == "db_begin":
+                DatabaseHandler.handle_db_begin(self.state)
+            elif token == "db_commit":
+                DatabaseHandler.handle_db_commit(self.state)
+            elif token == "db_rollback":
+                DatabaseHandler.handle_db_rollback(self.state)
+            elif token == "db_tables":
+                DatabaseHandler.handle_db_tables(self.state)
+            elif token == "db_schema":
+                consumed = DatabaseHandler.handle_db_schema(self.state, tokens, i)
+            elif token == "db_indexes":
+                consumed = DatabaseHandler.handle_db_indexes(self.state, tokens, i)
             
             # Array operations - working with lists of data
             elif token == "array_create":
@@ -149,6 +171,82 @@ class CommandExecutor:
                 consumed = FileOpsHandler.handle_file_delete(self.state, tokens, i, self.base_dir)
             elif token == "file_list":
                 consumed = FileOpsHandler.handle_file_list(self.state, tokens, i, self.base_dir)
+
+            # HTTP client
+            elif token == "http_get":
+                consumed = NetOpsHandler.handle_http_get(self.state, tokens, i)
+            elif token == "http_post":
+                consumed = NetOpsHandler.handle_http_post(self.state, tokens, i)
+            elif token == "http_status":
+                consumed = NetOpsHandler.handle_http_status(self.state, tokens, i)
+
+            # Server stubs
+            elif token == "server_start":
+                consumed = NetServerHandler.handle_server_start(self.state, tokens, i)
+            elif token == "server_route":
+                consumed = NetServerHandler.handle_server_route(self.state, tokens, i)
+            elif token == "server_stop":
+                NetServerHandler.handle_server_stop(self.state)
+
+            # Graphics
+            elif token == "graphics_init":
+                consumed = GraphicsOpsHandler.handle_graphics_init(self.state, tokens, i)
+            elif token == "graphics_draw_line":
+                consumed = GraphicsOpsHandler.handle_graphics_draw_line(self.state, tokens, i)
+            elif token == "graphics_draw_circle":
+                consumed = GraphicsOpsHandler.handle_graphics_draw_circle(self.state, tokens, i)
+            elif token == "graphics_draw_text":
+                consumed = GraphicsOpsHandler.handle_graphics_draw_text(self.state, tokens, i)
+            elif token == "graphics_show":
+                GraphicsOpsHandler.handle_graphics_show(self.state)
+
+            # Memory
+            elif token == "mem_alloc":
+                consumed = MemoryOpsHandler.handle_mem_alloc(self.state, tokens, i)
+            elif token == "mem_free":
+                consumed = MemoryOpsHandler.handle_mem_free(self.state, tokens, i)
+            elif token == "mem_read":
+                consumed = MemoryOpsHandler.handle_mem_read(self.state, tokens, i)
+            elif token == "mem_write":
+                consumed = MemoryOpsHandler.handle_mem_write(self.state, tokens, i)
+            elif token == "mem_dump":
+                MemoryOpsHandler.handle_mem_dump(self.state)
+
+            # Help
+            elif token == "help":
+                consumed = HelpOpsHandler.handle_help(self.state, tokens, i, sorted(BasicCommandHandler.KNOWN_COMMANDS))
+
+            # Threading & Async
+            elif token == "thread_create":
+                consumed = ThreadOpsHandler.handle_thread_create(self.state, tokens, i, self.base_dir)
+            elif token == "thread_join":
+                consumed = ThreadOpsHandler.handle_thread_join(self.state, tokens, i)
+            elif token == "thread_sleep":
+                consumed = ThreadOpsHandler.handle_thread_sleep(self.state, tokens, i)
+            elif token == "async_start":
+                consumed = ThreadOpsHandler.handle_async_start(self.state, tokens, i, self.base_dir)
+            elif token == "async_wait":
+                consumed = ThreadOpsHandler.handle_async_wait(self.state, tokens, i)
+
+            # System
+            elif token == "sys_exec":
+                consumed = SystemOpsHandler.handle_sys_exec(self.state, tokens, i)
+            elif token == "sys_env":
+                consumed = SystemOpsHandler.handle_sys_env(self.state, tokens, i)
+            elif token == "sys_time":
+                SystemOpsHandler.handle_sys_time(self.state)
+            elif token == "sys_date":
+                SystemOpsHandler.handle_sys_date(self.state)
+            elif token == "sys_exit":
+                consumed = SystemOpsHandler.handle_sys_exit(self.state, tokens, i)
+
+            # Processes
+            elif token == "proc_spawn":
+                consumed = ProcessOpsHandler.handle_proc_spawn(self.state, tokens, i)
+            elif token == "proc_wait":
+                consumed = ProcessOpsHandler.handle_proc_wait(self.state, tokens, i)
+            elif token == "proc_kill":
+                consumed = ProcessOpsHandler.handle_proc_kill(self.state, tokens, i)
 
             # Try/Catch
             elif token == "try":

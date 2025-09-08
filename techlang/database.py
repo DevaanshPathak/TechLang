@@ -38,6 +38,128 @@ class DatabaseHandler:
     def close_all_connections(self) -> None:
         for db_name in list(self.connections.keys()):
             self.close_connection(db_name)
+
+    # --- New: Connection management and transactions ---
+    @staticmethod
+    def handle_db_connect(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 1 >= len(tokens):
+            state.add_error("db_connect requires a database file path")
+            return 0
+        db_path = tokens[index + 1]
+        if db_path.startswith('"') and db_path.endswith('"'):
+            db_path = db_path[1:-1]
+        try:
+            db_handler = DatabaseHandler()
+            db_handler.default_db = db_path
+            # Establish connection immediately
+            db_handler.get_connection(db_path)
+            state.add_output(f"Connected to '{db_path}'")
+            return 1
+        except Exception as e:
+            state.add_error(f"Failed to connect: {e}")
+            return 1
+
+    @staticmethod
+    def handle_db_disconnect(state: InterpreterState) -> None:
+        try:
+            db_handler = DatabaseHandler()
+            db_handler.close_all_connections()
+            state.add_output("Disconnected from all databases")
+        except Exception as e:
+            state.add_error(f"Failed to disconnect: {e}")
+
+    @staticmethod
+    def handle_db_begin(state: InterpreterState) -> None:
+        try:
+            db_handler = DatabaseHandler()
+            conn = db_handler.get_connection()
+            conn.execute("BEGIN")
+            state.add_output("Transaction started")
+        except Exception as e:
+            state.add_error(f"Failed to begin transaction: {e}")
+
+    @staticmethod
+    def handle_db_commit(state: InterpreterState) -> None:
+        try:
+            db_handler = DatabaseHandler()
+            conn = db_handler.get_connection()
+            conn.commit()
+            state.add_output("Transaction committed")
+        except Exception as e:
+            state.add_error(f"Failed to commit transaction: {e}")
+
+    @staticmethod
+    def handle_db_rollback(state: InterpreterState) -> None:
+        try:
+            db_handler = DatabaseHandler()
+            conn = db_handler.get_connection()
+            conn.rollback()
+            state.add_output("Transaction rolled back")
+        except Exception as e:
+            state.add_error(f"Failed to roll back transaction: {e}")
+
+    # --- New: Introspection helpers ---
+    @staticmethod
+    def handle_db_tables(state: InterpreterState) -> None:
+        try:
+            db_handler = DatabaseHandler()
+            conn = db_handler.get_connection()
+            cur = conn.cursor()
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+            rows = cur.fetchall()
+            if not rows:
+                state.add_output("No tables")
+            else:
+                for row in rows:
+                    state.add_output(row[0])
+        except Exception as e:
+            state.add_error(f"Failed to list tables: {e}")
+
+    @staticmethod
+    def handle_db_schema(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 1 >= len(tokens):
+            state.add_error("db_schema requires a table name")
+            return 0
+        table = tokens[index + 1]
+        try:
+            db_handler = DatabaseHandler()
+            conn = db_handler.get_connection()
+            cur = conn.cursor()
+            cur.execute(f"PRAGMA table_info({table})")
+            cols = cur.fetchall()
+            if not cols:
+                state.add_output("No columns or table not found")
+            else:
+                for col in cols:
+                    # cid, name, type, notnull, dflt_value, pk
+                    state.add_output(f"{col['name']} {col['type']}")
+            return 1
+        except Exception as e:
+            state.add_error(f"Failed to get schema: {e}")
+            return 1
+
+    @staticmethod
+    def handle_db_indexes(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 1 >= len(tokens):
+            state.add_error("db_indexes requires a table name")
+            return 0
+        table = tokens[index + 1]
+        try:
+            db_handler = DatabaseHandler()
+            conn = db_handler.get_connection()
+            cur = conn.cursor()
+            cur.execute(f"PRAGMA index_list({table})")
+            idx = cur.fetchall()
+            if not idx:
+                state.add_output("No indexes")
+            else:
+                for i in idx:
+                    # seq, name, unique, origin, partial
+                    state.add_output(str(i[1]))
+            return 1
+        except Exception as e:
+            state.add_error(f"Failed to get indexes: {e}")
+            return 1
     
     @staticmethod
     def handle_db_create(state: InterpreterState, tokens: List[str], index: int) -> int:
