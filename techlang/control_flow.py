@@ -4,7 +4,11 @@ from .blocks import BlockCollector
 
 
 class ControlFlowHandler:
-    # Loops, conditionals, and simple function defs/calls
+    """
+    Handles control flow in TechLang.
+    This class manages loops, conditions, and functions - the logic that controls
+    how your program flows from one part to another.
+    """
     
     @staticmethod
     def handle_loop(state: InterpreterState, tokens: List[str], index: int, execute_block: Callable) -> int:

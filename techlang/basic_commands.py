@@ -4,57 +4,104 @@ from .core import InterpreterState
 
 
 class BasicCommandHandler:
-    # Core single-word commands for quick value tweaks and prints
+    """
+    Handles the basic commands in TechLang.
+    These are the simple commands that work with numbers and basic operations.
+    Think of this as the calculator part of TechLang.
+    """
     
+    # All the commands that TechLang knows about
+    # This helps us tell the difference between commands and variable names
     KNOWN_COMMANDS: Set[str] = {
         "boot", "ping", "crash", "reboot", "print", "upload",
         "download", "debug", "hack", "lag", "fork", "set", "add",
         "mul", "sub", "div", "loop", "end", "if", "def", "call", "input", "alias", "import",
-        "db_create", "db_insert", "db_select", "db_update", "db_delete", "db_execute", "db_close"
+        "db_create", "db_insert", "db_select", "db_update", "db_delete", "db_execute", "db_close",
+        # Array commands - for working with lists
+        "array_create", "array_set", "array_get", "array_push", "array_pop",
+        # String commands - for working with text
+        "str_create", "str_concat", "str_length", "str_substring",
+        # Dictionary commands - for working with key-value pairs
+        "dict_create", "dict_set", "dict_get", "dict_keys"
     }
     
     @staticmethod
     def handle_boot(state: InterpreterState) -> None:
+        """
+        Reset the current value to 0.
+        Like pressing the clear button on a calculator.
+        """
         state.value = 0
     
     @staticmethod
     def handle_ping(state: InterpreterState) -> None:
+        """
+        Add 1 to the current value.
+        Like pressing the +1 button on a calculator.
+        """
         state.value += 1
     
     @staticmethod
     def handle_crash(state: InterpreterState) -> None:
+        """
+        Subtract 1 from the current value.
+        Like pressing the -1 button on a calculator.
+        """
         state.value -= 1
     
     @staticmethod
     def handle_reboot(state: InterpreterState) -> None:
+        """
+        Reset the current value to 0 (same as boot).
+        Like restarting your computer.
+        """
         state.value = 0
     
     @staticmethod
     def handle_print(state: InterpreterState, tokens: List[str], index: int) -> int:
-        # Print numbers, variables, or quoted text following the command
+        """
+        Print something to the screen.
+        Can print numbers, variables, strings, or quoted text.
+        Like the print statement in other programming languages.
+        """
+        # Look at the next word to see what we should print
         lookahead: Optional[str] = tokens[index + 1] if index + 1 < len(tokens) else None
         
         if lookahead:
             if lookahead.startswith('"') and lookahead.endswith('"'):
+                # It's a quoted string, print it directly
                 message = lookahead[1:-1]
                 state.add_output(message)
-                return 1  # Consume the quoted string
+                return 1  # Tell the interpreter we used 1 token
             elif lookahead.isalpha() and lookahead not in BasicCommandHandler.KNOWN_COMMANDS:
-                if state.has_variable(lookahead):
+                # It's a variable name, print its value
+                if lookahead in state.strings:
+                    # It's a string variable
+                    state.add_output(state.strings[lookahead])
+                elif state.has_variable(lookahead):
+                    # It's a regular variable
                     state.add_output(str(state.get_variable(lookahead)))
                 else:
-                    state.add_error(f"Variable '{lookahead}' is not defined. Use 'set {lookahead} <value>' to create it.")
-                return 1  # Consume variable name
+                    state.add_error(f"Variable '{lookahead}' is not defined. Use 'set {lookahead} <value>' or 'str_create {lookahead} <value>' to create it.")
+                return 1  # Tell the interpreter we used 1 token
         
-        # Default behavior prints the current running value
+        # If nothing specific to print, print the current value
         state.add_output(str(state.value))
         return 0
     
     @staticmethod
     def handle_hack(state: InterpreterState) -> None:
+        """
+        Double the current value.
+        Like multiplying by 2.
+        """
         state.value *= 2
     
     @staticmethod
     def handle_lag(state: InterpreterState) -> None:
-        # Small sleep to simulate a pause in execution
+        """
+        Pause execution for 1 second.
+        Like waiting for something to load.
+        Useful for demonstrations or slowing down programs.
+        """
         time.sleep(1)

@@ -3,7 +3,11 @@ from .core import InterpreterState
 
 
 class VariableHandler:
-    # Variable commands: assign values, do math, and read input
+    """
+    Handles variable operations in TechLang.
+    This class manages storing values in variables and doing math with them.
+    Think of it as the memory manager for your programs.
+    """
     
     @staticmethod
     def handle_set(state: InterpreterState, tokens: List[str], index: int) -> int:

@@ -2,7 +2,11 @@ from .core import InterpreterState
 
 
 class StackHandler:
-    # Stack commands for TechLang: push current value, pop to value, and inspect
+    """
+    Handles stack operations in TechLang.
+    A stack is like a stack of plates - you can only add or remove from the top.
+    This class manages pushing and popping values to/from the stack.
+    """
     
     @staticmethod
     def handle_upload(state: InterpreterState) -> None:
@@ -25,4 +29,7 @@ class StackHandler:
         # Quick snapshot of runtime state to help troubleshoot scripts
         state.add_output(f"Stack: {state.stack}")
         state.add_output(f"Vars: {state.variables}")
+        state.add_output(f"Arrays: {state.arrays}")
+        state.add_output(f"Strings: {state.strings}")
+        state.add_output(f"Dictionaries: {state.dictionaries}")
         # Note: this prints raw structures so you can see exact values

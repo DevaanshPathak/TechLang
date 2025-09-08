@@ -6,23 +6,36 @@ from .stack import StackHandler
 from .control_flow import ControlFlowHandler
 from .imports import ImportHandler
 from .database import DatabaseHandler
+from .data_types import DataTypesHandler
 
 
 class CommandExecutor:
-    # Walks the token list and dispatches to the right handler
+    """
+    The main command dispatcher for TechLang.
+    This class reads through the program line by line and figures out what to do.
+    Think of it as the conductor of an orchestra - it tells each part what to play.
+    """
     
     def __init__(self, state: InterpreterState, base_dir: str):
+        """
+        Set up the command executor.
+        state: The interpreter's memory and state
+        base_dir: The directory to look for imported files
+        """
         self.state = state
         self.base_dir = base_dir
     
     def execute_block(self, tokens: List[str]) -> None:
-        # Simple loop with lookahead consumption via returned counts
+        """
+        Execute a block of TechLang code.
+        This is the main function that runs through each command and executes it.
+        """
         i = 0
         while i < len(tokens):
             token = tokens[i]
-            consumed = 0
+            consumed = 0  # How many tokens this command used up
             
-            # Basic commands
+            # Basic math and display commands
             if token == "boot":
                 BasicCommandHandler.handle_boot(self.state)
             elif token == "ping":
@@ -38,7 +51,7 @@ class CommandExecutor:
             elif token == "lag":
                 BasicCommandHandler.handle_lag(self.state)
             
-            # Variable operations
+            # Variable operations - storing and manipulating data
             elif token == "set":
                 consumed = VariableHandler.handle_set(self.state, tokens, i)
             elif token in {"add", "mul", "sub", "div"}:
@@ -46,7 +59,7 @@ class CommandExecutor:
             elif token == "input":
                 consumed = VariableHandler.handle_input(self.state, tokens, i)
             
-            # Stack operations
+            # Stack operations - temporary storage for numbers
             elif token == "upload":
                 StackHandler.handle_upload(self.state)
             elif token == "download":
@@ -56,7 +69,7 @@ class CommandExecutor:
             elif token == "debug":
                 StackHandler.handle_debug(self.state)
             
-            # Control flow
+            # Control flow - loops, conditions, and functions
             elif token == "loop":
                 consumed = ControlFlowHandler.handle_loop(self.state, tokens, i, self.execute_block)
             elif token == "if":
@@ -66,11 +79,11 @@ class CommandExecutor:
             elif token == "call":
                 consumed = ControlFlowHandler.handle_call(self.state, tokens, i, self.execute_block)
             
-            # Import
+            # File operations - loading other TechLang files
             elif token == "import":
                 consumed = ImportHandler.handle_import(self.state, tokens, i, self.base_dir)
             
-            # Database operations
+            # Database operations - working with SQLite databases
             elif token == "db_create":
                 consumed = DatabaseHandler.handle_db_create(self.state, tokens, i)
             elif token == "db_insert":
@@ -86,12 +99,45 @@ class CommandExecutor:
             elif token == "db_close":
                 DatabaseHandler.handle_db_close(self.state)
             
-            # End of block
+            # Array operations - working with lists of data
+            elif token == "array_create":
+                consumed = DataTypesHandler.handle_array_create(self.state, tokens, i)
+            elif token == "array_set":
+                consumed = DataTypesHandler.handle_array_set(self.state, tokens, i)
+            elif token == "array_get":
+                consumed = DataTypesHandler.handle_array_get(self.state, tokens, i)
+            elif token == "array_push":
+                consumed = DataTypesHandler.handle_array_push(self.state, tokens, i)
+            elif token == "array_pop":
+                consumed = DataTypesHandler.handle_array_pop(self.state, tokens, i)
+            
+            # String operations - working with text
+            elif token == "str_create":
+                consumed = DataTypesHandler.handle_str_create(self.state, tokens, i)
+            elif token == "str_concat":
+                consumed = DataTypesHandler.handle_str_concat(self.state, tokens, i)
+            elif token == "str_length":
+                consumed = DataTypesHandler.handle_str_length(self.state, tokens, i)
+            elif token == "str_substring":
+                consumed = DataTypesHandler.handle_str_substring(self.state, tokens, i)
+            
+            # Dictionary operations - working with key-value pairs
+            elif token == "dict_create":
+                consumed = DataTypesHandler.handle_dict_create(self.state, tokens, i)
+            elif token == "dict_set":
+                consumed = DataTypesHandler.handle_dict_set(self.state, tokens, i)
+            elif token == "dict_get":
+                consumed = DataTypesHandler.handle_dict_get(self.state, tokens, i)
+            elif token == "dict_keys":
+                consumed = DataTypesHandler.handle_dict_keys(self.state, tokens, i)
+            
+            # End of block - marks the end of loops, functions, etc.
             elif token == "end":
                 pass
             
-            # Unknown command
+            # Unknown command - something we don't recognize
             else:
                 self.state.add_error(f"Unknown command '{token}'. Check your syntax and make sure all commands are spelled correctly.")
             
+            # Move to the next command, skipping any tokens this command used
             i += 1 + consumed
