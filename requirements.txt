@@ -1,2 +1,6 @@
+flask==2.3.3
 pytest
-flask
+sqlite3
+matplotlib
+pillow
+requests
