@@ -1,6 +1,6 @@
 # 🖥️ TechLang
 
-**TechLang** is a hacker-themed, stack-based toy programming language implemented in Python. It features its own custom interpreter, language parser, and playful syntax (`ping`, `crash`, `upload`, etc.). The project includes a CLI, a GUI, and a web-based playground.
+**TechLang** is a hacker-themed, stack-based programming language implemented in Python. It features its own custom interpreter, language parser, and playful syntax (`ping`, `crash`, `upload`, etc.). The project includes a CLI, a GUI, and a web-based playground.
 
 ---
 
