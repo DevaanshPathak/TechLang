@@ -1,6 +1,5 @@
 flask
 pytest
-sqlite3
 matplotlib
 pillow
 requests
