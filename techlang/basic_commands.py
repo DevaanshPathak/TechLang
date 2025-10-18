@@ -1,5 +1,5 @@
 import time
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Union
 from .core import InterpreterState
 
 
@@ -14,7 +14,7 @@ class BasicCommandHandler:
     # This helps us tell the difference between commands and variable names
     KNOWN_COMMANDS: Set[str] = {
         "boot", "ping", "crash", "reboot", "print", "upload",
-        "download", "debug", "hack", "lag", "fork", "set", "add",
+    "download", "debug", "hack", "lag", "sleep", "yield", "fork", "set", "add",
     "mul", "sub", "div", "loop", "while", "switch", "match", "try", "catch", "default", "case", "end", "if", "def", "call", "input", "alias", "import", "package", "struct", "macro", "inline", "do",
         "db_create", "db_insert", "db_select", "db_update", "db_delete", "db_execute", "db_close",
         # Advanced DB
@@ -122,10 +122,47 @@ class BasicCommandHandler:
         state.value *= 2
     
     @staticmethod
+    def _sleep_seconds(seconds: float) -> None:
+        time.sleep(seconds)
+
+    @staticmethod
+    def _resolve_numeric_value(state: InterpreterState, token: str, description: str) -> Optional[float]:
+        try:
+            return float(token)
+        except ValueError:
+            if state.has_variable(token):
+                value: Union[int, float, str] = state.get_variable(token)
+                if isinstance(value, (int, float)):
+                    return float(value)
+                state.add_error(f"{description} must be numeric; variable '{token}' is not a number")
+                return None
+            state.add_error(f"{description} must be a number or numeric variable")
+            return None
+
+    @staticmethod
     def handle_lag(state: InterpreterState) -> None:
         """
         Pause execution for 1 second.
         Like waiting for something to load.
         Useful for demonstrations or slowing down programs.
         """
-        time.sleep(1)
+        BasicCommandHandler._sleep_seconds(1.0)
+
+    @staticmethod
+    def handle_sleep(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 1 >= len(tokens):
+            state.add_error("sleep requires milliseconds")
+            return 0
+        duration_token = tokens[index + 1]
+        duration = BasicCommandHandler._resolve_numeric_value(state, duration_token, "sleep duration")
+        if duration is None:
+            return 0
+        if duration < 0:
+            state.add_error("sleep duration must be non-negative")
+            return 0
+        BasicCommandHandler._sleep_seconds(duration / 1000.0)
+        return 1
+
+    @staticmethod
+    def handle_yield(state: InterpreterState) -> None:
+        BasicCommandHandler._sleep_seconds(0.0)

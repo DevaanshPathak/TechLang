@@ -58,6 +58,10 @@ class CommandExecutor:
                 BasicCommandHandler.handle_hack(self.state)
             elif token == "lag":
                 BasicCommandHandler.handle_lag(self.state)
+            elif token == "sleep":
+                consumed = BasicCommandHandler.handle_sleep(self.state, tokens, i)
+            elif token == "yield":
+                BasicCommandHandler.handle_yield(self.state)
             
             # Variable operations - storing and manipulating data
             elif token == "set":

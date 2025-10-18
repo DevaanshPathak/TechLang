@@ -1,4 +1,5 @@
 from techlang.interpreter import run
+from techlang.basic_commands import BasicCommandHandler
 import os
 from typing import List
 
@@ -122,6 +123,48 @@ def test_lag_in_loop():
     code = "set x 2 loop x lag ping print end"
     output = run(code).strip().splitlines()
     assert output == ["1", "2"]
+
+
+def test_sleep_uses_milliseconds(monkeypatch):
+    recorded = []
+
+    def fake_sleep(seconds: float) -> None:
+        recorded.append(seconds)
+
+    monkeypatch.setattr(BasicCommandHandler, "_sleep_seconds", fake_sleep)
+    code = 'sleep 150 print "done"'
+    output = run(code).strip().splitlines()
+    assert recorded == [0.15]
+    assert output == ["done"]
+
+
+def test_sleep_accepts_variable(monkeypatch):
+    recorded = []
+
+    def fake_sleep(seconds: float) -> None:
+        recorded.append(seconds)
+
+    monkeypatch.setattr(BasicCommandHandler, "_sleep_seconds", fake_sleep)
+    output = run("set wait 75 sleep wait").strip()
+    assert output == ""
+    assert recorded == [0.075]
+
+
+def test_sleep_rejects_negative_duration():
+    output = run("sleep -5").strip()
+    assert "sleep duration must be non-negative" in output
+
+
+def test_yield_yields_control(monkeypatch):
+    recorded = []
+
+    def fake_sleep(seconds: float) -> None:
+        recorded.append(seconds)
+
+    monkeypatch.setattr(BasicCommandHandler, "_sleep_seconds", fake_sleep)
+    output = run("yield ping print").strip().splitlines()
+    assert recorded == [0.0]
+    assert output == ["1"]
 
 def test_boundary_math_operations():
     # Test large numbers

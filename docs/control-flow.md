@@ -41,6 +41,23 @@ while countdown > 0
 end
 ```
 
+### Scheduler-friendly pacing
+
+Tight loops can starve other interpreters or threads. Use `sleep <milliseconds>` to add an explicit pause, or `yield` to hand control back to the scheduler without a fixed delay. These commands block the current interpreter, so tests typically mock the timer to avoid slow runs.
+
+```techlang
+set ticks 3
+loop ticks
+    print "tick"
+    sleep 50   # wait 50 ms before the next iteration
+end
+
+loop ticks
+    print "cooperate"
+    yield      # no delay, but gives other workers a chance to run
+end
+```
+
 ## Pattern Matching
 
 `match` lets you express guarded branches without chaining several `if` statements. The selector may be a number, string, or variable. Each `case` line can specify an operator, and `case default` handles the fallback.
