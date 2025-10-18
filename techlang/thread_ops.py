@@ -1,3 +1,4 @@
+import queue
 import threading
 import time
 from typing import List
@@ -119,5 +120,107 @@ class ThreadOpsHandler:
         order = " ".join(str(tid) for tid in state.threads.keys())
         state.add_output(order)
         return 0
+
+    @staticmethod
+    def handle_thread_wait_all(state: InterpreterState) -> int:
+        for tid in sorted(state.threads.keys()):
+            thread = state.threads[tid]
+            thread.join(timeout=30)
+            result = state.thread_results.get(tid, "")
+            state.add_output(result)
+        return 0
+
+    @staticmethod
+    def handle_mutex_create(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 1 >= len(tokens):
+            state.add_error("mutex_create requires a name")
+            return 0
+        name = tokens[index + 1]
+        if name in state.mutexes:
+            state.add_error(f"Mutex '{name}' already exists")
+            return 1
+        state.mutexes[name] = threading.Lock()
+        state.add_output("created")
+        return 1
+
+    @staticmethod
+    def handle_mutex_lock(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 1 >= len(tokens):
+            state.add_error("mutex_lock requires a name")
+            return 0
+        name = tokens[index + 1]
+        lock = state.mutexes.get(name)
+        if lock is None:
+            state.add_error(f"Mutex '{name}' is not defined")
+            return 1
+        acquired = lock.acquire(timeout=30)
+        if not acquired:
+            state.add_error(f"Mutex '{name}' could not be acquired")
+            return 1
+        state.add_output("locked")
+        return 1
+
+    @staticmethod
+    def handle_mutex_unlock(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 1 >= len(tokens):
+            state.add_error("mutex_unlock requires a name")
+            return 0
+        name = tokens[index + 1]
+        lock = state.mutexes.get(name)
+        if lock is None:
+            state.add_error(f"Mutex '{name}' is not defined")
+            return 1
+        try:
+            lock.release()
+        except RuntimeError:
+            state.add_error(f"Mutex '{name}' is not locked")
+            return 1
+        state.add_output("unlocked")
+        return 1
+
+    @staticmethod
+    def handle_queue_push(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 2 >= len(tokens):
+            state.add_error("queue_push requires a queue name and a value")
+            return 0
+        name = tokens[index + 1]
+        value_token = tokens[index + 2]
+        value = ThreadOpsHandler._resolve_queue_value(state, value_token)
+        q = state.queues.get(name)
+        if q is None:
+            q = queue.Queue()
+            state.queues[name] = q
+        q.put(value)
+        return 2
+
+    @staticmethod
+    def handle_queue_pop(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 2 >= len(tokens):
+            state.add_error("queue_pop requires a queue name and a target variable")
+            return 0
+        name = tokens[index + 1]
+        target = tokens[index + 2]
+        q = state.queues.get(name)
+        if q is None:
+            state.add_error(f"Queue '{name}' is empty or undefined")
+            return 1
+        try:
+            value = q.get(timeout=30)
+        except queue.Empty:
+            state.add_error(f"Queue '{name}' is empty")
+            return 1
+        state.set_variable(target, value)
+        state.strings[target] = value
+        return 2
+
+    @staticmethod
+    def _resolve_queue_value(state: InterpreterState, token: str) -> str:
+        if token.startswith('"') and token.endswith('"'):
+            return token[1:-1]
+        if token in state.strings:
+            return state.strings[token]
+        if state.has_variable(token):
+            return str(state.get_variable(token))
+        return token
 
 

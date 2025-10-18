@@ -37,7 +37,8 @@ class BasicCommandHandler:
         # Help
         "help",
         # Threading & Async
-    "thread_create", "thread_join", "thread_sleep", "thread_status", "thread_result", "thread_list", "async_start", "async_wait",
+    "thread_create", "thread_join", "thread_sleep", "thread_status", "thread_result", "thread_list", "thread_wait_all", "async_start", "async_wait",
+    "mutex_create", "mutex_lock", "mutex_unlock", "queue_push", "queue_pop",
         # System & Processes
         "sys_exec", "sys_env", "sys_time", "sys_date", "sys_sleep", "sys_cwd", "sys_exit",
         "proc_spawn", "proc_kill", "proc_wait", "proc_status"

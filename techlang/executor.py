@@ -238,6 +238,18 @@ class CommandExecutor:
                 consumed = ThreadOpsHandler.handle_thread_result(self.state, tokens, i)
             elif token == "thread_list":
                 consumed = ThreadOpsHandler.handle_thread_list(self.state)
+            elif token == "thread_wait_all":
+                consumed = ThreadOpsHandler.handle_thread_wait_all(self.state)
+            elif token == "mutex_create":
+                consumed = ThreadOpsHandler.handle_mutex_create(self.state, tokens, i)
+            elif token == "mutex_lock":
+                consumed = ThreadOpsHandler.handle_mutex_lock(self.state, tokens, i)
+            elif token == "mutex_unlock":
+                consumed = ThreadOpsHandler.handle_mutex_unlock(self.state, tokens, i)
+            elif token == "queue_push":
+                consumed = ThreadOpsHandler.handle_queue_push(self.state, tokens, i)
+            elif token == "queue_pop":
+                consumed = ThreadOpsHandler.handle_queue_pop(self.state, tokens, i)
             elif token == "async_start":
                 consumed = ThreadOpsHandler.handle_async_start(self.state, tokens, i, self.base_dir)
             elif token == "async_wait":

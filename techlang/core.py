@@ -65,6 +65,8 @@ class InterpreterState:
     threads: Dict[int, object] = None
     thread_results: Dict[int, str] = None
     next_thread_id: int = 1
+    mutexes: Dict[str, object] = None
+    queues: Dict[str, object] = None
 
     # Subprocess management
     processes: Dict[int, object] = None
@@ -111,6 +113,10 @@ class InterpreterState:
             self.threads = {}
         if self.thread_results is None:
             self.thread_results = {}
+        if self.mutexes is None:
+            self.mutexes = {}
+        if self.queues is None:
+            self.queues = {}
         if self.processes is None:
             self.processes = {}
     
@@ -138,6 +144,8 @@ class InterpreterState:
         self.threads.clear()
         self.thread_results.clear()
         self.next_thread_id = 1
+        self.mutexes.clear()
+        self.queues.clear()
         self.processes.clear()
         self.next_process_id = 1
         self.modules.clear()

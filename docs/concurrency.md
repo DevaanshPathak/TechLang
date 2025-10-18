@@ -39,6 +39,7 @@ Three utility commands make coordinating work easier:
 * `thread_status <id>` — prints `running` while the thread is alive, otherwise `finished`.
 * `thread_result <id>` — returns the cached output captured so far (empty until the thread finishes).
 * `thread_list` — prints a space-separated list of thread ids that have been created in the current interpreter.
+* `thread_wait_all` — waits for every tracked thread to finish and emits each thread’s output in id order.
 
 These commands let you poll without blocking:
 
@@ -60,6 +61,16 @@ thread_status 1        # finished
 Threads run new interpreter instances that inherit the parent's state snapshot. Mutations to variables, strings, arrays, dictionaries, structs, and database connections are shared. If workers should communicate progress, write to shared variables or push structured output to the main thread via `thread_result` and `thread_join`.
 
 TechLang threads are implemented with Python `threading.Thread` and are best suited to I/O bound tasks or simple background automation.
+
+## Synchronisation Primitives
+
+TechLang exposes simple building blocks for coordination in the host interpreter:
+
+* `mutex_create <name>` — registers a named mutex. Creating a mutex that already exists is treated as an error.
+* `mutex_lock <name>` / `mutex_unlock <name>` — acquire and release a mutex. Locks wait up to 30 seconds before reporting a timeout error.
+* `queue_push <queue> <value>` / `queue_pop <queue> <var>` — enqueue values and dequeue them into variables. Values can be quoted strings or existing variables; queues are created on first push and `queue_pop` waits up to 30 seconds for new data.
+
+The main interpreter owns these coordinators. Use them to guard critical sections around shared state, or to buffer messages between background workers and the main script after collecting their outputs.
 
 ---
 

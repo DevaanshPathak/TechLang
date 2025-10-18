@@ -52,3 +52,45 @@ def test_thread_status_result_and_list():
     assert out[6] == "done"
     assert out[7] == "1"
 
+
+def test_thread_wait_all_collects_outputs():
+    code = """
+    def alpha
+        print "alpha"
+    end
+    def beta
+        thread_sleep 50
+        print "beta"
+    end
+    thread_create alpha
+    thread_create beta
+    thread_wait_all
+    """
+    out = run(code).splitlines()
+    assert out[0] == "1"
+    assert out[1] == "2"
+    # thread_wait_all should emit the outputs from both threads, order by thread id
+    assert "alpha" in out[2]
+    assert "beta" in out[3]
+
+
+def test_mutex_and_queue_commands():
+    code = """
+    mutex_create lock
+    mutex_lock lock
+    mutex_unlock lock
+    queue_push inbox "hello"
+    queue_push inbox "world"
+    queue_pop inbox message
+    print message
+    queue_pop inbox message
+    print message
+    """
+    out = run(code).splitlines()
+    assert out[0] == "created"
+    assert out[1] == "locked"
+    assert out[2] == "unlocked"
+    # Queue pops should allow printing retrieved messages
+    assert out[3] == "hello"
+    assert out[4] == "world"
+
