@@ -19,8 +19,9 @@ class BasicCommandHandler:
         "db_create", "db_insert", "db_select", "db_update", "db_delete", "db_execute", "db_close",
         # Advanced DB
         "db_begin", "db_commit", "db_rollback", "db_tables", "db_schema", "db_indexes", "db_connect", "db_disconnect",
-        # Array commands - for working with lists
-        "array_create", "array_set", "array_get", "array_push", "array_pop",
+    # Array commands - for working with lists
+    "array_create", "array_set", "array_get", "array_push", "array_pop",
+    "array_map", "array_filter",
         # String commands - for working with text
         "str_create", "str_concat", "str_length", "str_substring",
         # Dictionary commands - for working with key-value pairs

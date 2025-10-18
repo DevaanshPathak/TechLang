@@ -9,6 +9,62 @@ class DataTypesHandler:
     This class manages arrays (lists), strings (text), and dictionaries (key-value pairs).
     Think of it as the toolbox for working with complex data structures.
     """
+    @staticmethod
+    def _resolve_int_token(state: InterpreterState, token: str, description: str) -> Optional[int]:
+        try:
+            return int(token)
+        except ValueError:
+            if state.has_variable(token):
+                value = state.get_variable(token)
+                if isinstance(value, (int, float)):
+                    return int(value)
+                if isinstance(value, str):
+                    try:
+                        return int(value)
+                    except ValueError:
+                        state.add_error(f"{description} must be numeric; variable '{token}' is not numeric")
+                        return None
+                state.add_error(f"{description} must be numeric; variable '{token}' is not numeric")
+                return None
+            if token in state.strings:
+                try:
+                    return int(state.strings[token])
+                except ValueError:
+                    state.add_error(f"{description} must be numeric; string '{token}' is not numeric")
+                    return None
+            state.add_error(f"{description} must be numeric; got '{token}'")
+            return None
+
+    @staticmethod
+    def _resolve_value_token(state: InterpreterState, token: str) -> Union[int, str]:
+        if token.startswith('"') and token.endswith('"'):
+            return token[1:-1]
+        if token in state.strings:
+            return state.strings[token]
+        if state.has_variable(token):
+            return state.get_variable(token)
+        try:
+            return int(token)
+        except ValueError:
+            return token
+
+    @staticmethod
+    def _resolve_string_token(state: InterpreterState, token: str, description: str) -> Optional[str]:
+        if token.startswith('"') and token.endswith('"'):
+            return token[1:-1]
+        if token in state.strings:
+            return state.strings[token]
+        if state.has_variable(token):
+            value = state.get_variable(token)
+            if isinstance(value, str):
+                return value
+            state.add_error(f"{description} must be a string; variable '{token}' is not a string")
+            return None
+        return token
+
+    @staticmethod
+    def _format_descriptor(name: str, argument: Optional[str]) -> str:
+        return name if argument is None else f"{name} {argument}"
     
     @staticmethod
     def handle_array_create(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -172,6 +228,179 @@ class DataTypesHandler:
         value = state.arrays[array_name].pop()
         state.add_output(str(value))
         return 1  # Consume array name
+
+    @staticmethod
+    def handle_array_map(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """Apply a simple transformation to every element in an array."""
+        if index + 3 >= len(tokens):
+            state.add_error("array_map requires source, target, and operation. Use: array_map <source> <target> <op> [value]")
+            return 0
+
+        source_name = tokens[index + 1]
+        target_name = tokens[index + 2]
+        operation = tokens[index + 3]
+
+        if source_name not in state.arrays:
+            state.add_error(f"Array '{source_name}' does not exist")
+            return 0
+
+        source_values = list(state.arrays[source_name])
+        op_requires_arg = {"add", "mul"}
+        arg_token: Optional[str] = None
+        consumed = 3
+
+        if operation in op_requires_arg:
+            if index + 4 >= len(tokens):
+                state.add_error(f"array_map {operation} requires a value. Use: array_map <source> <target> {operation} <number|var>")
+                return 0
+            arg_token = tokens[index + 4]
+            consumed = 4
+
+        result: List[Union[int, str]] = []
+
+        def ensure_numeric(value: Union[int, str], idx: int) -> Optional[int]:
+            if isinstance(value, int):
+                return value
+            state.add_error(f"array_map {operation} requires numeric elements; index {idx} in '{source_name}' is not numeric")
+            return None
+
+        numeric_arg: Optional[int] = None
+        if arg_token is not None:
+            numeric_arg = DataTypesHandler._resolve_int_token(state, arg_token, f"array_map {operation} value")
+            if numeric_arg is None:
+                return 0
+
+        for idx, value in enumerate(source_values):
+            if operation == "identity":
+                result.append(value)
+            elif operation == "negate":
+                numeric_value = ensure_numeric(value, idx)
+                if numeric_value is None:
+                    return 0
+                result.append(-numeric_value)
+            elif operation == "double":
+                numeric_value = ensure_numeric(value, idx)
+                if numeric_value is None:
+                    return 0
+                result.append(numeric_value * 2)
+            elif operation == "square":
+                numeric_value = ensure_numeric(value, idx)
+                if numeric_value is None:
+                    return 0
+                result.append(numeric_value * numeric_value)
+            elif operation == "abs":
+                numeric_value = ensure_numeric(value, idx)
+                if numeric_value is None:
+                    return 0
+                result.append(abs(numeric_value))
+            elif operation == "add":
+                numeric_value = ensure_numeric(value, idx)
+                if numeric_value is None or numeric_arg is None:
+                    return 0
+                result.append(numeric_value + numeric_arg)
+            elif operation == "mul":
+                numeric_value = ensure_numeric(value, idx)
+                if numeric_value is None or numeric_arg is None:
+                    return 0
+                result.append(numeric_value * numeric_arg)
+            else:
+                state.add_error("Unknown array_map operation. Supported: identity, add, mul, negate, double, square, abs")
+                return 0
+
+        state.arrays[target_name] = result
+        descriptor = DataTypesHandler._format_descriptor(operation, arg_token)
+        state.add_output(f"Mapped array '{source_name}' into '{target_name}' with op {descriptor} (items: {len(result)})")
+        return consumed
+
+    @staticmethod
+    def handle_array_filter(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """Filter array elements into a new array based on simple predicates."""
+        if index + 3 >= len(tokens):
+            state.add_error("array_filter requires source, target, and predicate. Use: array_filter <source> <target> <predicate> [value]")
+            return 0
+
+        source_name = tokens[index + 1]
+        target_name = tokens[index + 2]
+        predicate = tokens[index + 3]
+
+        if source_name not in state.arrays:
+            state.add_error(f"Array '{source_name}' does not exist")
+            return 0
+
+        predicates_with_value = {"gt", "ge", "lt", "le", "eq", "ne", "contains"}
+        value_token: Optional[str] = None
+        consumed = 3
+
+        if predicate in predicates_with_value:
+            if index + 4 >= len(tokens):
+                state.add_error(f"array_filter {predicate} requires a value. Use: array_filter <source> <target> {predicate} <value>")
+                return 0
+            value_token = tokens[index + 4]
+            consumed = 4
+
+        source_values = list(state.arrays[source_name])
+        result: List[Union[int, str]] = []
+
+        numeric_predicates = {"even", "odd", "positive", "negative", "nonzero", "gt", "ge", "lt", "le"}
+        comparator_value: Optional[int] = None
+        comparison_target: Optional[Union[int, str]] = None
+        contains_term: Optional[str] = None
+
+        if predicate in {"gt", "ge", "lt", "le"}:
+            comparator_value = DataTypesHandler._resolve_int_token(state, value_token or "", f"array_filter {predicate} value")
+            if comparator_value is None:
+                return 0
+        elif predicate in {"eq", "ne"}:
+            comparison_target = DataTypesHandler._resolve_value_token(state, value_token or "")
+        elif predicate == "contains":
+            contains_term = DataTypesHandler._resolve_string_token(state, value_token or "", "array_filter contains value")
+            if contains_term is None:
+                return 0
+
+        for idx, value in enumerate(source_values):
+            if predicate in numeric_predicates:
+                if not isinstance(value, int):
+                    state.add_error(f"array_filter {predicate} requires numeric elements; index {idx} in '{source_name}' is not numeric")
+                    return 0
+
+            match = False
+            if predicate == "even":
+                match = value % 2 == 0  # type: ignore[arg-type]
+            elif predicate == "odd":
+                match = value % 2 != 0  # type: ignore[arg-type]
+            elif predicate == "positive":
+                match = value > 0  # type: ignore[arg-type]
+            elif predicate == "negative":
+                match = value < 0  # type: ignore[arg-type]
+            elif predicate == "nonzero":
+                match = value != 0  # type: ignore[arg-type]
+            elif predicate == "gt":
+                match = value > comparator_value  # type: ignore[operator]
+            elif predicate == "ge":
+                match = value >= comparator_value  # type: ignore[operator]
+            elif predicate == "lt":
+                match = value < comparator_value  # type: ignore[operator]
+            elif predicate == "le":
+                match = value <= comparator_value  # type: ignore[operator]
+            elif predicate == "eq":
+                match = value == comparison_target
+            elif predicate == "ne":
+                match = value != comparison_target
+            elif predicate == "contains":
+                match = contains_term in str(value)
+            else:
+                state.add_error("Unknown array_filter predicate. Supported: even, odd, positive, negative, nonzero, gt, ge, lt, le, eq, ne, contains")
+                return 0
+
+            if match:
+                result.append(value)
+
+        state.arrays[target_name] = result
+        descriptor = DataTypesHandler._format_descriptor(predicate, value_token)
+        state.add_output(
+            f"Filtered array '{source_name}' into '{target_name}' with predicate {descriptor} (kept {len(result)}/{len(source_values)})"
+        )
+        return consumed
     
     @staticmethod
     def handle_str_create(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -373,6 +602,9 @@ class DataTypesHandler:
             state.add_error(f"Dictionary '{dict_name}' does not exist")
             return 0
         
-        keys = list(state.dictionaries[dict_name].keys())
-        state.add_output(f"Keys: {', '.join(keys)}")
+        keys = sorted(state.dictionaries[dict_name].keys())
+        if not keys:
+            state.add_output("Keys[0]: (empty)")
+        else:
+            state.add_output(f"Keys[{len(keys)}]: {', '.join(keys)}")
         return 1  # Consume dictionary name

@@ -67,6 +67,41 @@ class TestArrayOperations:
         output = run(code)
         assert "Array 'mylist' is empty" in output
 
+    def test_array_map_add(self):
+        """Test array_map with add operation"""
+        code = """
+        array_create items 3
+        array_set items 0 1
+        array_set items 1 2
+        array_set items 2 3
+        array_map items plus add 5
+        array_get plus 0
+        array_get plus 1
+        array_get plus 2
+        """
+        output = run(code)
+        assert "Mapped array 'items' into 'plus' with op add 5 (items: 3)" in output
+        assert "6" in output
+        assert "7" in output
+        assert "8" in output
+
+    def test_array_filter_gt(self):
+        """Test array_filter with greater-than predicate"""
+        code = """
+        array_create items 4
+        array_set items 0 2
+        array_set items 1 4
+        array_set items 2 6
+        array_set items 3 8
+        array_filter items big gt 5
+        array_get big 0
+        array_get big 1
+        """
+        output = run(code)
+        assert "Filtered array 'items' into 'big' with predicate gt 5 (kept 2/4)" in output
+        assert "6" in output
+        assert "8" in output
+
 
 class TestStringOperations:
     """Test string creation, manipulation, and access operations"""
@@ -149,8 +184,16 @@ class TestDictionaryOperations:
         dict_keys mydict
         """
         output = run(code)
-        assert "key1" in output
-        assert "key2" in output
+        assert "Keys[2]: key1, key2" in output
+
+    def test_dict_keys_empty(self):
+        """Test dictionary keys output when empty"""
+        code = """
+        dict_create empty
+        dict_keys empty
+        """
+        output = run(code)
+        assert "Keys[0]: (empty)" in output
     
     def test_dict_get_nonexistent_key(self):
         """Test getting value for nonexistent key"""

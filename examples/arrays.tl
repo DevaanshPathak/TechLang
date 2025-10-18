@@ -39,3 +39,21 @@ array_get mylist 1
 array_get mylist 2
 array_get mylist 3
 array_get mylist 4
+
+# Map the array to create doubled values
+array_map mylist doubled double
+
+print "Doubled values:"
+array_get doubled 0
+array_get doubled 1
+array_get doubled 2
+array_get doubled 3
+array_get doubled 4
+
+# Filter doubled values greater than 50
+array_filter doubled big gt 50
+
+print "Values greater than 50:"
+array_get big 0
+array_get big 1
+array_get big 2

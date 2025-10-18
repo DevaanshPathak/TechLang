@@ -146,6 +146,10 @@ class CommandExecutor:
                 consumed = DataTypesHandler.handle_array_push(self.state, tokens, i)
             elif token == "array_pop":
                 consumed = DataTypesHandler.handle_array_pop(self.state, tokens, i)
+            elif token == "array_map":
+                consumed = DataTypesHandler.handle_array_map(self.state, tokens, i)
+            elif token == "array_filter":
+                consumed = DataTypesHandler.handle_array_filter(self.state, tokens, i)
             
             # String operations - working with text
             elif token == "str_create":
