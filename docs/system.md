@@ -26,7 +26,7 @@ The process commands let you start a long-running program and interact with it l
 
 * `proc_spawn "command"` — Launches the process and returns an id.
 * `proc_status <id>` — Prints `running` while the process is alive; once it exits the exit code is printed and cached in `proc_<id>_status`.
-* `proc_wait <id>` — Waits for completion (30s timeout), streams stdout/stderr, and stores the exit code in `proc_<id>_status`.
+* `proc_wait <id> [timeoutSeconds]` — Waits for completion (default 30s), streams stdout/stderr line-by-line, and stores lines in `proc_<id>_out` / `proc_<id>_err` arrays as well as the exit code in `proc_<id>_status`.
 * `proc_kill <id>` — Terminates the process.
 
 Commands that accept a path or command string must use double quotes. All commands run relative to the interpreter's base directory, so you can reference project scripts directly.

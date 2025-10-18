@@ -5,6 +5,7 @@ from .core import InterpreterState
 from .macros import MacroHandler
 from .aliases import AliasHandler
 from .executor import CommandExecutor
+from .system_ops import ProcessOpsHandler
 
 
 def run(code: str, inputs: Optional[List[str]] = None, loaded_files: Optional[Set[str]] = None, base_dir: Optional[str] = None) -> str:
@@ -15,6 +16,7 @@ def run(code: str, inputs: Optional[List[str]] = None, loaded_files: Optional[Se
         base_dir = os.path.abspath(base_dir)
 
     state = InterpreterState()
+    ProcessOpsHandler.prime_cached_streams(state)
     state.input_queue = inputs or []
     state.loaded_files = loaded_files or set()
 

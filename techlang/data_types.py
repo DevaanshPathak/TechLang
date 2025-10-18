@@ -1,5 +1,6 @@
 from typing import List, Dict, Union, Optional
 from .core import InterpreterState
+from .system_ops import ProcessOpsHandler
 
 
 class DataTypesHandler:
@@ -63,7 +64,7 @@ class DataTypesHandler:
         
         value = tokens[index + 3]
         
-        if array_name not in state.arrays:
+        if array_name not in state.arrays and not ProcessOpsHandler.hydrate_stream_array(state, array_name):
             state.add_error(f"Array '{array_name}' does not exist")
             return 0
         

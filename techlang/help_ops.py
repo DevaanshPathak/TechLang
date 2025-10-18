@@ -107,7 +107,7 @@ HELP_TEXT: Dict[str, str] = {
     "sys_exit": "sys_exit [code] — store exit code in _exit",
     "proc_spawn": "proc_spawn \"cmd\" — start subprocess (returns id)",
     "proc_kill": "proc_kill <id> — terminate subprocess",
-    "proc_wait": "proc_wait <id> — wait and capture output",
+    "proc_wait": "proc_wait <id> [timeout] — wait, stream output lines, update arrays",
     "proc_status": "proc_status <id> — report running state or exit code",
 }
 

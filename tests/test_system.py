@@ -37,3 +37,32 @@ def test_proc_status_reports_running_then_exit():
     # After waiting, process should have exited with status 0
     assert out[2] == '0'
 
+
+def test_proc_wait_timeout_and_stream_arrays(tmp_path):
+    script = tmp_path / "slow.py"
+    script.write_text("""import time
+print('tick')
+time.sleep(0.2)
+print('tock')
+""")
+    cmd = f'"python" "{script}"'
+    code = f"proc_spawn {cmd} proc_wait 1 1.0"
+    out = run(code)
+    lines = out.strip().splitlines()
+    assert lines[0] == '1'
+    # Wait output should include tick/tock
+    assert 'tick' in lines[1]
+    assert 'tock' in lines[2]
+    # Arrays should retain individual lines
+    result = run("array_get proc_1_out 0 array_get proc_1_out 1")
+    arr_lines = result.strip().splitlines()
+    assert 'tick' in arr_lines[0]
+    assert 'tock' in arr_lines[1]
+
+
+def test_proc_wait_timeout_triggers_error():
+    cmd = '"python" -c "import time; time.sleep(0.5)"'
+    out = run(f"proc_spawn {cmd} proc_wait 1 0.1").strip().splitlines()
+    assert out[0] == '1'
+    assert any('timeout' in line.lower() for line in out[1:])
+

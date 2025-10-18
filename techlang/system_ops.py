@@ -3,7 +3,7 @@ import shlex
 import subprocess
 import time
 import datetime as dt
-from typing import List
+from typing import Dict, List
 from .core import InterpreterState
 
 
@@ -85,6 +85,8 @@ class SystemOpsHandler:
 
 
 class ProcessOpsHandler:
+    _stream_cache: Dict[str, List[str]] = {}
+
     @staticmethod
     def handle_proc_spawn(state: InterpreterState, tokens: List[str], index: int) -> int:
         from .basic_commands import BasicCommandHandler  # Local import to avoid circular dependency
@@ -114,6 +116,13 @@ class ProcessOpsHandler:
             pid = state.next_process_id
             state.next_process_id += 1
             state.processes[pid] = p
+            # Reset any cached output for this pid (ids restart each interpreter run)
+            out_key = f"proc_{pid}_out"
+            err_key = f"proc_{pid}_err"
+            state.arrays.pop(out_key, None)
+            state.arrays.pop(err_key, None)
+            ProcessOpsHandler._stream_cache.pop(out_key, None)
+            ProcessOpsHandler._stream_cache.pop(err_key, None)
             state.add_output(str(pid))
             return len(cmd_parts)
         except Exception as e:
@@ -130,18 +139,23 @@ class ProcessOpsHandler:
         except ValueError:
             state.add_error("process_id must be an integer")
             return 0
+        timeout_seconds = 30.0
+        if index + 2 < len(tokens):
+            try:
+                timeout_seconds = float(tokens[index + 2])
+            except ValueError:
+                state.add_error("proc_wait timeout must be a number of seconds")
+                return 1
         p = state.processes.get(pid)
         if p is None:
             state.add_error(f"Unknown process {pid}")
             return 1
         try:
-            out, err = p.communicate(timeout=30)
-            if out:
-                state.add_output(out.strip())
-            if err:
-                state.add_output(err.strip())
+            out, err = p.communicate(timeout=timeout_seconds)
+            ProcessOpsHandler._stream_process_output(state, pid, out, is_stdout=True)
+            ProcessOpsHandler._stream_process_output(state, pid, err, is_stdout=False)
             state.set_variable(f"proc_{pid}_status", p.returncode)
-            return 1
+            return 1 if index + 2 >= len(tokens) else 2
         except subprocess.TimeoutExpired:
             state.add_error("proc_wait timeout")
             return 1
@@ -189,5 +203,36 @@ class ProcessOpsHandler:
             state.set_variable(f"proc_{pid}_status", code)
             state.add_output(str(code))
         return 1
+
+    @staticmethod
+    def _stream_process_output(state: InterpreterState, pid: int, data: str, *, is_stdout: bool) -> None:
+        if not data:
+            return
+        lines = [line for line in data.splitlines() if line]
+        for line in lines:
+            state.add_output(line)
+        array_name = f"proc_{pid}_{'out' if is_stdout else 'err'}"
+        existing = state.arrays.get(array_name, [])
+        existing.extend(lines)
+        state.arrays[array_name] = existing
+        ProcessOpsHandler._stream_cache[array_name] = list(existing)
+
+    @classmethod
+    def hydrate_stream_array(cls, state: InterpreterState, array_name: str) -> bool:
+        if array_name in state.arrays:
+            return True
+        cached = cls._stream_cache.get(array_name)
+        if cached is None:
+            return False
+        state.arrays[array_name] = list(cached)
+        return True
+
+    @classmethod
+    def prime_cached_streams(cls, state: InterpreterState) -> None:
+        if not cls._stream_cache:
+            return
+        for name, lines in cls._stream_cache.items():
+            if name not in state.arrays:
+                state.arrays[name] = list(lines)
 
 
