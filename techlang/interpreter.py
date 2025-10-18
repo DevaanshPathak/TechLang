@@ -2,6 +2,7 @@ import os
 from typing import List, Optional, Set
 from .parser import parse
 from .core import InterpreterState
+from .macros import MacroHandler
 from .aliases import AliasHandler
 from .executor import CommandExecutor
 
@@ -19,6 +20,7 @@ def run(code: str, inputs: Optional[List[str]] = None, loaded_files: Optional[Se
 
     tokens: List[str] = parse(code)
     
+    tokens = MacroHandler.process_macros(tokens, state)
     tokens = AliasHandler.process_aliases(tokens, state)
     
     executor = CommandExecutor(state, base_dir)

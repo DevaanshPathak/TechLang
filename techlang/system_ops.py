@@ -48,6 +48,27 @@ class SystemOpsHandler:
     @staticmethod
     def handle_sys_date(state: InterpreterState) -> None:
         state.add_output(dt.datetime.now().isoformat())
+    
+    @staticmethod
+    def handle_sys_sleep(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 1 >= len(tokens):
+            state.add_error("sys_sleep requires milliseconds")
+            return 0
+        try:
+            ms = int(tokens[index + 1])
+        except ValueError:
+            state.add_error("sys_sleep expects an integer number of milliseconds")
+            return 0
+        if ms < 0:
+            state.add_error("sys_sleep requires a non-negative duration")
+            return 0
+        time.sleep(ms / 1000.0)
+        return 1
+
+    @staticmethod
+    def handle_sys_cwd(state: InterpreterState) -> int:
+        state.add_output(os.getcwd())
+        return 0
 
     @staticmethod
     def handle_sys_exit(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -66,14 +87,27 @@ class SystemOpsHandler:
 class ProcessOpsHandler:
     @staticmethod
     def handle_proc_spawn(state: InterpreterState, tokens: List[str], index: int) -> int:
-        if index + 1 >= len(tokens):
-            state.add_error("proc_spawn requires a quoted command")
+        from .basic_commands import BasicCommandHandler  # Local import to avoid circular dependency
+
+        cursor = index + 1
+        cmd_parts: List[str] = []
+        stop_tokens = BasicCommandHandler.KNOWN_COMMANDS.union({"end"})
+        while cursor < len(tokens):
+            token = tokens[cursor]
+            if cmd_parts and token in stop_tokens:
+                break
+            cmd_parts.append(token)
+            cursor += 1
+
+        if not cmd_parts:
+            state.add_error("proc_spawn requires a command")
             return 0
-        cmd_token = tokens[index + 1]
-        if not (cmd_token.startswith('"') and cmd_token.endswith('"')):
-            state.add_error("proc_spawn requires a quoted command")
-            return 0
-        cmd = cmd_token[1:-1]
+
+        cmd_text = " ".join(cmd_parts)
+        if cmd_text.startswith('"') and cmd_text.endswith('"') and cmd_text.count('"') == 2:
+            cmd = cmd_text[1:-1]
+        else:
+            cmd = cmd_text
         try:
             args = shlex.split(cmd)
             p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -81,10 +115,10 @@ class ProcessOpsHandler:
             state.next_process_id += 1
             state.processes[pid] = p
             state.add_output(str(pid))
-            return 1
+            return len(cmd_parts)
         except Exception as e:
             state.add_error(f"proc_spawn failed: {e}")
-            return 1
+            return len(cmd_parts)
 
     @staticmethod
     def handle_proc_wait(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -133,5 +167,27 @@ class ProcessOpsHandler:
         except Exception as e:
             state.add_error(f"proc_kill failed: {e}")
             return 1
+
+    @staticmethod
+    def handle_proc_status(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 1 >= len(tokens):
+            state.add_error("proc_status requires process_id")
+            return 0
+        try:
+            pid = int(tokens[index + 1])
+        except ValueError:
+            state.add_error("process_id must be an integer")
+            return 0
+        p = state.processes.get(pid)
+        if p is None:
+            state.add_error(f"Unknown process {pid}")
+            return 1
+        code = p.poll()
+        if code is None:
+            state.add_output("running")
+        else:
+            state.set_variable(f"proc_{pid}_status", code)
+            state.add_output(str(code))
+        return 1
 
 

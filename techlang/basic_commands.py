@@ -15,7 +15,7 @@ class BasicCommandHandler:
     KNOWN_COMMANDS: Set[str] = {
         "boot", "ping", "crash", "reboot", "print", "upload",
         "download", "debug", "hack", "lag", "fork", "set", "add",
-    "mul", "sub", "div", "loop", "while", "switch", "match", "try", "catch", "default", "case", "end", "if", "def", "call", "input", "alias", "import", "package", "struct",
+    "mul", "sub", "div", "loop", "while", "switch", "match", "try", "catch", "default", "case", "end", "if", "def", "call", "input", "alias", "import", "package", "struct", "macro", "inline", "do",
         "db_create", "db_insert", "db_select", "db_update", "db_delete", "db_execute", "db_close",
         # Advanced DB
         "db_begin", "db_commit", "db_rollback", "db_tables", "db_schema", "db_indexes", "db_connect", "db_disconnect",
@@ -37,10 +37,10 @@ class BasicCommandHandler:
         # Help
         "help",
         # Threading & Async
-        "thread_create", "thread_join", "thread_sleep", "async_start", "async_wait",
+    "thread_create", "thread_join", "thread_sleep", "thread_status", "thread_result", "thread_list", "async_start", "async_wait",
         # System & Processes
-        "sys_exec", "sys_env", "sys_time", "sys_date", "sys_exit",
-        "proc_spawn", "proc_kill", "proc_wait"
+        "sys_exec", "sys_env", "sys_time", "sys_date", "sys_sleep", "sys_cwd", "sys_exit",
+        "proc_spawn", "proc_kill", "proc_wait", "proc_status"
     }
     
     @staticmethod

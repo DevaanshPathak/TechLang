@@ -22,6 +22,9 @@ class InterpreterState:
     
     # Functions that can be called (like def my_function)
     functions: Dict[str, List[str]] = None
+
+    # Compile-time macros expanded before execution
+    macros: Dict[str, dict] = None
     
     # Shortcuts for commands (like alias inc ping)
     aliases: Dict[str, str] = None
@@ -80,6 +83,8 @@ class InterpreterState:
             self.variables = {}
         if self.functions is None:
             self.functions = {}
+        if self.macros is None:
+            self.macros = {}
         if self.aliases is None:
             self.aliases = {}
         if self.input_queue is None:
@@ -120,6 +125,7 @@ class InterpreterState:
         self.output.clear()
         self.variables.clear()
         self.functions.clear()
+        self.macros.clear()
         self.aliases.clear()
         self.input_queue.clear()
         self.arrays.clear()

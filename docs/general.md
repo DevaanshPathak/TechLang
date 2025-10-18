@@ -10,7 +10,7 @@ This document outlines the fundamental syntax rules and conventions that govern 
 | Statement Termination | One command per line; no semicolons required |
 | Strings | Double quotes only: `"text"` (single quotes are not supported) |
 | Comments | Use `#` for single-line comments; no multi-line comment syntax |
-| Blocks | Begin with a keyword (`loop`, `if`, `def`, `while`, `switch`, `try`) and end with `end` |
+| Blocks | Begin with a keyword (`loop`, `if`, `def`, `while`, `switch`, `match`, `try`, `macro`) and end with `end` |
 | Whitespace | Whitespace is used for separation but is otherwise ignored |
 | Errors | Printed as `[Error: message]` (non-fatal); execution continues |
 | Inputs | `input <var>` reads queued inputs (CLI/tests) or prompts user in interactive mode |
@@ -26,6 +26,10 @@ call utils.helpers.greet   # double-colon or dot both work
 ```
 
 Modules run in a child `InterpreterState` that shares variables, strings, arrays, dictionaries, structs, and output with the caller. The runtime keeps `state.modules` / `state.loaded_modules` so each module is evaluated once per run.
+
+## Macros
+
+Use `macro <name> [params...] do ... end` to capture reusable snippets that expand before execution. Inside the body, reference parameters with `$param`. Invoke the macro with `inline <name> <args...>`; the generated tokens are inserted directly into the surrounding code. Recursive macro expansion is prevented to avoid infinite loops.
 
 ## Variables and Data Types
 

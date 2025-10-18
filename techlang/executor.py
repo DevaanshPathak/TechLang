@@ -232,6 +232,12 @@ class CommandExecutor:
                 consumed = ThreadOpsHandler.handle_thread_join(self.state, tokens, i)
             elif token == "thread_sleep":
                 consumed = ThreadOpsHandler.handle_thread_sleep(self.state, tokens, i)
+            elif token == "thread_status":
+                consumed = ThreadOpsHandler.handle_thread_status(self.state, tokens, i)
+            elif token == "thread_result":
+                consumed = ThreadOpsHandler.handle_thread_result(self.state, tokens, i)
+            elif token == "thread_list":
+                consumed = ThreadOpsHandler.handle_thread_list(self.state)
             elif token == "async_start":
                 consumed = ThreadOpsHandler.handle_async_start(self.state, tokens, i, self.base_dir)
             elif token == "async_wait":
@@ -246,6 +252,10 @@ class CommandExecutor:
                 SystemOpsHandler.handle_sys_time(self.state)
             elif token == "sys_date":
                 SystemOpsHandler.handle_sys_date(self.state)
+            elif token == "sys_sleep":
+                consumed = SystemOpsHandler.handle_sys_sleep(self.state, tokens, i)
+            elif token == "sys_cwd":
+                consumed = SystemOpsHandler.handle_sys_cwd(self.state)
             elif token == "sys_exit":
                 consumed = SystemOpsHandler.handle_sys_exit(self.state, tokens, i)
 
@@ -256,6 +266,8 @@ class CommandExecutor:
                 consumed = ProcessOpsHandler.handle_proc_wait(self.state, tokens, i)
             elif token == "proc_kill":
                 consumed = ProcessOpsHandler.handle_proc_kill(self.state, tokens, i)
+            elif token == "proc_status":
+                consumed = ProcessOpsHandler.handle_proc_status(self.state, tokens, i)
 
             # Try/Catch
             elif token == "try":

@@ -1,63 +1,49 @@
 # Control Flow in TechLang
 
-Control flow statements determine the order in which instructions are executed in a TechLang program. TechLang supports several control flow constructs, including conditional statements, loops, and branching.
+TechLang evaluates commands from left to right. Any construct that introduces a block (`if`, `loop`, `while`, `def`, `match`, `try`, `macro`, …) is terminated with a literal `end` token. Blocks may be nested freely.
 
-## Conditional Statements
+## Conditionals
 
-Use `if`, `else if`, and `else` to execute code based on conditions:
+Use `if` with a comparison operator. When the condition is true the nested block runs; otherwise it is skipped.
 
 ```techlang
-if x > 0 {
-    print("Positive")
-} else if x == 0 {
-    print("Zero")
-} else {
-    print("Negative")
-}
+set score 75
+if score >= 60
+    print "pass"
+end
+
+if score < 60
+    print "retake"
+end
 ```
+
+Comparisons support `==`, `!=`, `<`, `<=`, `>` and `>=`. The right-hand side accepts integers or existing variables.
 
 ## Loops
 
-### While Loop
-
-Repeat a block of code while a condition is true:
+`loop <count>` repeats its body a fixed number of times. The count can be either a literal integer or a variable that currently holds an integer.
 
 ```techlang
-while count < 10 {
-    print(count)
-    count = count + 1
-}
+set i 0
+loop 3
+    add i 1
+end
+print i    # 3
 ```
 
-### For Loop
-
-Iterate over a range or collection:
+For open-ended loops use `while <var> <op> <value>`; the condition is evaluated before every iteration. A safety guard aborts the loop after 1000 iterations to prevent runaway programs.
 
 ```techlang
-for i in 1..5 {
-    print(i)
-}
+set countdown 3
+while countdown > 0
+    print countdown
+    sub countdown 1
+end
 ```
 
-## Branching
+## Pattern Matching
 
-Use `break` to exit a loop early, and `continue` to skip to the next iteration:
-
-```techlang
-for i in 1..10 {
-    if i == 5 {
-        break
-    }
-    if i % 2 == 0 {
-        continue
-    }
-    print(i)
-}
-```
-
-## Match Blocks
-
-Use `match` to replace deeply nested `if`/`switch` chains with guard-style branches. The TechLang syntax is line-based and terminates with `end`:
+`match` lets you express guarded branches without chaining several `if` statements. The selector may be a number, string, or variable. Each `case` line can specify an operator, and `case default` handles the fallback.
 
 ```techlang
 set temperature 68
@@ -69,11 +55,7 @@ match temperature
     case default
         print "mild"
 end
-```
 
-Each `case` may specify an operator (`==`, `!=`, `<`, `<=`, `>`, `>=`). If you omit the operator the comparison defaults to equality. Strings can be matched with quoted literals:
-
-```techlang
 str_create status "ok"
 match status
     case "error"
@@ -85,21 +67,53 @@ match status
 end
 ```
 
-## Enhanced try/catch
+## Functions
 
-`try ... catch` still watches for output lines that begin with `[Error:`. You can now capture the error message (without the prefix) and optionally a snapshot of the operand stack:
+`def <name> ... end` stores the raw token list for later reuse. Call a function with `call <name>`. Functions capture the state in which they were defined, so they are safe to invoke from threads and modules.
+
+```techlang
+def greet
+    print "hello"
+end
+call greet
+```
+
+## Try / Catch
+
+Errors surface as lines starting with `[Error:`. A `try ... catch` block suppresses the first error emitted inside the `try` region and executes the `catch` block instead. Provide one or two identifiers after `catch` to capture the message (without the prefix) and an optional stack snapshot.
 
 ```techlang
 try
-    div a b
-catch errMsg stackSnapshot
-    print errMsg           # e.g. Cannot divide by zero...
-    print stackSnapshot    # stringified stack contents
+    div numerator denominator
+catch errMsg stackDump
+    print errMsg
+    print stackDump
 end
 ```
 
-If no variable names follow `catch`, it behaves as before.
+If you omit the identifiers the catch block is still executed when an error appears, but nothing is bound.
+
+## Compile-time Macros
+
+Macros expand before the interpreter executes any code. Define a macro with `macro <name> [params...] do ... end` and reference parameters inside the body using `$param`. Invoke the macro with `inline <name> <args...>`; the expanded tokens are spliced into the call site.
+
+```techlang
+macro print_twice message do
+    print $message
+    print $message
+end
+
+macro inc target do
+    add $target 1
+end
+
+set counter 0
+inline inc counter
+inline print_twice "done"
+```
+
+Macros may call other macros; recursion is rejected to prevent infinite expansion loops. Macro bodies can also declare aliases or functions, which are processed after macro expansion just like handwritten code.
 
 ---
 
-See the [Examples Index](examples.md) for runnable
+See the [Examples Index](examples.md) for runnable snippets.

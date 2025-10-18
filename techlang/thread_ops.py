@@ -79,4 +79,45 @@ class ThreadOpsHandler:
         # Alias to thread_join for now
         return ThreadOpsHandler.handle_thread_join(state, tokens, index)
 
+    @staticmethod
+    def handle_thread_status(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 1 >= len(tokens):
+            state.add_error("thread_status requires thread_id")
+            return 0
+        try:
+            tid = int(tokens[index + 1])
+        except ValueError:
+            state.add_error("thread_id must be an integer")
+            return 0
+        thread = state.threads.get(tid)
+        if thread is None:
+            state.add_error(f"Unknown thread {tid}")
+            return 1
+        status = "running" if thread.is_alive() else "finished"
+        state.add_output(status)
+        return 1
+
+    @staticmethod
+    def handle_thread_result(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 1 >= len(tokens):
+            state.add_error("thread_result requires thread_id")
+            return 0
+        try:
+            tid = int(tokens[index + 1])
+        except ValueError:
+            state.add_error("thread_id must be an integer")
+            return 0
+        if tid not in state.threads:
+            state.add_error(f"Unknown thread {tid}")
+            return 1
+        result = state.thread_results.get(tid, "")
+        state.add_output(result)
+        return 1
+
+    @staticmethod
+    def handle_thread_list(state: InterpreterState) -> int:
+        order = " ".join(str(tid) for tid in state.threads.keys())
+        state.add_output(order)
+        return 0
+
 
