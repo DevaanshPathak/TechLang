@@ -152,6 +152,48 @@ class TestStringOperations:
         output = run(code)
         assert "Invalid substring range" in output
 
+    def test_string_interpolate_success(self):
+        """Test string interpolation fills placeholders"""
+        code = """
+        str_create name "Ada"
+        set year 2024
+        string_interpolate message "Hello {name}, welcome to {year}!"
+        print message
+        """
+        output = run(code)
+        assert "Hello Ada, welcome to 2024!" in output
+
+    def test_string_interpolate_missing_placeholder(self):
+        """Test interpolation reports missing placeholder"""
+        code = """
+        string_interpolate message "Hi {unknown}"
+        """
+        output = run(code)
+        assert "Placeholder 'unknown' is not defined" in output
+
+    def test_string_match_true_false(self):
+        """Test regex matching returning 1 or 0"""
+        code = """
+        str_create sentence "The quick brown fox jumps over the lazy dog"
+    string_match "fox" sentence hasfox
+    print hasfox
+    string_match "cat" sentence hascat
+    print hascat
+        """
+        output = run(code)
+        lines = [line.strip() for line in output.strip().splitlines()]
+        assert "1" in lines
+        assert "0" in lines
+
+    def test_string_match_invalid_pattern(self):
+        """Test regex errors surface as interpreter errors"""
+        code = """
+        str_create text "abc"
+        string_match "(" text has_match
+        """
+        output = run(code)
+        assert "Invalid regular expression" in output
+
 
 class TestDictionaryOperations:
     """Test dictionary creation, manipulation, and access operations"""

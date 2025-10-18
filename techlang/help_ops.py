@@ -54,6 +54,8 @@ HELP_TEXT: Dict[str, str] = {
     "str_concat": "str_concat <name> <stringVar|\"text\">",
     "str_length": "str_length <name>",
     "str_substring": "str_substring <name> <start> <end>",
+    "string_interpolate": "string_interpolate <name> <template> — fill {placeholders} using variables or strings",
+    "string_match": "string_match <pattern> <subject> <var> — store 1 if regex matches, else 0",
     "dict_create": "dict_create <name>",
     "dict_set": "dict_set <name> \"key\" \"val\"",
     "dict_get": "dict_get <name> \"key\"",

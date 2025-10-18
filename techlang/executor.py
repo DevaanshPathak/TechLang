@@ -160,6 +160,10 @@ class CommandExecutor:
                 consumed = DataTypesHandler.handle_str_length(self.state, tokens, i)
             elif token == "str_substring":
                 consumed = DataTypesHandler.handle_str_substring(self.state, tokens, i)
+            elif token == "string_interpolate":
+                consumed = VariableHandler.handle_string_interpolate(self.state, tokens, i)
+            elif token == "string_match":
+                consumed = VariableHandler.handle_string_match(self.state, tokens, i)
             
             # Dictionary operations - working with key-value pairs
             elif token == "dict_create":

@@ -22,6 +22,13 @@ This document covers the fundamental commands that form the backbone of TechLang
 | alias | `alias <short> <command>` | Create a shorthand name for a command. Useful for creating custom commands or simplifying repetitive operations. | `alias inc ping alias dec crash inc inc print  # 2` |
 | import | `import <name>` | Load and execute a TechLang file (`name.tl`). Each file is imported only once, even if the command is called multiple times. | `import math_utils` |
 
+### String Utilities
+
+| Command | Syntax | Description | Example |
+|--------|--------|-------------|---------|
+| string_interpolate | `string_interpolate <name> "template"` | Fill `{placeholders}` using string or numeric variables and store the resolved string under `<name>`. | `str_create name "Ada" string_interpolate welcome "Hello {name}!" print welcome` → Hello Ada! |
+| string_match | `string_match "pattern" <subject> <resultVar>` | Run a regular expression match; stores `1` on success or `0` on failure. Errors if the pattern is invalid or the optional regex dependency is missing. | `str_create msg "hello123" string_match "\\d+" msg has_digits print has_digits` → 1 |
+
 ## Detailed Examples
 
 ### Value Manipulation

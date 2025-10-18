@@ -23,7 +23,7 @@ class BasicCommandHandler:
     "array_create", "array_set", "array_get", "array_push", "array_pop",
     "array_map", "array_filter",
         # String commands - for working with text
-        "str_create", "str_concat", "str_length", "str_substring",
+    "str_create", "str_concat", "str_length", "str_substring", "string_interpolate", "string_match",
         # Dictionary commands - for working with key-value pairs
         "dict_create", "dict_set", "dict_get", "dict_keys",
         # File I/O commands

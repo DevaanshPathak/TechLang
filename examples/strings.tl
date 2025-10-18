@@ -32,3 +32,20 @@ str_substring sentence 20 24
 
 # Show string length
 str_length sentence
+
+# Interpolate a greeting using placeholders
+str_create first_name "Ada"
+str_create title "Engineer"
+string_interpolate intro "Hello {first_name}, brilliant {title}!"
+
+print "Interpolated greeting:"
+print intro
+
+# Run regex matches to detect words
+string_match "fox" sentence containsfox
+print "Contains 'fox'?"
+print containsfox
+
+string_match "cat" sentence containscat
+print "Contains 'cat'?"
+print containscat
