@@ -15,6 +15,18 @@ This document outlines the fundamental syntax rules and conventions that govern 
 | Errors | Printed as `[Error: message]` (non-fatal); execution continues |
 | Inputs | `input <var>` reads queued inputs (CLI/tests) or prompts user in interactive mode |
 
+## Modules
+
+Use `package use <module>` to execute another `.tl` file in a namespaced scope. Modules are resolved relative to the current script’s `base_dir`, so `package use utils/helpers` loads `utils/helpers.tl` next to the caller. Any functions defined inside the module are invoked with a qualified name:
+
+```techlang
+package use utils.helpers
+call utils.helpers::greet
+call utils.helpers.greet   # double-colon or dot both work
+```
+
+Modules run in a child `InterpreterState` that shares variables, strings, arrays, dictionaries, structs, and output with the caller. The runtime keeps `state.modules` / `state.loaded_modules` so each module is evaluated once per run.
+
 ## Variables and Data Types
 
 ### Variable Naming

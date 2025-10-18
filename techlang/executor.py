@@ -4,9 +4,10 @@ from .basic_commands import BasicCommandHandler
 from .variables import VariableHandler
 from .stack import StackHandler
 from .control_flow import ControlFlowHandler
-from .imports import ImportHandler
+from .imports import ImportHandler, ModuleHandler
 from .database import DatabaseHandler
 from .data_types import DataTypesHandler
+from .struct_ops import StructHandler
 from .file_ops import FileOpsHandler
 from .net_ops import NetOpsHandler, NetServerHandler
 from .graphics_ops import GraphicsOpsHandler
@@ -93,6 +94,8 @@ class CommandExecutor:
             # File operations - loading other TechLang files
             elif token == "import":
                 consumed = ImportHandler.handle_import(self.state, tokens, i, self.base_dir)
+            elif token == "package":
+                consumed = ModuleHandler.handle_package(self.state, tokens, i, self.base_dir)
             
             # Database operations - working with SQLite databases
             elif token == "db_create":
@@ -157,6 +160,10 @@ class CommandExecutor:
                 consumed = DataTypesHandler.handle_dict_get(self.state, tokens, i)
             elif token == "dict_keys":
                 consumed = DataTypesHandler.handle_dict_keys(self.state, tokens, i)
+
+            # Struct definitions and instances
+            elif token == "struct":
+                consumed = StructHandler.handle_struct(self.state, tokens, i)
             
             # File I/O
             elif token == "file_read":

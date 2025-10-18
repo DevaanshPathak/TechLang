@@ -1,4 +1,4 @@
-from typing import List, Tuple, Callable
+from typing import Callable, List, Optional, Tuple
 from .core import InterpreterState
 from .blocks import BlockCollector
 
@@ -287,13 +287,36 @@ class ControlFlowHandler:
             return 0
         
         func_name = tokens[index + 1]
+
+        module_call = ControlFlowHandler._split_module_call(func_name)
+        if module_call is not None:
+            module_name, inner_name = module_call
+            from .imports import ModuleHandler  # local import to avoid circular dependencies
+
+            ModuleHandler.call_module_function(state, module_name, inner_name)
+            return 1
         
         if func_name in state.functions:
             execute_block(state.functions[func_name])
+        elif state.parent_state and func_name in state.parent_state.functions:
+            execute_block(state.parent_state.functions[func_name])
         else:
             state.add_error(f"Function '{func_name}' is not defined. Use 'def {func_name} ... end' to define it first.")
         
         return 1  # Consume function name
+
+    @staticmethod
+    def _split_module_call(func_name: str) -> Optional[Tuple[str, str]]:
+        if "::" in func_name:
+            parts = func_name.split("::", 1)
+        elif "." in func_name:
+            parts = func_name.split(".", 1)
+        else:
+            return None
+
+        if len(parts) != 2 or not parts[0] or not parts[1]:
+            return None
+        return parts[0], parts[1]
     
     @staticmethod
     def _evaluate_condition(var_value: int, op: str, compare_val: int) -> bool:

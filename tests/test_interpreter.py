@@ -9,7 +9,16 @@ def test_print_value():
 def test_stack_usage():
     code = "boot ping upload ping print download print debug"
     output = run(code).strip().splitlines()
-    assert output == ["2", "1", "Stack: []", "Vars: {}", "Arrays: {}", "Strings: {}", "Dictionaries: {}"]
+    assert output == [
+        "2",
+        "1",
+        "Stack: []",
+        "Vars: {}",
+        "Arrays: {}",
+        "Strings: {}",
+        "Dictionaries: {}",
+        "Structs: {}",
+    ]
 
 def test_hack_command():
     code = "boot ping ping hack print"
@@ -29,6 +38,7 @@ def test_variable_set_and_add():
     assert output[3] == "Arrays: {}"
     assert output[4] == "Strings: {}"
     assert output[5] == "Dictionaries: {}"
+    assert output[6] == "Structs: {}"
 
 def test_math_commands():
     code = '''

@@ -1,4 +1,4 @@
-from typing import List, Dict, Union, Set
+from typing import List, Dict, Union, Set, Optional
 from dataclasses import dataclass
 
 
@@ -31,6 +31,15 @@ class InterpreterState:
     
     # Files that have been imported to avoid loading them twice
     loaded_files: Set[str] = None
+
+    # Modules loaded via `package use`; maps module name -> module info dict
+    modules: Dict[str, object] = None
+
+    # Track raw module identifiers to skip duplicate loads
+    loaded_modules: Set[str] = None
+
+    # Optional parent scope (used by modules for fallback lookups)
+    parent_state: Optional["InterpreterState"] = None
     
     # Arrays that can store lists of numbers or text
     arrays: Dict[str, List[Union[int, str]]] = None
@@ -40,6 +49,10 @@ class InterpreterState:
     
     # Dictionaries that store key-value pairs (like a phone book)
     dictionaries: Dict[str, Dict[str, Union[int, str]]] = None
+
+    # Struct type definitions (field name -> type) and instances (instance -> {type, fields})
+    struct_defs: Dict[str, Dict[str, str]] = None
+    structs: Dict[str, Dict[str, object]] = None
 
     # Simple memory model
     memory: Dict[int, int] = None
@@ -73,12 +86,20 @@ class InterpreterState:
             self.input_queue = []
         if self.loaded_files is None:
             self.loaded_files = set()
+        if self.modules is None:
+            self.modules = {}
+        if self.loaded_modules is None:
+            self.loaded_modules = set()
         if self.arrays is None:
             self.arrays = {}
         if self.strings is None:
             self.strings = {}
         if self.dictionaries is None:
             self.dictionaries = {}
+        if self.struct_defs is None:
+            self.struct_defs = {}
+        if self.structs is None:
+            self.structs = {}
         if self.memory is None:
             self.memory = {}
         if self.threads is None:
@@ -104,6 +125,8 @@ class InterpreterState:
         self.arrays.clear()
         self.strings.clear()
         self.dictionaries.clear()
+        self.struct_defs.clear()
+        self.structs.clear()
         self.memory.clear()
         self.next_address = 1
         self.threads.clear()
@@ -111,6 +134,8 @@ class InterpreterState:
         self.next_thread_id = 1
         self.processes.clear()
         self.next_process_id = 1
+        self.modules.clear()
+        self.loaded_modules.clear()
     
     def get_output(self) -> str:
         """

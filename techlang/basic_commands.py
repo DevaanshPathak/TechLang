@@ -15,7 +15,7 @@ class BasicCommandHandler:
     KNOWN_COMMANDS: Set[str] = {
         "boot", "ping", "crash", "reboot", "print", "upload",
         "download", "debug", "hack", "lag", "fork", "set", "add",
-        "mul", "sub", "div", "loop", "while", "switch", "try", "catch", "default", "case", "end", "if", "def", "call", "input", "alias", "import",
+    "mul", "sub", "div", "loop", "while", "switch", "try", "catch", "default", "case", "end", "if", "def", "call", "input", "alias", "import", "package",
         "db_create", "db_insert", "db_select", "db_update", "db_delete", "db_execute", "db_close",
         # Advanced DB
         "db_begin", "db_commit", "db_rollback", "db_tables", "db_schema", "db_indexes", "db_connect", "db_disconnect",
@@ -91,6 +91,11 @@ class BasicCommandHandler:
                 message = lookahead[1:-1]
                 state.add_output(message)
                 return 1  # Tell the interpreter we used 1 token
+            if lookahead in state.structs:
+                from .struct_ops import StructHandler  # local import to avoid circular dependency
+
+                state.add_output(StructHandler.format_instance(state.structs[lookahead]))
+                return 1
             elif lookahead.isalpha() and lookahead not in BasicCommandHandler.KNOWN_COMMANDS:
                 # It's a variable name, print its value
                 if lookahead in state.strings:

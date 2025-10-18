@@ -32,4 +32,5 @@ class StackHandler:
         state.add_output(f"Arrays: {state.arrays}")
         state.add_output(f"Strings: {state.strings}")
         state.add_output(f"Dictionaries: {state.dictionaries}")
+        state.add_output(f"Structs: {state.structs}")
         # Note: this prints raw structures so you can see exact values

@@ -2,6 +2,24 @@
 
 TechLang provides a variety of built-in data types to support different kinds of data and operations. Understanding these types is essential for writing effective programs.
 
+## Structs (records)
+
+Structs let you bundle named fields with simple typing guarantees. Define the shape with a `struct <Type>` block, then create and mutate instances with `struct` subcommands:
+
+```techlang
+struct Person name:string age:int end
+
+struct new Person user
+struct set user name "Ada"
+struct set user age 37
+print user            # Person{name: "Ada", age: 37}
+struct get user name  # Ada
+```
+
+- Supported field types: `int`, `string` (defaults to `0` / empty string).
+- `struct dump <instance>` prints the formatted record without touching `print`.
+- The `debug` command now includes a `Structs:` line so you can inspect all live instances.
+
 ## Primitive Types
 
 - **Integer (`int`)**: Whole numbers, e.g., `42`, `-7`
