@@ -14,7 +14,7 @@ class BlockCollector:
             token: str = tokens_list[i]
             
             # Any of these tokens start a nested block
-            if token in {"def", "if", "loop", "while", "switch", "try"}:
+            if token in {"def", "if", "loop", "while", "switch", "match", "try"}:
                 depth += 1
             elif token == "struct":
                 next_token = tokens_list[i + 1] if i + 1 < len(tokens_list) else ""

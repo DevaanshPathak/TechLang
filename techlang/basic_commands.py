@@ -15,7 +15,7 @@ class BasicCommandHandler:
     KNOWN_COMMANDS: Set[str] = {
         "boot", "ping", "crash", "reboot", "print", "upload",
         "download", "debug", "hack", "lag", "fork", "set", "add",
-    "mul", "sub", "div", "loop", "while", "switch", "try", "catch", "default", "case", "end", "if", "def", "call", "input", "alias", "import", "package",
+    "mul", "sub", "div", "loop", "while", "switch", "match", "try", "catch", "default", "case", "end", "if", "def", "call", "input", "alias", "import", "package", "struct",
         "db_create", "db_insert", "db_select", "db_update", "db_delete", "db_execute", "db_close",
         # Advanced DB
         "db_begin", "db_commit", "db_rollback", "db_tables", "db_schema", "db_indexes", "db_connect", "db_disconnect",

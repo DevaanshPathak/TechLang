@@ -86,6 +86,8 @@ class CommandExecutor:
                 consumed = ControlFlowHandler.handle_if(self.state, tokens, i, self.execute_block)
             elif token == "switch":
                 consumed = ControlFlowHandler.handle_switch(self.state, tokens, i, self.execute_block)
+            elif token == "match":
+                consumed = ControlFlowHandler.handle_match(self.state, tokens, i, self.execute_block)
             elif token == "def":
                 consumed = ControlFlowHandler.handle_def(self.state, tokens, i)
             elif token == "call":

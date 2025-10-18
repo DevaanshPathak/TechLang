@@ -131,6 +131,8 @@ try {
 }
 ```
 
+`catch` can optionally bind two identifiers: the first receives the error message without the `[Error:` prefix, and the second (if provided) receives a stringified snapshot of the operand stack.
+
 ## Input and Output
 
 ### Basic Input

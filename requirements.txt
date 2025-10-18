@@ -1,5 +1,5 @@
-flask
-pytest
-matplotlib
-pillow
-requests
+Flask>=3.0.0,<4.0.0
+pytest>=8.0.0,<9.0.0
+matplotlib>=3.8.0,<4.0.0
+Pillow>=10.0.0,<11.0.0
+requests>=2.31.0,<3.0.0

@@ -55,17 +55,50 @@ for i in 1..10 {
 }
 ```
 
-## Match Statement
+## Match Blocks
 
-Pattern matching for concise branching:
+Use `match` to replace deeply nested `if`/`switch` chains with guard-style branches. The TechLang syntax is line-based and terminates with `end`:
 
 ```techlang
-match value {
-    1 => print("One"),
-    2 => print("Two"),
-    _ => print("Other")
-}
+set temperature 68
+match temperature
+    case < 32
+        print "freezing"
+    case >= 80
+        print "hot"
+    case default
+        print "mild"
+end
 ```
+
+Each `case` may specify an operator (`==`, `!=`, `<`, `<=`, `>`, `>=`). If you omit the operator the comparison defaults to equality. Strings can be matched with quoted literals:
+
+```techlang
+str_create status "ok"
+match status
+    case "error"
+        print "bad"
+    case == "ok"
+        print "good"
+    case default
+        print "unknown"
+end
+```
+
+## Enhanced try/catch
+
+`try ... catch` still watches for output lines that begin with `[Error:`. You can now capture the error message (without the prefix) and optionally a snapshot of the operand stack:
+
+```techlang
+try
+    div a b
+catch errMsg stackSnapshot
+    print errMsg           # e.g. Cannot divide by zero...
+    print stackSnapshot    # stringified stack contents
+end
+```
+
+If no variable names follow `catch`, it behaves as before.
 
 ---
 

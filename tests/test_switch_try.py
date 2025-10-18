@@ -58,3 +58,35 @@ def test_try_no_error_skips_catch():
     # div 10 2 = 5, prints 5; catch should not run
     assert run(code).strip().splitlines()[-1] == "5"
 
+
+def test_try_catch_captures_error_message():
+    code = """
+    set a 10
+    set b 0
+    try
+        div a b
+    catch errMsg
+        print errMsg
+    end
+    """
+    lines = run(code).strip().splitlines()
+    assert lines[-1] == "Cannot divide by zero. Please provide a non-zero number."
+
+
+def test_try_catch_stack_snapshot():
+    code = """
+    boot
+    ping
+    upload
+    try
+        download
+        download
+    catch errMsg stackSnapshot
+        print errMsg
+        print stackSnapshot
+    end
+    """
+    lines = run(code).strip().splitlines()
+    assert lines[-2] == "Cannot download from empty stack. Use 'upload' to add values to the stack first."
+    assert lines[-1] == "[]"
+

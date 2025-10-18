@@ -23,6 +23,7 @@ HELP_TEXT: Dict[str, str] = {
     "alias": "alias <short> <command> — create shorthand",
     "import": "import <name> — load name.tl once",
     "package": "package use <module> — load a module with namespaced calls",
+    "match": "match <expr> ... case [op] <value> ... end — pattern guards with ==, !=, <, <=, >, >=",
     "db_create": "db_create <table> \"cols\" — create table",
     "db_insert": "db_insert <table> \"values\" — insert row",
     "db_select": "db_select \"SQL\" — run SELECT and print rows",
@@ -80,6 +81,7 @@ HELP_TEXT: Dict[str, str] = {
     "mem_read": "mem_read <addr>",
     "mem_write": "mem_write <addr> <value>",
     "mem_dump": "Print memory contents",
+    "try": "try ... catch [errVar [stackVar]] ... end — run catch if [Error:] is emitted",
 }
 
 
