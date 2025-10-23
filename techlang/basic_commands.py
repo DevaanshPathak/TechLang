@@ -27,7 +27,7 @@ class BasicCommandHandler:
         # Dictionary commands - for working with key-value pairs
         "dict_create", "dict_set", "dict_get", "dict_keys",
         # File I/O commands
-        "file_read", "file_write", "file_append", "file_exists", "file_delete", "file_list",
+    "file_read", "file_write", "file_append", "file_exists", "file_delete", "file_list",
         # Network commands
         "http_get", "http_post", "http_status", "server_start", "server_route", "server_stop",
         # Graphics commands
@@ -35,6 +35,10 @@ class BasicCommandHandler:
         ,
         # Memory commands
         "mem_alloc", "mem_free", "mem_read", "mem_write", "mem_dump",
+    # Math & time commands
+    "math_sin", "math_cos", "math_tan", "math_asin", "math_acos", "math_atan",
+    "math_sqrt", "math_pow", "math_random", "math_round", "math_floor", "math_ceil",
+    "math_deg2rad", "math_rad2deg", "math_pi", "math_e", "now", "format_date",
         # Help
         "help",
         # Threading & Async

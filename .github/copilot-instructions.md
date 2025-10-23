@@ -1,46 +1,36 @@
-# TechLang agent playbook (short)
+# TechLang agent guide
 
-Quick, actionable points to get an AI coding agent productive in this repository.
-# TechLang agent playbook
+## Core architecture
+- `techlang.interpreter.run(code, inputs=None, loaded_files=None, base_dir=None)` is the entrypoint; the CLI (`cli.py` / `tl`) sets `base_dir` to the file folder and streams the captured output.
+- `parser.parse` and `blocks.collect_blocks` break `.tl` source into tokens; every block terminates with the literal `end` (no braces/indent inference).
+- `executor.CommandExecutor.execute_block` fans out to handlers like `basic_commands.py`, `memory_ops.py`, `database.py`, `thread_ops.py`; keep new tokens in those modules.
+- All user-visible text must go through `InterpreterState.add_output` / `add_error`; tests assert prefixes and ordering, so never `print()` directly.
 
-- Entrypoint & CLI
-	- Interpreter entrypoint: `techlang.interpreter.run(code, inputs=None, loaded_files=None, base_dir=None)`.
-	- CLI wrapper: `cli.py` exposes `tl`-style behavior; it sets `base_dir` to the script file's folder when running files and prints the collected output.
+## State & data conventions
+- `InterpreterState` carries stack, vars, strings, arrays, dicts, structs, plus bookkeeping (`_status`, `proc_<pid>_status`, `thread_results`). Update these containers instead of ad-hoc fields.
+- `print <name>` resolves strings before numeric vars; struct values render as `Type{field: value}` (see `struct_ops.py`). Match that formatting when extending structs.
+- File commands resolve paths relative to `base_dir` and expect quoted literals: `file_write "path" "text"`, `file_read "path" var`.
 
-- Runtime pipeline (high-level)
-	- Parsing: `parser.parse` produces tokens.
-	- Alias expansion: `aliases.AliasHandler` collects/expands aliases.
-	- Execution dispatch: `executor.CommandExecutor.execute_block` routes tokens to handler modules (e.g., `basic_commands.py`, `memory_ops.py`, `database.py`).
-	- All output must flow through the `InterpreterState` instance (`InterpreterState.add_output` / `add_error`) — tests rely on exact output prefixes and ordering.
+## Modules, macros, aliases
+- `package use foo` loads `foo.tl` relative to `base_dir`, runs it in a child state, then registers aliases/functions under `state.modules['foo']`; invoke with `call foo.bar` or `call foo::bar` (see `tests/test_modules.py`).
+- `aliases.AliasHandler` expands alias tokens pre-execution; prefer touching `aliases.py` instead of sprinkling manual replacements.
+- Macros live in `macros.py`; emit real TechLang tokens so downstream handlers stay unchanged.
 
-- Important concepts & files
-	- `techlang/interpreter.py`: orchestrates the run loop and constructs `InterpreterState`.
-	- `techlang/parser.py` and `techlang/blocks.py`: block collection (every block ends with literal `end`) and tokenization — do not assume brace-based blocks.
-	- `techlang/imports.py`: `ImportHandler` still splices tokens inline; `ModuleHandler` backs the new `package use <module>` namespace loader and stores module states in `state.modules`/`loaded_modules`.
-	- `techlang/variables.py`, `data_types.py`, `struct_ops.py`, `stack.py`: value containers (scalars, arrays, strings, dictionaries, structs, memory) and debugging helpers.
-	- `techlang/database.py`: singleton `DatabaseHandler` uses `techlang.db` by default; `db_connect` changes the file.
-	- `techlang/help_ops.py`: canonical `help` text — keep it in sync with command handlers and `tests/test_help.py`.
+## Adding or tweaking commands
+- Wire new keywords in three spots: add to `basic_commands.BasicCommandHandler.KNOWN_COMMANDS`, route in `CommandExecutor.execute_block`, and document in `help_ops.HELP_TEXT` (also update `tests/test_help.py`).
+- Handlers should follow the existing signature, mutate state, and push textual results via `state.add_output(...)` / `add_error(...)` before returning.
+- Use lowercase TechLang tokens with Python handlers named `handle_<token>` for clarity and discoverability.
 
-- Project-specific conventions (examples)
-	- New commands must be wired in three places: add dispatch in `CommandExecutor.execute_block`, include token in `BasicCommandHandler.KNOWN_COMMANDS` (see `basic_commands.py`), and document text in `help_ops.HELP_TEXT`.
-	- `package use foo` resolves `foo.tl` relative to `base_dir`, executes it in a child `InterpreterState`, and registers functions/aliases under the module key; invoke module functions with `call foo.bar` or `call foo::bar`. Tests live in `tests/test_modules.py`.
-	- `struct <Type> ... end` defines field metadata; `struct new/set/get/dump` live in `struct_ops.py` and write into `state.struct_defs` / `state.structs`. Printing prefers struct instances before numeric variables so `print person` formats as `Type{field: value}`. See `tests/test_structs.py` for expected wording.
-	- `match <expr>` blocks support `case` guards with `==`, `!=`, `<`, `<=`, `>`, `>=`, plus `case default`; implementation sits in `ControlFlowHandler.handle_match` with coverage in `tests/test_match.py`.
-	- `try ... catch` lets you write `catch errVar [stackVar]`; the interpreter passes the first `[Error:` message (sans prefix) and a stringified stack snapshot into those variables before running the catch body. See `ControlFlowHandler.handle_try` and `tests/test_switch_try.py`.
-	- File paths are resolved relative to the `base_dir` argument passed to `run()` (the CLI sets this). File command arguments are quoted string literals (e.g., `file_write "path" "text"`) and tests assert exact response strings like `Wrote X bytes`.
-	- Thread/process results are stored in state keys: processes use `_status` / `proc_<pid>_status`; threads put outputs into `state.thread_results`. Use those keys when adding synchronization primitives.
+## Persistence, I/O, and external deps
+- `database.DatabaseHandler` is a singleton pointing at `techlang.db`; `db_connect` swaps the active file. Keep SQL output wording identical to maintain snapshot-based tests.
+- Network helpers rely on `requests`; graphics need `Pillow`. On missing deps, emit the exact pattern `[Error: 'requests' library not available]` / `[Error: 'Pillow' library not available]` so tests pass.
+- Thread/process primitives stash results inside state (`thread_ops.py`, `system_ops.py`); update those maps when introducing new async behaviors.
 
-- External deps & graceful degradation
-	- Optional: `requests` for network helpers; `Pillow` for graphics. Handlers emit a specific `[Error: 'requests' library not available]` or similar message when a dependency is missing — tests accept this pattern. Mirror that wording.
+## Tooling & tests
+- Run the full suite with `python run_tests.py` (pytest wrapper). Tests assert literal output lines—match spacing, casing, and prefixes exactly.
+- Sync examples (`examples/`) and docs (`docs/*.md`) whenever you add or rename commands so the CLI, GUI (`playground/gui.py`), and web app (`techlang_web/app.py`) stay aligned.
+- Verbose CLI mode `tl -v path.tl` streams each command before execution—helpful when you need to trace parser vs executor behavior.
 
-- Tests & workflows
-	- Run quick checks: `python run_tests.py` (runs pytest with recommended flags). Unit tests in `tests/` are the source of truth for behavior — new suites `test_modules.py` and `test_structs.py` pin module + struct expectations.
-	- Examples: `.tl` programs live in `examples/`; modify examples + tests when adding new language features.
-
-- Debugging and output formatting
-	- `debug` command prints internal structures in a fixed order (stack, vars, arrays, strings, dictionaries, structs); tests assert literal lines. Avoid reformatting those outputs or changing label names.
-	- `print <name>` looks up `state.strings` before numeric variables — preserve lookup precedence when introducing new containers.
-
-If anything here is unclear or you'd like more examples wired into specific files (tests or new command scaffolding), tell me which area to expand and I'll iterate.
-
-```
+## Debugging
+- The `debug` command prints stack, vars, arrays, strings, dicts, structs in that order; changing labels or sequence will break `tests/test_interpreter.py`.
+- When troubleshooting modules or macros, write minimal `.tl` repros in `examples/` and run them through `python cli.py example.tl` for consistent `base_dir` handling.

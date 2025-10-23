@@ -15,6 +15,7 @@ from .memory_ops import MemoryOpsHandler
 from .help_ops import HelpOpsHandler
 from .thread_ops import ThreadOpsHandler
 from .system_ops import SystemOpsHandler, ProcessOpsHandler
+from .math_ops import MathOpsHandler
 
 
 class CommandExecutor:
@@ -62,6 +63,44 @@ class CommandExecutor:
                 consumed = BasicCommandHandler.handle_sleep(self.state, tokens, i)
             elif token == "yield":
                 BasicCommandHandler.handle_yield(self.state)
+
+            # Advanced math, date, and time helpers
+            elif token == "math_sin":
+                consumed = MathOpsHandler.handle_math_sin(self.state, tokens, i)
+            elif token == "math_cos":
+                consumed = MathOpsHandler.handle_math_cos(self.state, tokens, i)
+            elif token == "math_tan":
+                consumed = MathOpsHandler.handle_math_tan(self.state, tokens, i)
+            elif token == "math_asin":
+                consumed = MathOpsHandler.handle_math_asin(self.state, tokens, i)
+            elif token == "math_acos":
+                consumed = MathOpsHandler.handle_math_acos(self.state, tokens, i)
+            elif token == "math_atan":
+                consumed = MathOpsHandler.handle_math_atan(self.state, tokens, i)
+            elif token == "math_sqrt":
+                consumed = MathOpsHandler.handle_math_sqrt(self.state, tokens, i)
+            elif token == "math_pow":
+                consumed = MathOpsHandler.handle_math_pow(self.state, tokens, i)
+            elif token == "math_random":
+                consumed = MathOpsHandler.handle_math_random(self.state, tokens, i)
+            elif token == "math_round":
+                consumed = MathOpsHandler.handle_math_round(self.state, tokens, i)
+            elif token == "math_floor":
+                consumed = MathOpsHandler.handle_math_floor(self.state, tokens, i)
+            elif token == "math_ceil":
+                consumed = MathOpsHandler.handle_math_ceil(self.state, tokens, i)
+            elif token == "math_deg2rad":
+                consumed = MathOpsHandler.handle_math_deg2rad(self.state, tokens, i)
+            elif token == "math_rad2deg":
+                consumed = MathOpsHandler.handle_math_rad2deg(self.state, tokens, i)
+            elif token == "math_pi":
+                MathOpsHandler.handle_math_pi(self.state)
+            elif token == "math_e":
+                MathOpsHandler.handle_math_e(self.state)
+            elif token == "now":
+                MathOpsHandler.handle_now(self.state)
+            elif token == "format_date":
+                consumed = MathOpsHandler.handle_format_date(self.state, tokens, i)
             
             # Variable operations - storing and manipulating data
             elif token == "set":
