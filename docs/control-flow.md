@@ -131,6 +131,105 @@ inline print_twice "done"
 
 Macros may call other macros; recursion is rejected to prevent infinite expansion loops. Macro bodies can also declare aliases or functions, which are processed after macro expansion just like handwritten code.
 
+## Interactive REPL
+
+The TechLang REPL (`tl -i`) provides an enhanced interactive environment with several productivity features:
+
+### Command History
+
+History is automatically persisted to `~/.techlang_history` and restored on startup. Use the arrow keys to navigate through previous commands (up to 1000 entries). History is saved when you exit the REPL.
+
+```bash
+$ tl -i
+TechLang REPL. Type 'exit' or Ctrl-D to quit. Type ':help' for meta-commands.
+tl> set x 5
+tl> print x
+5
+tl> # Press up arrow to recall "print x"
+```
+
+### Auto-indentation
+
+The REPL tracks block depth and automatically indents continuation lines, making multi-line blocks easier to write:
+
+```techlang
+tl> def greet
+...     set msg "hello"
+...     print msg
+... end
+```
+
+Indentation uses 4 spaces per nesting level. Block keywords include: `def`, `if`, `loop`, `while`, `switch`, `match`, `try`, `macro`, and `struct` (except `struct new/set/get/dump`).
+
+### Meta-commands
+
+Meta-commands start with `:` and provide REPL-specific functionality:
+
+| Command | Description |
+|---------|-------------|
+| `:load <file.tl>` | Load and execute a TechLang file without exiting the REPL |
+| `:help` | Show available meta-commands |
+| `:clear` | Clear the current input buffer (useful if you're stuck in a block) |
+| `:history` | Display the last 20 commands from history |
+| `exit` or `quit` | Exit the REPL (Ctrl-D also works) |
+
+**Example usage:**
+
+```techlang
+tl> :load examples/hello.tl
+[Loading examples/hello.tl...]
+Hello, TechLang!
+
+tl> :clear
+[Buffer cleared]
+
+tl> :history
+   1  set x 5
+   2  print x
+   3  def greet
+   4  :load examples/hello.tl
+
+tl> :help
+TechLang REPL Meta-Commands:
+  :load <file.tl>   Load and execute a TechLang file
+  :help             Show this help message
+  :clear            Clear the current buffer
+  :history          Show command history
+  exit / quit       Exit the REPL (or Ctrl-D)
+```
+
+**Loading files:**
+
+The `:load` command is particularly useful for testing and iterating on `.tl` files:
+
+```techlang
+tl> :load mymodule.tl
+[Loading mymodule.tl...]
+# Module executes, functions/aliases become available
+
+tl> call my_function
+# Use functions defined in the loaded file
+```
+
+The `.tl` extension is optional—`:load hello` will load `hello.tl` automatically.
+
+### Block Detection
+
+The REPL executes code immediately when the block depth returns to zero. For single-line commands without blocks, execution happens right away. For multi-line blocks, the REPL waits for the matching `end` token:
+
+```techlang
+tl> ping print
+1
+tl> loop 3
+...     ping print
+... end
+1
+2
+3
+```
+
+If you get stuck in a block (forgot an `end`), use `:clear` to reset the buffer.
+
 ---
 
 See the [Examples Index](examples.md) for runnable snippets.

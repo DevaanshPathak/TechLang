@@ -176,7 +176,8 @@ Parse & Validate             Resolve alias/var
 
   * Commands are lowercase.
   * One command per line.
-  * Indent `loop`, `if`, `def` blocks consistently (2 spaces).
+  * Indent `loop`, `if`, `def` blocks consistently (4 spaces per level).
+  * Use the formatter to ensure consistent style (see below).
 
 ---
 
@@ -206,12 +207,76 @@ Parse & Validate             Resolve alias/var
 
 ---
 
+## 🎨 Formatting and Linting
+
+TechLang includes a built-in formatter and linter to ensure consistent code style across `.tl` files.
+
+### Formatter
+
+The formatter automatically reflows blocks with proper indentation (4 spaces per level):
+
+```bash
+# Check if files need formatting
+python format_tl.py --check file.tl
+python format_tl.py --check examples/
+
+# Format files in place
+python format_tl.py --fix file.tl
+python format_tl.py --fix examples/
+
+# Custom indent size
+python format_tl.py --fix --indent 2 file.tl
+```
+
+The formatter:
+- Tokenizes using `parser.parse()` for consistency with the interpreter
+- Preserves quoted strings and comments
+- Handles all block types: `def`, `if`, `loop`, `while`, `switch`, `match`, `try`, `macro`, `struct`
+- Properly indents `case` and `catch` keywords
+
+### Linter
+
+The linter detects common issues in TechLang code:
+
+```bash
+# Lint files for issues
+python format_tl.py --lint file.tl
+python format_tl.py --lint examples/
+
+# Check formatting and lint together
+python format_tl.py --check --lint file.tl
+```
+
+Linting rules:
+- **E001**: Unmatched `end` keyword
+- **E002**: Unclosed block (missing `end`)
+- **W001**: Variable used before assignment
+- **W002**: Function called before definition
+- **W003**: Duplicate function definitions
+- **I001**: Empty block
+- **I002**: Line too long (>100 characters)
+
+### CI Integration
+
+GitHub Actions automatically checks formatting on all PRs:
+
+```yaml
+# .github/workflows/techlang-format.yml runs on every PR
+- python format_tl.py --check examples/
+- python format_tl.py --lint examples/
+```
+
+Contributors should run `python format_tl.py --fix --lint .` before committing to ensure consistent style.
+
+---
+
 ## 🧪 Testing
 
 * All tests reside in `tests/`.
 * Use `pytest` or `python run_tests.py`.
 * Make sure to add tests for any new commands or features.
 * Database tests include cleanup functions to prevent conflicts.
+* Formatter/linter tests are in `tests/test_formatter.py`.
 * Example:
 
   ```python
