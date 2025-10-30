@@ -24,8 +24,11 @@ class BasicCommandHandler:
     "array_map", "array_filter",
         # String commands - for working with text
     "str_create", "str_concat", "str_length", "str_substring", "string_interpolate", "string_match",
+    "str_split", "str_replace", "str_trim", "str_upper", "str_lower", "str_contains", "str_reverse",
         # Dictionary commands - for working with key-value pairs
         "dict_create", "dict_set", "dict_get", "dict_keys",
+        # JSON commands - for parsing and stringifying JSON data
+        "json_parse", "json_stringify", "json_read", "json_write",
         # File I/O commands
     "file_read", "file_write", "file_append", "file_exists", "file_delete", "file_list",
         # Network commands

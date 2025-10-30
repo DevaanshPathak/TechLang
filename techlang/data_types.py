@@ -1,3 +1,4 @@
+import json
 from typing import List, Dict, Union, Optional
 from .core import InterpreterState
 from .system_ops import ProcessOpsHandler
@@ -506,6 +507,170 @@ class DataTypesHandler:
             return 0
     
     @staticmethod
+    def handle_str_split(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Split a string into an array using a delimiter.
+        Like cutting a sentence into words.
+        Example: str_split mystring " " myarray splits mystring by spaces into myarray.
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("str_split requires string name, delimiter, and target array name. Use: str_split <string> <delimiter> <array>")
+            return 0
+        
+        string_name = tokens[index + 1]
+        delimiter = tokens[index + 2]
+        array_name = tokens[index + 3]
+        
+        if string_name not in state.strings:
+            state.add_error(f"String '{string_name}' does not exist")
+            return 0
+        
+        # Remove quotes from delimiter if present
+        if delimiter.startswith('"') and delimiter.endswith('"'):
+            delimiter = delimiter[1:-1]
+        
+        # Perform the split
+        parts = state.strings[string_name].split(delimiter)
+        state.arrays[array_name] = parts
+        state.add_output(f"String split into {len(parts)} parts")
+        return 3  # Consume string name, delimiter, and array name
+    
+    @staticmethod
+    def handle_str_replace(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Replace all occurrences of a substring with another.
+        Like using find-and-replace in a text editor.
+        Example: str_replace mystring "old" "new" replaces all "old" with "new" in mystring.
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("str_replace requires string name, old value, and new value. Use: str_replace <string> <old> <new>")
+            return 0
+        
+        string_name = tokens[index + 1]
+        old_value = tokens[index + 2]
+        new_value = tokens[index + 3]
+        
+        if string_name not in state.strings:
+            state.add_error(f"String '{string_name}' does not exist")
+            return 0
+        
+        # Remove quotes if present
+        if old_value.startswith('"') and old_value.endswith('"'):
+            old_value = old_value[1:-1]
+        if new_value.startswith('"') and new_value.endswith('"'):
+            new_value = new_value[1:-1]
+        
+        # Perform the replacement
+        state.strings[string_name] = state.strings[string_name].replace(old_value, new_value)
+        return 3  # Consume string name, old value, and new value
+    
+    @staticmethod
+    def handle_str_trim(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Remove whitespace from both ends of a string.
+        Like trimming the edges of a piece of paper.
+        Example: str_trim mystring removes leading and trailing spaces from mystring.
+        """
+        if index + 1 >= len(tokens):
+            state.add_error("str_trim requires string name. Use: str_trim <string>")
+            return 0
+        
+        string_name = tokens[index + 1]
+        
+        if string_name not in state.strings:
+            state.add_error(f"String '{string_name}' does not exist")
+            return 0
+        
+        state.strings[string_name] = state.strings[string_name].strip()
+        return 1  # Consume string name
+    
+    @staticmethod
+    def handle_str_upper(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Convert a string to uppercase.
+        Like turning all letters into capital letters.
+        Example: str_upper mystring converts mystring to all uppercase.
+        """
+        if index + 1 >= len(tokens):
+            state.add_error("str_upper requires string name. Use: str_upper <string>")
+            return 0
+        
+        string_name = tokens[index + 1]
+        
+        if string_name not in state.strings:
+            state.add_error(f"String '{string_name}' does not exist")
+            return 0
+        
+        state.strings[string_name] = state.strings[string_name].upper()
+        return 1  # Consume string name
+    
+    @staticmethod
+    def handle_str_lower(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Convert a string to lowercase.
+        Like turning all letters into small letters.
+        Example: str_lower mystring converts mystring to all lowercase.
+        """
+        if index + 1 >= len(tokens):
+            state.add_error("str_lower requires string name. Use: str_lower <string>")
+            return 0
+        
+        string_name = tokens[index + 1]
+        
+        if string_name not in state.strings:
+            state.add_error(f"String '{string_name}' does not exist")
+            return 0
+        
+        state.strings[string_name] = state.strings[string_name].lower()
+        return 1  # Consume string name
+    
+    @staticmethod
+    def handle_str_contains(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Check if a string contains a substring.
+        Like checking if a sentence includes a specific word.
+        Example: str_contains mystring "hello" prints 1 if "hello" is in mystring, 0 otherwise.
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("str_contains requires string name and substring. Use: str_contains <string> <substring>")
+            return 0
+        
+        string_name = tokens[index + 1]
+        substring = tokens[index + 2]
+        
+        if string_name not in state.strings:
+            state.add_error(f"String '{string_name}' does not exist")
+            return 0
+        
+        # Remove quotes from substring if present
+        if substring.startswith('"') and substring.endswith('"'):
+            substring = substring[1:-1]
+        
+        result = 1 if substring in state.strings[string_name] else 0
+        state.add_output(str(result))
+        return 2  # Consume string name and substring
+    
+    @staticmethod
+    def handle_str_reverse(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Reverse the characters in a string.
+        Like reading text backwards.
+        Example: str_reverse mystring reverses the order of characters in mystring.
+        """
+        if index + 1 >= len(tokens):
+            state.add_error("str_reverse requires string name. Use: str_reverse <string>")
+            return 0
+        
+        string_name = tokens[index + 1]
+        
+        if string_name not in state.strings:
+            state.add_error(f"String '{string_name}' does not exist")
+            return 0
+        
+        state.strings[string_name] = state.strings[string_name][::-1]
+        return 1  # Consume string name
+    
+    @staticmethod
     def handle_dict_create(state: InterpreterState, tokens: List[str], index: int) -> int:
         """
         Create a new dictionary.
@@ -608,3 +773,224 @@ class DataTypesHandler:
         else:
             state.add_output(f"Keys[{len(keys)}]: {', '.join(keys)}")
         return 1  # Consume dictionary name
+    
+    @staticmethod
+    def handle_json_parse(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Parse a JSON string into a TechLang data structure.
+        Converts JSON objects to dictionaries and JSON arrays to arrays.
+        Example: json_parse jsonString result
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("json_parse requires source string and target name. Use: json_parse <source> <target>")
+            return 0
+        
+        source_name = tokens[index + 1]
+        target_name = tokens[index + 2]
+        
+        # Get the JSON string
+        json_str = None
+        if source_name in state.strings:
+            json_str = state.strings[source_name]
+        elif source_name.startswith('"') and source_name.endswith('"'):
+            json_str = source_name[1:-1]
+        else:
+            state.add_error(f"Source '{source_name}' is not a valid string")
+            return 0
+        
+        # Parse the JSON
+        try:
+            parsed = json.loads(json_str)
+            
+            # Store based on type
+            # NOTE: Check bool before int/float since bool is a subclass of int in Python
+            if isinstance(parsed, bool):
+                state.variables[target_name] = 1 if parsed else 0
+                state.add_output(f"Parsed JSON boolean into variable '{target_name}'")
+            elif isinstance(parsed, dict):
+                state.dictionaries[target_name] = parsed
+                state.add_output(f"Parsed JSON object into dictionary '{target_name}'")
+            elif isinstance(parsed, list):
+                state.arrays[target_name] = parsed
+                state.add_output(f"Parsed JSON array into array '{target_name}'")
+            elif isinstance(parsed, str):
+                state.strings[target_name] = parsed
+                state.add_output(f"Parsed JSON string into string '{target_name}'")
+            elif isinstance(parsed, (int, float)):
+                state.variables[target_name] = parsed
+                state.add_output(f"Parsed JSON number into variable '{target_name}'")
+            elif parsed is None:
+                state.variables[target_name] = 0
+                state.add_output(f"Parsed JSON null into variable '{target_name}' (0)")
+            else:
+                state.add_error(f"Unsupported JSON type: {type(parsed).__name__}")
+                return 0
+            
+            return 2  # Consume source and target
+            
+        except json.JSONDecodeError as e:
+            state.add_error(f"Invalid JSON: {str(e)}")
+            return 0
+    
+    @staticmethod
+    def handle_json_stringify(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Convert a TechLang data structure to a JSON string.
+        Works with dictionaries, arrays, strings, and numbers.
+        Example: json_stringify myDict jsonString
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("json_stringify requires source name and target string. Use: json_stringify <source> <target>")
+            return 0
+        
+        source_name = tokens[index + 1]
+        target_name = tokens[index + 2]
+        
+        # Determine what to stringify
+        obj = None
+        if source_name in state.dictionaries:
+            obj = state.dictionaries[source_name]
+        elif source_name in state.arrays:
+            obj = state.arrays[source_name]
+        elif source_name in state.strings:
+            obj = state.strings[source_name]
+        elif state.has_variable(source_name):
+            obj = state.get_variable(source_name)
+        else:
+            state.add_error(f"Source '{source_name}' does not exist")
+            return 0
+        
+        # Convert to JSON
+        try:
+            json_str = json.dumps(obj, ensure_ascii=False, separators=(',', ':'))
+            state.strings[target_name] = json_str
+            state.add_output(f"Stringified to JSON in '{target_name}'")
+            return 2  # Consume source and target
+            
+        except (TypeError, ValueError) as e:
+            state.add_error(f"Cannot stringify to JSON: {str(e)}")
+            return 0
+    
+    @staticmethod
+    def handle_json_read(state: InterpreterState, tokens: List[str], index: int, base_dir: str = None) -> int:
+        """
+        Read JSON from a file and parse it into a TechLang data structure.
+        Example: json_read "data.json" myDict
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("json_read requires file path and target name. Use: json_read <path> <target>")
+            return 0
+        
+        file_path = tokens[index + 1]
+        target_name = tokens[index + 2]
+        
+        # Remove quotes from path if present
+        if file_path.startswith('"') and file_path.endswith('"'):
+            file_path = file_path[1:-1]
+        
+        # Resolve path relative to base_dir
+        if base_dir:
+            from pathlib import Path
+            full_path = Path(base_dir) / file_path
+            
+            # Security check - prevent path traversal
+            try:
+                full_path = full_path.resolve()
+                base_resolved = Path(base_dir).resolve()
+                if not str(full_path).startswith(str(base_resolved)):
+                    state.add_error(f"Access denied: path outside base directory")
+                    return 0
+            except Exception as e:
+                state.add_error(f"Invalid path: {str(e)}")
+                return 0
+        else:
+            from pathlib import Path
+            full_path = Path(file_path)
+        
+        # Read and parse the file
+        try:
+            with open(full_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            parsed = json.loads(content)
+            
+            # Store based on type
+            if isinstance(parsed, dict):
+                state.dictionaries[target_name] = parsed
+                state.add_output(f"Read JSON object from file into dictionary '{target_name}'")
+            elif isinstance(parsed, list):
+                state.arrays[target_name] = parsed
+                state.add_output(f"Read JSON array from file into array '{target_name}'")
+            else:
+                state.add_error(f"JSON file must contain an object or array at root level")
+                return 0
+            
+            return 2  # Consume path and target
+            
+        except FileNotFoundError:
+            state.add_error(f"File not found: {file_path}")
+            return 0
+        except json.JSONDecodeError as e:
+            state.add_error(f"Invalid JSON in file: {str(e)}")
+            return 0
+        except Exception as e:
+            state.add_error(f"Error reading file: {str(e)}")
+            return 0
+    
+    @staticmethod
+    def handle_json_write(state: InterpreterState, tokens: List[str], index: int, base_dir: str = None) -> int:
+        """
+        Write a data structure to a JSON file.
+        Example: json_write myDict "data.json"
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("json_write requires source name and file path. Use: json_write <source> <path>")
+            return 0
+        
+        source_name = tokens[index + 1]
+        file_path = tokens[index + 2]
+        
+        # Get the data to write
+        obj = None
+        if source_name in state.dictionaries:
+            obj = state.dictionaries[source_name]
+        elif source_name in state.arrays:
+            obj = state.arrays[source_name]
+        else:
+            state.add_error(f"Source '{source_name}' must be a dictionary or array")
+            return 0
+        
+        # Remove quotes from path if present
+        if file_path.startswith('"') and file_path.endswith('"'):
+            file_path = file_path[1:-1]
+        
+        # Resolve path relative to base_dir
+        if base_dir:
+            from pathlib import Path
+            full_path = Path(base_dir) / file_path
+            
+            # Security check - prevent path traversal
+            try:
+                full_path = full_path.resolve()
+                base_resolved = Path(base_dir).resolve()
+                if not str(full_path).startswith(str(base_resolved)):
+                    state.add_error(f"Access denied: path outside base directory")
+                    return 0
+            except Exception as e:
+                state.add_error(f"Invalid path: {str(e)}")
+                return 0
+        else:
+            from pathlib import Path
+            full_path = Path(file_path)
+        
+        # Write to file
+        try:
+            with open(full_path, 'w', encoding='utf-8') as f:
+                json.dump(obj, f, ensure_ascii=False, indent=2)
+            
+            state.add_output(f"Wrote JSON to file: {file_path}")
+            return 2  # Consume source and path
+            
+        except Exception as e:
+            state.add_error(f"Error writing file: {str(e)}")
+            return 0

@@ -9,7 +9,7 @@ This document outlines the fundamental syntax rules and conventions that govern 
 | Case Sensitivity | Commands are lowercase (`print`, `set`, `add`); variables are case-sensitive (`counter` and `Counter` are different variables) |
 | Statement Termination | One command per line; no semicolons required |
 | Strings | Double quotes only: `"text"` (single quotes are not supported) |
-| Comments | Use `#` for single-line comments; no multi-line comment syntax |
+| Comments | Three styles supported: `#` for single-line, `//` for C-style single-line, `/* */` for multi-line blocks |
 | Blocks | Begin with a keyword (`loop`, `if`, `def`, `while`, `switch`, `match`, `try`, `macro`) and end with `end` |
 | Whitespace | Whitespace is used for separation but is otherwise ignored |
 | Errors | Printed as `[Error: message]` (non-fatal); execution continues |
@@ -67,6 +67,65 @@ set is_active true             # Boolean
 set numbers [1, 2, 3, 4, 5]    # Array
 set person {"name": "Bob", "age": 25}  # Map
 ```
+
+## Comments
+
+TechLang supports three comment styles to make your code more readable and maintainable:
+
+### Single-Line Comments
+
+Use `#` (hash) or `//` (double-slash) for single-line comments:
+
+```techlang
+# This is a hash-style comment
+set x 10
+
+// This is a C-style comment
+set y 20
+
+set z 30  # Inline comment after code
+add x y   // This also works inline
+```
+
+### Multi-Line Comments
+
+Use `/* ... */` for comments that span multiple lines:
+
+```techlang
+/*
+This is a multi-line comment block.
+It can span as many lines as you need.
+Useful for longer explanations or documentation.
+*/
+
+set total 0
+
+/*
+Calculate the sum of values
+Loop iteration starts here
+*/
+loop 5
+    add total 1
+end
+```
+
+### Comments in Strings
+
+Comments inside quoted strings are preserved as literal text:
+
+```techlang
+str_create url "https://example.com"  # // in string is NOT a comment
+str_create note "Use # for comments"   # The # inside quotes stays
+print url   # Prints: https://example.com
+print note  # Prints: Use # for comments
+```
+
+### Best Practices
+
+- Use comments to explain **why** code does something, not **what** it does
+- Keep comments concise and up-to-date with code changes
+- Use multi-line comments for file headers and function documentation
+- Use inline comments sparingly for complex operations
 
 ## Code Blocks and Structure
 

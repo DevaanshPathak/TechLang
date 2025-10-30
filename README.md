@@ -151,13 +151,17 @@ python run_tests.py
 ### Core & Variables
 `boot`, `ping`, `crash`, `print`, `set`, `add`, `sub`, `mul`, `div`, `input`, `upload`, `download`, `debug`, `import`, `alias`, `hack`
 
+### Comments
+Three styles supported: `#` single-line, `//` C-style single-line, `/* */` multi-line blocks
+
 ### Control Flow
 `loop ... end`, `if ... end`, `while ... end`, `switch/case/default`, `try/catch`, `def ... end`, `call`
 
 ### Data Types
-- Arrays: `array_create`, `array_set`, `array_get`, `array_push`, `array_pop`
-- Strings: `str_create`, `str_concat`, `str_length`, `str_substring`
+- Arrays: `array_create`, `array_set`, `array_get`, `array_push`, `array_pop`, `array_map`, `array_filter`
+- Strings: `str_create`, `str_concat`, `str_length`, `str_substring`, `str_split`, `str_replace`, `str_trim`, `str_upper`, `str_lower`, `str_contains`, `str_reverse`
 - Dictionaries: `dict_create`, `dict_set`, `dict_get`, `dict_keys`
+- **JSON**: `json_parse`, `json_stringify`, `json_read`, `json_write` (full Unicode support)
 
 ### File I/O
 `file_read`, `file_write`, `file_append`, `file_exists`, `file_delete`, `file_list`

@@ -199,6 +199,20 @@ class CommandExecutor:
                 consumed = DataTypesHandler.handle_str_length(self.state, tokens, i)
             elif token == "str_substring":
                 consumed = DataTypesHandler.handle_str_substring(self.state, tokens, i)
+            elif token == "str_split":
+                consumed = DataTypesHandler.handle_str_split(self.state, tokens, i)
+            elif token == "str_replace":
+                consumed = DataTypesHandler.handle_str_replace(self.state, tokens, i)
+            elif token == "str_trim":
+                consumed = DataTypesHandler.handle_str_trim(self.state, tokens, i)
+            elif token == "str_upper":
+                consumed = DataTypesHandler.handle_str_upper(self.state, tokens, i)
+            elif token == "str_lower":
+                consumed = DataTypesHandler.handle_str_lower(self.state, tokens, i)
+            elif token == "str_contains":
+                consumed = DataTypesHandler.handle_str_contains(self.state, tokens, i)
+            elif token == "str_reverse":
+                consumed = DataTypesHandler.handle_str_reverse(self.state, tokens, i)
             elif token == "string_interpolate":
                 consumed = VariableHandler.handle_string_interpolate(self.state, tokens, i)
             elif token == "string_match":
@@ -213,6 +227,16 @@ class CommandExecutor:
                 consumed = DataTypesHandler.handle_dict_get(self.state, tokens, i)
             elif token == "dict_keys":
                 consumed = DataTypesHandler.handle_dict_keys(self.state, tokens, i)
+            
+            # JSON operations - parsing and stringifying JSON
+            elif token == "json_parse":
+                consumed = DataTypesHandler.handle_json_parse(self.state, tokens, i)
+            elif token == "json_stringify":
+                consumed = DataTypesHandler.handle_json_stringify(self.state, tokens, i)
+            elif token == "json_read":
+                consumed = DataTypesHandler.handle_json_read(self.state, tokens, i, self.base_dir)
+            elif token == "json_write":
+                consumed = DataTypesHandler.handle_json_write(self.state, tokens, i, self.base_dir)
 
             # Struct definitions and instances
             elif token == "struct":
