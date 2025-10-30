@@ -72,6 +72,14 @@ class InterpreterState:
     processes: Dict[int, object] = None
     next_process_id: int = 1
     
+    # Debugger state
+    breakpoints: Set[int] = None  # Line numbers where execution should pause
+    debug_mode: bool = False  # Whether debugger is active
+    stepping: bool = False  # Whether to pause after each command
+    watched_vars: Set[str] = None  # Variables to monitor
+    command_count: int = 0  # Current command/instruction number
+    paused: bool = False  # Whether execution is currently paused
+    
     def __post_init__(self):
         """
         Set up empty containers when the interpreter starts.
@@ -119,6 +127,10 @@ class InterpreterState:
             self.queues = {}
         if self.processes is None:
             self.processes = {}
+        if self.breakpoints is None:
+            self.breakpoints = set()
+        if self.watched_vars is None:
+            self.watched_vars = set()
     
     def reset(self) -> None:
         """

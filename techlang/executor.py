@@ -16,6 +16,7 @@ from .help_ops import HelpOpsHandler
 from .thread_ops import ThreadOpsHandler
 from .system_ops import SystemOpsHandler, ProcessOpsHandler
 from .math_ops import MathOpsHandler
+from .debugger import DebuggerHandler
 
 
 class CommandExecutor:
@@ -41,11 +42,36 @@ class CommandExecutor:
         """
         i = 0
         while i < len(tokens):
+            # Check if we should pause for debugging
+            if DebuggerHandler.check_breakpoint(self.state):
+                # In a real interactive debugger, we'd wait for user input here
+                # For now, just continue (users can implement interactive loop externally)
+                pass
+            
             token = tokens[i]
             consumed = 0  # How many tokens this command used up
             
+            # Increment command counter for debugging
+            self.state.command_count += 1
+            
+            # Debugger commands
+            if token == "breakpoint":
+                consumed = DebuggerHandler.handle_breakpoint(self.state, tokens, i)
+            elif token == "step":
+                consumed = DebuggerHandler.handle_step(self.state, tokens, i)
+            elif token == "continue":
+                consumed = DebuggerHandler.handle_continue(self.state, tokens, i)
+            elif token == "inspect":
+                consumed = DebuggerHandler.handle_inspect(self.state, tokens, i)
+            elif token == "watch":
+                consumed = DebuggerHandler.handle_watch(self.state, tokens, i)
+            elif token == "unwatch":
+                consumed = DebuggerHandler.handle_unwatch(self.state, tokens, i)
+            elif token == "clear_breakpoints":
+                consumed = DebuggerHandler.handle_clear_breakpoints(self.state, tokens, i)
+            
             # Basic math and display commands
-            if token == "boot":
+            elif token == "boot":
                 BasicCommandHandler.handle_boot(self.state)
             elif token == "ping":
                 BasicCommandHandler.handle_ping(self.state)

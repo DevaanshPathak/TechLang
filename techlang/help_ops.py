@@ -138,6 +138,14 @@ HELP_TEXT: Dict[str, str] = {
     "proc_kill": "proc_kill <id> — terminate subprocess",
     "proc_wait": "proc_wait <id> [timeout] — wait, stream output lines, update arrays",
     "proc_status": "proc_status <id> — report running state or exit code",
+    # Debugger commands
+    "breakpoint": "breakpoint — set breakpoint at current command",
+    "step": "step — enable step mode (pause after each command)",
+    "continue": "continue — resume execution from paused state",
+    "inspect": "inspect — show detailed state at current point",
+    "watch": "watch <var> — add variable to watch list",
+    "unwatch": "unwatch <var> — remove variable from watch list",
+    "clear_breakpoints": "clear_breakpoints — remove all breakpoints",
 }
 
 

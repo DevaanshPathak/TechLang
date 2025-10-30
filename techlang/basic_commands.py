@@ -44,6 +44,8 @@ class BasicCommandHandler:
     "math_deg2rad", "math_rad2deg", "math_pi", "math_e", "now", "format_date",
         # Help
         "help",
+        # Debugger commands
+        "breakpoint", "step", "continue", "inspect", "watch", "unwatch", "clear_breakpoints",
         # Threading & Async
     "thread_create", "thread_join", "thread_sleep", "thread_status", "thread_result", "thread_list", "thread_wait_all", "async_start", "async_wait",
     "mutex_create", "mutex_lock", "mutex_unlock", "queue_push", "queue_pop",

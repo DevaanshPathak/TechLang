@@ -532,6 +532,126 @@ Added 3 comment styles: `#` (hash), `//` (C-style), `/* */` (multi-line).
 
 ---
 
+### 2025-01-XX: Debugger System
+
+**Status:** ✅ Completed
+
+**Summary:**  
+Comprehensive debugger implementation with 7 commands enabling breakpoints, stepping, variable watching, and state inspection for TechLang programs.
+
+**Motivation:**  
+Debugging stack-based programs is challenging without visibility into execution state. Traditional print debugging is insufficient for complex programs with threads, databases, and file I/O. TechLang needed a proper debugging system to enable professional development workflows.
+
+**Implementation:**
+- **Commands added:**
+  - `breakpoint` - Set breakpoint at current command position
+  - `step` - Enable step-through mode (pause after each command)
+  - `continue` - Resume execution from paused state
+  - `inspect` - Show detailed state snapshot (stack, vars, arrays, dicts, strings, breakpoints, watched vars)
+  - `watch <var>` - Add variable to watch list
+  - `unwatch <var>` - Remove variable from watch list
+  - `clear_breakpoints` - Remove all breakpoints
+
+- **Core architecture:**
+  - Extended `InterpreterState` with 6 debugger fields:
+    - `breakpoints: Set[int]` - Line numbers where execution pauses
+    - `debug_mode: bool` - Whether debugger is active
+    - `stepping: bool` - Pause after each command
+    - `watched_vars: Set[str]` - Variables to monitor
+    - `command_count: int` - Current command number
+    - `paused: bool` - Whether execution currently paused
+  
+  - `DebuggerHandler` module (~200 lines) with 7 handler functions
+  
+  - Executor integration:
+    - `check_breakpoint()` called before each command
+    - `command_count` incremented to track position
+    - Automatic pause on breakpoint/step mode
+    - Variable change tracking for watched vars
+
+- **Key features:**
+  - Command-level granularity (tracks each executed command)
+  - Comprehensive state inspection (all data structures visible)
+  - Variable watching with change detection
+  - Step-through debugging mode
+  - Multiple simultaneous breakpoints
+  - Clean output formatting with clear sections
+  - Integration with existing TechLang features (loops, functions, threads, database, etc.)
+
+**Files Modified:**
+- `techlang/core.py`: Added 6 debugger state fields to InterpreterState
+- `techlang/basic_commands.py`: Added 7 debugger commands to KNOWN_COMMANDS
+- `techlang/executor.py`: 
+  - Added DebuggerHandler import
+  - Added breakpoint checking in execute_block loop
+  - Added command_count incrementing
+  - Routed 7 debugger commands
+- `techlang/help_ops.py`: Added help text for 7 debugger commands
+- `README.md`: Added Debugger section to features list
+
+**Files Created:**
+- `techlang/debugger.py`: New module with DebuggerHandler class (~200 lines)
+- `tests/test_debugger.py`: 22 comprehensive tests
+- `examples/debugger_demo.tl`: Full demonstration of all debugger features
+- `examples/cookbook_multifeature.tl`: Integration example showing threads + database + file I/O + JSON + debugging
+- `docs/debugging.md`: Complete debugging guide (~300 lines)
+- `docs/cookbook.md`: Recipe collection showing multi-feature integration
+
+**Validation:**
+- ✅ All 22 debugger tests passing
+- ✅ Full test suite: 255 tests passing (233 original + 22 debugger, no regressions)
+- ✅ Example files created and documented
+- ✅ Documentation updated (debugging.md, cookbook.md, README.md, help text)
+- ✅ Integration with existing features verified (loops, functions, threads, database, file I/O)
+
+**Technical Notes:**
+- Debugger hooks into executor's main command loop before command dispatch
+- Command counting starts at 0 and increments before each command execution
+- Breakpoint checking happens at command boundaries (not mid-command)
+- `inspect` command shows first 10 variables (prevents output overflow with large state)
+- Watched variables tracked by name (string lookups in state.vars/strings/arrays/dicts)
+- Paused state persists across commands until `continue` is called
+- Step mode (`stepping=True`) automatically pauses after every command
+- Clean separation: debugger reads state but doesn't modify execution flow (executor handles pausing)
+
+**Design Decisions:**
+- **Command-level granularity**: Chose command boundaries over token boundaries for cleaner breakpoint behavior
+- **Unified inspect output**: Single command shows all state (vs separate commands for each data structure)
+- **Persistent watches**: Watch list survives between inspect calls until explicitly cleared
+- **Separate cookbook documentation**: Created standalone `cookbook.md` instead of embedding in `examples.md`
+- **State extension**: Added debugger fields directly to InterpreterState rather than separate debugger context
+
+**Known Limitations:**
+- Breakpoints are command-based (cannot pause mid-command)
+- No conditional breakpoints (e.g., "break when x > 10")
+- No call stack tracking (function call depth not visible)
+- Watch list limited to variables/strings/arrays/dicts (no struct field watching)
+- Variable display limited to first 10 (prevents output overflow)
+- No time-travel debugging (cannot step backwards)
+- Stepping through threads not supported (debugger is single-threaded)
+
+**Future Enhancements:**
+- Conditional breakpoints: `breakpoint_if x gt 10`
+- Call stack visualization: `stacktrace` command
+- Watch expressions: `watch_expr "x + y > 100"`
+- Breakpoint management: `breakpoint_list`, `breakpoint_delete <id>`
+- Variable modification: `debug_set var 42`
+- Step over/into/out: `step_over`, `step_into`, `step_out`
+- Time-travel debugging: Save snapshots and allow `step_back`
+- Thread-aware debugging: `thread_debug <id>` to debug specific thread
+- Performance profiling: Command execution timing
+- Memory profiling: Track memory allocation/deallocation
+
+**Integration Examples:**
+See `examples/cookbook_multifeature.tl` for real-world usage combining:
+- File I/O with JSON log parsing
+- Database storage and querying
+- Thread concurrency
+- Debugging with watches and breakpoints
+- All in a realistic log processor scenario
+
+---
+
 **Last Updated:** 2025-01-XX  
-**Total Features Added:** 3  
-**Total Tests:** 233
+**Total Features Added:** 4  
+**Total Tests:** 255

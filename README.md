@@ -190,6 +190,9 @@ Advanced: `db_begin`, `db_commit`, `db_rollback`, `db_tables`, `db_schema`, `db_
 System: `sys_exec`, `sys_env`, `sys_time`, `sys_date`, `sys_exit`
 Processes: `proc_spawn`, `proc_wait`, `proc_kill`
 
+### Debugger
+`breakpoint`, `step`, `continue`, `inspect`, `watch`, `unwatch`, `clear_breakpoints`
+
 ### Help
 `help` or `help <command>` to see built-in docs.
 
