@@ -43,8 +43,8 @@ TechLang is a hacker-themed, stack-based programming language with its own inter
   - Multi-line: `assert run(code).strip().splitlines() == ["line1", "line2"]`
   - Tests in `tests/test_*.py` cover interpreter, database, data types, file ops, graphics, network, threads, etc.
 - **CI workflows**: 
-  - `.github/workflows/python-app.yml`: Runs `python run_tests.py` on push/PR to main
-  - `.github/workflows/techlang-format.yml`: Enforces formatting/linting on all `.tl` files in `examples/`
+  - `.github/workflows/pytest.yml`: Runs `python run_tests.py` on push/PR to main
+  - `.github/workflows/lint.yml`: Lints Python code and enforces formatting/linting on all `.tl` files in `examples/`
 - **Formatter/linter**: `python format_tl.py --check file.tl` (check formatting), `--fix` (reformat in place), `--lint` (detect issues like unclosed blocks, undefined vars). 
 - **Documentation sync**: When adding/renaming commands, update `examples/`, `docs/*.md`, and ensure CLI (`cli.py`), GUI (`playground/gui.py`), and web app (`techlang_web/app.py`) remain aligned.
 - **CLI modes**: `tl file.tl` (run file), `tl -i` (REPL), `tl -v file.tl` (verbose—streams each command before execution, helpful for tracing parser vs executor).

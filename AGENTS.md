@@ -353,8 +353,8 @@ call utils.helpers.greet   # both :: and . work
 
 ### GitHub Actions
 
-1. **`python-app.yml`**: Runs full test suite on push/PR
-2. **`techlang-format.yml`**: Validates `.tl` file formatting
+1. **`pytest.yml`**: Runs full test suite on push/PR
+2. **`lint.yml`**: Lints Python code and validates TechLang (`.tl`) file formatting
 
 ### Pre-Commit Checklist
 
