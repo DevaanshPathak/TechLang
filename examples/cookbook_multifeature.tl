@@ -51,7 +51,7 @@ print ""
 # Step 3: Define log processing function
 print "Step 3: Defining log processor..."
 def process_log
-    # This function will run in threads
+# This function will run in threads
     file_read "log1.json" content
     json_parse content logdata
     dict_get logdata "level"
@@ -72,7 +72,7 @@ add log_count 1
 # Set breakpoint before critical section
 breakpoint
 
-# Read and process second log  
+# Read and process second log
 json_read "log2.json" log2_data
 dict_get log2_data "level"
 dict_get log2_data "message"

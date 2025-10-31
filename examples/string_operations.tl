@@ -30,26 +30,26 @@ array_get fruits 0
 array_get fruits 2
 
 // Check if substring exists
-str_create text "techlang is awesome"
-str_contains text "lang"
-str_contains text "python"
+    str_create text "techlang is awesome"
+    str_contains text "lang"
+    str_contains text "python"
 
-// Reverse a string
-str_create palindrome "racecar"
-str_reverse palindrome
-print palindrome  // Still a palindrome!
+    // Reverse a string
+    str_create palindrome "racecar"
+    str_reverse palindrome
+    print palindrome // Still a palindrome!
 
-// Chaining operations
-str_create data "  MIXED Case Text  "
-str_trim data
-str_lower data
-str_replace data "mixed" "proper"
-print data
+    // Chaining operations
+    str_create data "  MIXED Case Text  "
+    str_trim data
+    str_lower data
+    str_replace data "mixed" "proper"
+    print data
 
-// Split and process
-str_create sentence "the quick brown fox"
-str_split sentence " " words
-array_get words 0
-array_get words 1
-array_get words 2
-array_get words 3
+    // Split and process
+    str_create sentence "the quick brown fox"
+    str_split sentence " " words
+    array_get words 0
+    array_get words 1
+    array_get words 2
+    array_get words 3

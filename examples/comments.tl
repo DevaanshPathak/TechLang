@@ -3,13 +3,13 @@
 
 /*
 ==============================================
- Multi-line Comment Block
+Multi-line Comment Block
 ==============================================
- This is a program that demonstrates
- TechLang's comment capabilities:
- - Hash comments (single-line)
- - Double-slash comments (C-style)
- - Block comments like this one
+This is a program that demonstrates
+TechLang's comment capabilities:
+- Hash comments (single-line)
+- Double-slash comments (C-style)
+- Block comments like this one
 ==============================================
 */
 
@@ -18,18 +18,18 @@ set counter 0
 
 # Loop 5 times
 loop 5
-    add counter 1  // increment the counter
+    add counter 1 // increment the counter
     print counter  # display current value
 end
 
-/* 
+/*
 Calculate the sum of two numbers
 This shows how comments work with math operations
 */
 set a 10  # first number
-set b 20  // second number
+set b 20 // second number
 add a b
-print a  /* should print 30 */
+print a /* should print 30 */
 
 // String demonstration
 str_create message "Comments make code readable!"  # create a string
@@ -43,7 +43,7 @@ def greet
     print "Hello from TechLang!"  # output greeting
 end
 
-call greet  /* invoke the function */
+call greet /* invoke the function */
 
 # End of demonstration
 // Program complete!

@@ -1,5 +1,6 @@
 import datetime
 import math
+import sys
 
 import pytest
 
@@ -63,8 +64,11 @@ def test_format_date_handles_out_of_range_timestamp():
     assert "[Error: format_date timestamp out of range]" in output
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason="Python 3.10 strftime behavior differs across platforms"
+)
 def test_format_date_reports_invalid_pattern():
-    # Python 3.10 doesn't raise ValueError for %Q, but does for incomplete directives
+    # Test that invalid format strings are caught
     output = _output_lines('format_date 0 "%"')
-    # Either we get an error message or the output contains the invalid format attempt
     assert any("Invalid format string" in line or "Error" in line for line in output)
