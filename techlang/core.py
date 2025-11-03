@@ -21,7 +21,11 @@ class InterpreterState:
     variables: Dict[str, Union[int, str]] = None
     
     # Functions that can be called (like def my_function)
-    functions: Dict[str, List[str]] = None
+    # Now stores dict with 'params' (list of param names) and 'body' (list of tokens)
+    functions: Dict[str, dict] = None
+    
+    # Function return values (set by 'return' command, read by caller)
+    return_values: List[Union[int, str]] = None
 
     # Compile-time macros expanded before execution
     macros: Dict[str, dict] = None
@@ -80,6 +84,9 @@ class InterpreterState:
     command_count: int = 0  # Current command/instruction number
     paused: bool = False  # Whether execution is currently paused
     
+    # Export/visibility control for library APIs
+    exported_functions: Set[str] = None  # Functions marked as public (callable from outside modules)
+    
     def __post_init__(self):
         """
         Set up empty containers when the interpreter starts.
@@ -93,6 +100,8 @@ class InterpreterState:
             self.variables = {}
         if self.functions is None:
             self.functions = {}
+        if self.return_values is None:
+            self.return_values = []
         if self.macros is None:
             self.macros = {}
         if self.aliases is None:
@@ -131,6 +140,8 @@ class InterpreterState:
             self.breakpoints = set()
         if self.watched_vars is None:
             self.watched_vars = set()
+        if self.exported_functions is None:
+            self.exported_functions = set()
     
     def reset(self) -> None:
         """

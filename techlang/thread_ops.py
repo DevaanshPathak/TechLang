@@ -14,12 +14,24 @@ class ThreadOpsHandler:
         func_name = tokens[index + 1]
 
         # Create thread to run the function. Re-emit the function body into the worker code
-        func_block = state.functions.get(func_name)
-        if func_block is None:
+        func_data = state.functions.get(func_name)
+        if func_data is None:
             state.add_error(f"Function '{func_name}' is not defined. Use 'def {func_name} ... end' to define it first.")
             return 1
-        func_body = ' '.join(func_block)
-        code = f"def {func_name} {func_body} end\ncall {func_name}"
+        
+        # Handle both old format (list) and new format (dict with params/body)
+        if isinstance(func_data, list):
+            func_body = ' '.join(func_data)
+            params_str = ""
+        elif isinstance(func_data, dict):
+            func_body = ' '.join(func_data.get('body', []))
+            params = func_data.get('params', [])
+            params_str = ' '.join(params) + ' ' if params else ''
+        else:
+            state.add_error(f"Invalid function format for '{func_name}'")
+            return 1
+        
+        code = f"def {func_name} {params_str}{func_body} end\ncall {func_name}"
         thread_id = state.next_thread_id
         state.next_thread_id += 1
 

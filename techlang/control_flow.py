@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 from .core import InterpreterState
 from .blocks import BlockCollector
 
@@ -371,24 +371,45 @@ class ControlFlowHandler:
         return end_index - index
     def handle_def(state: InterpreterState, tokens: List[str], index: int) -> int:
         if index + 1 >= len(tokens):
-            state.add_error("Invalid 'def' command. Use: def <function_name> ... end")
+            state.add_error("Invalid 'def' command. Use: def <function_name> [params...] ... end")
             return 0
         
         func_name = tokens[index + 1]
-        start_index = index + 2  # Start after 'def' and function name
         
-        # Store the function body tokens for later calls
+        # Collect parameter names (everything between func_name and the function body)
+        params = []
+        param_index = index + 2
+        
+        # Parameters are tokens before the function body starts
+        # We need to find where params end and body begins
+        # Body starts when we encounter tokens that look like commands or we run out of simple identifiers
+        while param_index < len(tokens):
+            token = tokens[param_index]
+            # If we hit a known command or quoted string, that's the start of the body
+            from .basic_commands import BasicCommandHandler
+            if token in BasicCommandHandler.KNOWN_COMMANDS or token.startswith('"'):
+                break
+            # Otherwise it's a parameter name
+            params.append(token)
+            param_index += 1
+        
+        # Now collect the function body from where params ended
+        start_index = param_index
         func_block, end_index = BlockCollector.collect_block(start_index, tokens)
         
-        state.functions[func_name] = func_block
+        # Store function with both params and body
+        state.functions[func_name] = {
+            'params': params,
+            'body': func_block
+        }
         
-        # Return total tokens consumed: 'def' + func_name + func_body + 'end'
+        # Return total tokens consumed: 'def' + func_name + params + func_body + 'end'
         return end_index - index
     
     @staticmethod
     def handle_call(state: InterpreterState, tokens: List[str], index: int, execute_block: Callable) -> int:
         if index + 1 >= len(tokens):
-            state.add_error("Invalid 'call' command. Use: call <function_name>")
+            state.add_error("Invalid 'call' command. Use: call <function_name> [args...] [return_vars...]")
             return 0
         
         func_name = tokens[index + 1]
@@ -398,24 +419,203 @@ class ControlFlowHandler:
             module_name, inner_name = module_call
             from .imports import ModuleHandler  # local import to avoid circular dependencies
 
-            ModuleHandler.call_module_function(state, module_name, inner_name)
-            return 1
+            # Collect arguments and return variables for module function call
+            # First, get the module and function to see how many params it needs
+            normalized_name = module_name.replace("::", ".").replace("/", ".")
+            # Support 'stdlib' as alias for 'stl'
+            if normalized_name.startswith("stdlib.") or normalized_name == "stdlib":
+                normalized_name = normalized_name.replace("stdlib", "stl", 1)
+            module_info = state.modules.get(normalized_name)
+            if module_info is None:
+                state.add_error(f"Module '{module_name}' is not loaded. Use 'package use {module_name}' first.")
+                return 1
+            
+            module_state = module_info.state
+            func_data = module_state.functions.get(inner_name)
+            if func_data is None:
+                state.add_error(f"Module '{module_name}' has no function '{inner_name}'.")
+                return 1
+            
+            # Determine parameter count
+            if isinstance(func_data, dict):
+                param_count = len(func_data.get('params', []))
+            else:
+                param_count = 0
+            
+            # Collect arguments
+            args = []
+            consumed = 1  # function name
+            for _ in range(param_count):
+                if index + 1 + consumed >= len(tokens):
+                    break
+                arg_token = tokens[index + 1 + consumed]
+                from .basic_commands import BasicCommandHandler
+                if arg_token in BasicCommandHandler.KNOWN_COMMANDS:
+                    break
+                args.append(arg_token)
+                consumed += 1
+            
+            # Collect return variable names (rest of tokens until next command)
+            return_vars = []
+            while index + 1 + consumed < len(tokens):
+                ret_token = tokens[index + 1 + consumed]
+                from .basic_commands import BasicCommandHandler
+                if ret_token in BasicCommandHandler.KNOWN_COMMANDS:
+                    break
+                return_vars.append(ret_token)
+                consumed += 1
+            
+            # Call module function with args and returns
+            ModuleHandler.call_module_function(state, module_name, inner_name, args, return_vars, execute_block)
+            return consumed
         
+        # Find the function definition
+        func_def = None
         if func_name in state.functions:
-            execute_block(state.functions[func_name])
+            func_def = state.functions[func_name]
         elif state.parent_state and func_name in state.parent_state.functions:
-            execute_block(state.parent_state.functions[func_name])
+            func_def = state.parent_state.functions[func_name]
         else:
             state.add_error(f"Function '{func_name}' is not defined. Use 'def {func_name} ... end' to define it first.")
+            return 1
         
-        return 1  # Consume function name
+        # Handle both old format (list of tokens) and new format (dict with params/body)
+        if isinstance(func_def, list):
+            # Old format: just execute the body
+            execute_block(func_def)
+            return 1
+        
+        # New format with parameters
+        params = func_def['params']
+        body = func_def['body']
+        
+        # Collect arguments (tokens after function name, before return variable names)
+        # We need to figure out how many are args vs return vars
+        # Args come first, return vars come after all args
+        args = []
+        return_var_names = []
+        consumed = 1  # Start at 1 for function name
+        
+        # Collect arguments (same number as parameters)
+        for i in range(len(params)):
+            if index + 1 + consumed >= len(tokens):
+                break
+            arg_token = tokens[index + 1 + consumed]
+            # Stop if we hit a keyword
+            from .basic_commands import BasicCommandHandler
+            if arg_token in BasicCommandHandler.KNOWN_COMMANDS:
+                break
+            args.append(arg_token)
+            consumed += 1
+        
+        # Remaining tokens are return variable names
+        while index + 1 + consumed < len(tokens):
+            token = tokens[index + 1 + consumed]
+            from .basic_commands import BasicCommandHandler
+            if token in BasicCommandHandler.KNOWN_COMMANDS:
+                break
+            return_var_names.append(token)
+            consumed += 1
+        
+        # Save current variable state (for local scope)
+        saved_vars = {}
+        saved_strings = {}
+        for param in params:
+            if param in state.variables:
+                saved_vars[param] = state.variables[param]
+            if param in state.strings:
+                saved_strings[param] = state.strings[param]
+        
+        # Bind arguments to parameters
+        for i, param in enumerate(params):
+            if i < len(args):
+                # Resolve argument value
+                arg_token = args[i]
+                # If the argument is a string variable, bind it as a string
+                if arg_token in state.strings:
+                    state.strings[param] = state.strings[arg_token]
+                else:
+                    arg_value = ControlFlowHandler._resolve_arg_value(state, arg_token)
+                    state.variables[param] = arg_value
+            else:
+                # Not enough arguments provided
+                state.add_error(f"Function '{func_name}' expects {len(params)} arguments, got {len(args)}")
+                return consumed
+        
+        # Clear return values before executing
+        state.return_values.clear()
+        
+        # Execute the function body
+        execute_block(body)
+        
+        # Restore parameter variables (clean up local scope)
+        for param in params:
+            if param in saved_vars:
+                state.variables[param] = saved_vars[param]
+            else:
+                state.variables.pop(param, None)
+            
+            if param in saved_strings:
+                state.strings[param] = saved_strings[param]
+            else:
+                state.strings.pop(param, None)
+        
+        # Assign return values to return variables
+        for i, var_name in enumerate(return_var_names):
+            if i < len(state.return_values):
+                value = state.return_values[i]
+                # If it's a string, store in strings; if numeric, store in variables
+                if isinstance(value, str):
+                    try:
+                        # Try to parse as number
+                        state.variables[var_name] = int(value)
+                    except ValueError:
+                        # It's a string
+                        state.strings[var_name] = value
+                else:
+                    state.variables[var_name] = value
+            else:
+                # Not enough return values - set to 0/empty
+                state.variables[var_name] = 0
+        
+        return consumed
 
+    @staticmethod
+    def _resolve_arg_value(state: InterpreterState, token: str) -> Union[int, str]:
+        """Resolve an argument token to its actual value."""
+        # Check if it's a quoted string
+        if token.startswith('"') and token.endswith('"'):
+            return token[1:-1]
+        
+        # Check if it's a string variable
+        if token in state.strings:
+            return state.strings[token]
+        
+        # Check if it's a numeric variable
+        if token in state.variables:
+            return state.variables[token]
+        
+        # Try to parse as integer
+        try:
+            return int(token)
+        except ValueError:
+            pass
+        
+        # Try to parse as float and convert to int
+        try:
+            return int(float(token))
+        except ValueError:
+            pass
+        
+        # If we can't resolve it, treat as 0
+        return 0
+    
     @staticmethod
     def _split_module_call(func_name: str) -> Optional[Tuple[str, str]]:
         if "::" in func_name:
-            parts = func_name.split("::", 1)
+            parts = func_name.rsplit("::", 1)
         elif "." in func_name:
-            parts = func_name.split(".", 1)
+            parts = func_name.rsplit(".", 1)
         else:
             return None
 

@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import List
+from typing import List, Callable
 from .core import InterpreterState
 from .parser import parse
 
@@ -88,7 +88,11 @@ class ModuleHandler:
 
     @staticmethod
     def _load_module(state: InterpreterState, module_name: str, base_dir: str) -> None:
-        normalized_name = module_name.replace("::", ".")
+        # Support 'stdlib' as alias for 'stl' (Standard Template Library)
+        if module_name.startswith("stdlib/") or module_name.startswith("stdlib.") or module_name == "stdlib":
+            module_name = module_name.replace("stdlib", "stl", 1)
+        
+        normalized_name = module_name.replace("::", ".").replace("/", ".")
         if normalized_name in state.loaded_modules:
             return
 
@@ -117,7 +121,7 @@ class ModuleHandler:
         ModuleHandler._bridge_state(module_state, state)
 
         # Remove optional 'package name <id>' header
-        module_tokens = ModuleHandler._strip_header(module_tokens, normalized_name.split(".")[-1], state)
+        module_tokens = ModuleHandler._strip_header(module_tokens, normalized_name, state)
 
         module_tokens = ModuleHandler._expand_aliases(module_tokens, module_state)
 
@@ -178,8 +182,22 @@ class ModuleHandler:
         module_state.parent_state = host_state
 
     @staticmethod
-    def call_module_function(state: InterpreterState, module_name: str, func_name: str) -> bool:
-        normalized_name = module_name.replace("::", ".")
+    def call_module_function(state: InterpreterState, module_name: str, func_name: str, 
+                           args: List[str] = None, return_vars: List[str] = None, 
+                           execute_block: Callable = None) -> bool:
+        if args is None:
+            args = []
+        if return_vars is None:
+            return_vars = []
+        
+        # Support 'stdlib' as alias for 'stl' in function calls
+        # Normalize the module name first
+        normalized_name = module_name.replace("::", ".").replace("/", ".")
+        
+        # Try with stdlib -> stl conversion if using stdlib prefix
+        if normalized_name.startswith("stdlib.") or normalized_name == "stdlib":
+            normalized_name = normalized_name.replace("stdlib", "stl", 1)
+            
         module_info = state.modules.get(normalized_name)
         if module_info is None:
             state.add_error(f"Module '{module_name}' is not loaded. Use 'package use {module_name}' first.")
@@ -188,15 +206,85 @@ class ModuleHandler:
         module_state = module_info.state
         ModuleHandler._bridge_state(module_state, state)
 
-        func_block = module_state.functions.get(func_name)
-        if func_block is None:
+        func_data = module_state.functions.get(func_name)
+        if func_data is None:
             state.add_error(f"Module '{module_name}' has no function '{func_name}'.")
             return False
 
-        from .executor import CommandExecutor  # local import to avoid circular dependency
+        # Check if function is exported (public API)
+        if func_name not in module_state.exported_functions:
+            state.add_error(f"Function '{func_name}' in module '{module_name}' is private. Use 'export {func_name}' to make it public.")
+            return False
 
-        executor = CommandExecutor(module_state, module_info.base_dir)
-        executor.execute_block(func_block)
+        # Handle both old format (list) and new format (dict with params/body)
+        if isinstance(func_data, list):
+            func_block = func_data
+            # Old format: just execute
+            from .executor import CommandExecutor
+            executor = CommandExecutor(module_state, module_info.base_dir)
+            executor.execute_block(func_block)
+        elif isinstance(func_data, dict):
+            params = func_data.get('params', [])
+            func_block = func_data.get('body', [])
+            
+            # Validate argument count
+            if len(args) < len(params):
+                state.add_error(f"Function '{func_name}' expects {len(params)} arguments, got {len(args)}")
+                return False
+            
+            # If function has parameters, use local scope; otherwise use shared scope
+            if params:
+                # Import helper function to resolve arguments
+                from .control_flow import ControlFlowHandler
+                
+                # Save current state for local scope
+                saved_vars = dict(module_state.variables)
+                saved_strings = dict(module_state.strings)
+                
+                # Bind arguments to parameters
+                for param_name, arg_token in zip(params, args):
+                    arg_value = ControlFlowHandler._resolve_arg_value(state, arg_token)
+                    if isinstance(arg_value, str):
+                        module_state.strings[param_name] = arg_value
+                    else:
+                        module_state.variables[param_name] = arg_value
+                
+                # Execute function body
+                from .executor import CommandExecutor
+                executor = CommandExecutor(module_state, module_info.base_dir)
+                executor.execute_block(func_block)
+                
+                # Restore saved state (clean up local parameters but keep other changes)
+                # Remove parameters from module state
+                for param_name in params:
+                    module_state.variables.pop(param_name, None)
+                    module_state.strings.pop(param_name, None)
+                
+                # Restore original values for variables that existed before
+                for var_name, var_value in saved_vars.items():
+                    module_state.variables[var_name] = var_value
+                for str_name, str_value in saved_strings.items():
+                    module_state.strings[str_name] = str_value
+            else:
+                # No parameters: use shared scope (backward compatibility)
+                from .executor import CommandExecutor
+                executor = CommandExecutor(module_state, module_info.base_dir)
+                executor.execute_block(func_block)
+            
+            # Handle return values
+            if module_state.return_values:
+                for i, ret_var in enumerate(return_vars):
+                    if i < len(module_state.return_values):
+                        ret_val = module_state.return_values[i]
+                        if isinstance(ret_val, str):
+                            state.strings[ret_var] = ret_val
+                        else:
+                            state.variables[ret_var] = ret_val
+                module_state.return_values.clear()
+        else:
+            state.add_error(f"Invalid function format for '{func_name}'")
+            return False
+
         ModuleHandler._sync_back(module_state, state)
         return True
 

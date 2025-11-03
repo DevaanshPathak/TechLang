@@ -20,28 +20,90 @@ TechLang is designed for experimenting with:
 ```
 TechLang/
 ├── techlang/            # Interpreter & parser logic
-│   ├── interpreter.py
-│   ├── parser.py
+│   ├── interpreter.py   # Main interpreter entry point
+│   ├── parser.py        # Tokenizer and syntax parser
+│   ├── executor.py      # Command execution dispatcher
+│   ├── core.py          # InterpreterState and core types
+│   ├── basic_commands.py # Core language commands
+│   ├── variables.py     # Variable operations
+│   ├── stack.py         # Stack operations
+│   ├── control_flow.py  # if, loop, while, switch, try/catch
+│   ├── data_types.py    # Arrays, strings, dicts, JSON
+│   ├── struct_ops.py    # Structured types
+│   ├── file_ops.py      # File I/O operations
+│   ├── net_ops.py       # HTTP client and server
+│   ├── graphics_ops.py  # Graphics rendering (Pillow)
 │   ├── database.py      # SQLite3 database operations
-│   ├── core.py
-│   ├── basic_commands.py
-│   ├── variables.py
-│   ├── stack.py
-│   ├── control_flow.py
-│   ├── imports.py
-│   ├── aliases.py
-│   ├── blocks.py
+│   ├── memory_ops.py    # Memory management
+│   ├── math_ops.py      # Math and date/time functions
+│   ├── thread_ops.py    # Threading and concurrency
+│   ├── system_ops.py    # System and process operations
+│   ├── debugger.py      # Debugger with breakpoints
+│   ├── help_ops.py      # Help system
+│   ├── imports.py       # Module imports
+│   ├── aliases.py       # Command aliases
+│   ├── macros.py        # Macro expansion
+│   ├── blocks.py        # Block depth tracking
+│   ├── formatter.py     # Code formatter
+│   ├── linter.py        # Code linter
 │   └── __init__.py
 │
-├── tests/               # Pytest-based unit tests
+├── tests/               # Pytest-based unit tests (255 tests)
 │   ├── test_interpreter.py
-│   └── test_database.py
+│   ├── test_database.py
+│   ├── test_database_advanced.py
+│   ├── test_data_types.py
+│   ├── test_json.py
+│   ├── test_string_ops.py
+│   ├── test_comments.py
+│   ├── test_debugger.py
+│   ├── test_file_ops.py
+│   ├── test_graphics.py
+│   ├── test_math_ops.py
+│   ├── test_memory.py
+│   ├── test_network.py
+│   ├── test_threads.py
+│   ├── test_system.py
+│   ├── test_formatter.py
+│   └── ...
 │
-├── examples/            # Sample TechLang programs
+├── docs/                # Comprehensive documentation
+│   ├── general.md       # Syntax and rules
+│   ├── core.md          # Core commands
+│   ├── control-flow.md  # Control structures
+│   ├── data-types.md    # Data structures and JSON
+│   ├── file-io.md       # File operations
+│   ├── network.md       # HTTP and networking
+│   ├── graphics.md      # Graphics and visualization
+│   ├── database.md      # Database operations
+│   ├── math.md          # Math and date/time
+│   ├── memory.md        # Memory management
+│   ├── concurrency.md   # Threading and async
+│   ├── system.md        # System and processes
+│   ├── debugging.md     # Debugger guide
+│   ├── cookbook.md      # Recipes and patterns
+│   ├── examples.md      # Example programs index
+│   └── help-cli.md      # CLI and help system
+│
+├── examples/            # Sample TechLang programs (26 files)
 │   ├── hello.tl
 │   ├── loop.tl
 │   ├── if.tl
-│   ├── database.tl      # SQLite3 example
+│   ├── vars.tl
+│   ├── functions.tl
+│   ├── arrays.tl
+│   ├── strings.tl
+│   ├── string_operations.tl
+│   ├── dictionaries.tl
+│   ├── json_demo.tl
+│   ├── database.tl
+│   ├── files.tl
+│   ├── network.tl
+│   ├── graphics.tl
+│   ├── memory.tl
+│   ├── threads.tl
+│   ├── debugger_demo.tl
+│   ├── cookbook_multifeature.tl
 │   └── ...
 │
 ├── playground/          # Optional GUI playground (Tkinter)
@@ -54,13 +116,19 @@ TechLang/
 │   ├── static/
 │   └── uploads/
 │
-├── uploads/             # Uploaded .tl files for testing
+├── .github/             # GitHub Actions CI/CD
+│   └── workflows/
+│       ├── pytest.yml   # Test suite
+│       └── lint.yml     # Code linting
 │
 ├── cli.py               # CLI for running .tl files
-├── run_tests.py         # Runs all tests
-├── requirements.txt     # Dependencies
+├── format_tl.py         # TechLang code formatter
+├── run_tests.py         # Test suite runner
+├── requirements.txt     # Python dependencies
 ├── README.md            # This file
+├── DOCUMENTATION.md     # Master documentation index
 ├── DEV.md               # Developer guide
+├── AGENTS.md            # AI agent guide
 ├── PLAYGROUND.MD        # Playground guide
 └── .venv/               # Python virtual environment
 ```
@@ -203,16 +271,39 @@ Processes: `proc_spawn`, `proc_wait`, `proc_kill`
 All in the `examples/` folder:
 
 ```bash
+# Basic Examples
+python cli.py examples/hello.tl
 python cli.py examples/loop.tl
+python cli.py examples/if.tl
+python cli.py examples/vars.tl
+python cli.py examples/functions.tl
 python cli.py examples/input.tl
-python cli.py examples/database.tl
-# Extended feature demos
+
+# Data Structures
+python cli.py examples/arrays.tl
+python cli.py examples/strings.tl
+python cli.py examples/string_operations.tl
+python cli.py examples/dictionaries.tl
 python cli.py examples/data_types_demo.tl
+
+# Advanced Features
+python cli.py examples/json_demo.tl
+python cli.py examples/comments.tl
+python cli.py examples/alias.tl
+python cli.py examples/switch_try.tl
+python cli.py examples/while_loops.tl
+
+# System Integration
+python cli.py examples/database.tl
 python cli.py examples/files.tl
 python cli.py examples/network.tl
 python cli.py examples/graphics.tl
 python cli.py examples/memory.tl
 python cli.py examples/threads.tl
+
+# Debugging & Recipes
+python cli.py examples/debugger_demo.tl
+python cli.py examples/cookbook_multifeature.tl
 ```
 
 Or try them in the web playground.
@@ -237,12 +328,17 @@ pip install -r requirements.txt
 
 ## 🤖 Future Ideas
 
+* ✅ ~~Database transactions and schema introspection~~ (Completed)
+* ✅ ~~Debugger with breakpoints and stepping~~ (Completed)
+* ✅ ~~JSON support for modern data interchange~~ (Completed)
+* ✅ ~~String manipulation operations~~ (Completed)
+* ✅ ~~Multi-line comments~~ (Completed)
 * Error highlighting in web playground
-* CLI flags for debug mode or stack tracing
 * Bytecode version of TechLang
 * Language transpiler to Python
-* Additional database features (transactions, indexes, foreign keys)
-* Database schema introspection
+* Foreign key support in database
+* Time-travel debugging (step backwards)
+* Conditional breakpoints
 
 ---
 
@@ -252,39 +348,82 @@ Crafted for hackers, students, and language lovers who want to build something w
 
 ---
 
-## ➕ Additional Commands (Quick Reference)
+## 📖 Quick Command Reference
 
-Below are recently added commands grouped by feature area. See `examples/` and tests for usage.
+Comprehensive command reference grouped by category. For detailed documentation, see [DOCUMENTATION.md](DOCUMENTATION.md).
 
-### Data Types
-- Arrays: `array_create name size`, `array_set name idx val`, `array_get name idx`, `array_push name val`, `array_pop name`
-- Strings: `str_create name "text"`, `str_concat name otherOr"text"`, `str_length name`, `str_substring name start end`
-- Dictionaries: `dict_create name`, `dict_set name "key" "val"`, `dict_get name "key"`, `dict_keys name`
+### Core Commands
+`boot`, `ping`, `crash`, `print`, `upload`, `download`, `debug`, `hack`, `lag`, `sleep`, `yield`
+
+### Variables & Math
+`set`, `add`, `sub`, `mul`, `div`, `input`
 
 ### Control Flow
-- While loop: `while x > 0 ... end`
-- Switch/Case: `switch x ... case 1 ... case 2 ... default ... end`
-- Try/Catch: `try ... catch ... end`
+- **Conditionals**: `if x > 5 ... end`
+- **Loops**: `loop 10 ... end`, `while x < 100 ... end`
+- **Switch/Case**: `switch x ... case 1 ... case 2 ... default ... end`
+- **Pattern Matching**: `match expr ... case > 10 ... case == 5 ... end`
+- **Error Handling**: `try ... catch [errVar [stackVar]] ... end`
+- **Functions**: `def name ... end`, `call name`
+
+### Data Structures
+- **Arrays**: `array_create`, `array_set`, `array_get`, `array_push`, `array_pop`, `array_map`, `array_filter`
+- **Strings**: `str_create`, `str_concat`, `str_length`, `str_substring`, `str_split`, `str_replace`, `str_trim`, `str_upper`, `str_lower`, `str_contains`, `str_reverse`, `string_interpolate`, `string_match`
+- **Dictionaries**: `dict_create`, `dict_set`, `dict_get`, `dict_keys`
+- **Structs**: `struct Type field1 field2 ... end`, `struct new`, `struct set`, `struct get`, `struct dump`
+
+### JSON Operations
+`json_parse`, `json_stringify`, `json_read`, `json_write` - Full Unicode support for modern data interchange
 
 ### File I/O
-- `file_read "path" var`, `file_write "path" "text"`, `file_append "path" "text"`
-- `file_exists "path"`, `file_delete "path"`, `file_list "dir"`
+`file_read`, `file_write`, `file_append`, `file_exists`, `file_delete`, `file_list`
 
-### Network & Web
-- HTTP client: `http_get "url" resp`, `http_post "url" data`, `http_status resp`
-- Server stubs: `server_start port`, `server_route "path" handler`, `server_stop`
+### Network & HTTP
+- **Client**: `http_get`, `http_post`, `http_status`
+- **Server** (stubs): `server_start`, `server_route`, `server_stop`
 
-### Graphics (Pillow-backed)
-- `graphics_init w h`, `graphics_draw_line x1 y1 x2 y2`, `graphics_draw_circle x y r`, `graphics_draw_text x y "txt"`, `graphics_show`
+### Graphics (Pillow)
+`graphics_init`, `graphics_draw_line`, `graphics_draw_circle`, `graphics_draw_text`, `graphics_show`
 
-### Math & Science
-- Functions: `math_sin a`, `math_cos a`, `math_sqrt n`, `math_pow b e`, `math_random lo hi`
-- Constants: `math_pi`, `math_e`
+### Math & Date/Time
+- **Trigonometry**: `math_sin`, `math_cos`, `math_tan`, `math_asin`, `math_acos`, `math_atan`
+- **Arithmetic**: `math_sqrt`, `math_pow`, `math_random`, `math_round`, `math_floor`, `math_ceil`
+- **Conversion**: `math_deg2rad`, `math_rad2deg`
+- **Constants**: `math_pi`, `math_e`
+- **Date/Time**: `now`, `format_date`, `sys_time`, `sys_date`
 
-### Database (Advanced)
-- Transactions: `db_begin`, `db_commit`, `db_rollback`
-- Introspection: `db_tables`, `db_schema table`, `db_indexes table`
-- Connections: `db_connect "path"`, `db_disconnect`
+### Database (SQLite3)
+- **CRUD**: `db_create`, `db_insert`, `db_select`, `db_update`, `db_delete`, `db_execute`, `db_close`
+- **Transactions**: `db_begin`, `db_commit`, `db_rollback`
+- **Introspection**: `db_tables`, `db_schema`, `db_indexes`
+- **Connections**: `db_connect`, `db_disconnect`
 
-### Memory Management (planned)
-- `mem_alloc size`, `mem_free address`, `mem_read address`, `mem_write address value`, `mem_dump`
+### Memory Management
+`mem_alloc`, `mem_free`, `mem_read`, `mem_write`, `mem_dump`
+
+### Concurrency & Threading
+- **Threads**: `thread_create`, `thread_join`, `thread_sleep`, `thread_status`, `thread_result`, `thread_list`, `thread_wait_all`
+- **Async**: `async_start`, `async_wait`
+- **Synchronization**: `mutex_create`, `mutex_lock`, `mutex_unlock`
+- **Queues**: `queue_push`, `queue_pop`
+
+### System & Processes
+- **System**: `sys_exec`, `sys_env`, `sys_time`, `sys_date`, `sys_sleep`, `sys_cwd`, `sys_exit`
+- **Processes**: `proc_spawn`, `proc_kill`, `proc_wait`, `proc_status`
+
+### Debugging & Inspection
+`breakpoint`, `step`, `continue`, `inspect`, `watch`, `unwatch`, `clear_breakpoints`
+
+### Modules & Macros
+- **Modules**: `package use module`, `call module.function`
+- **Macros**: `macro name params do ... end`, `inline name args`
+- **Aliases**: `alias short command`
+- **Imports**: `import name`
+
+### Comments
+- Single-line: `# comment` or `// comment`
+- Multi-line: `/* comment */`
+
+### Help System
+`help` - List all commands  
+`help <command>` - Show specific command help

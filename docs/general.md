@@ -283,6 +283,37 @@ Some commands operate on an implicit current value:
 boot ping ping print   # Output: 2
 ```
 
+## Debugging
+
+TechLang includes a comprehensive debugger that helps you understand and troubleshoot your programs. See [docs/debugging.md](debugging.md) for complete documentation.
+
+### Debugger Commands
+
+| Command | Description |
+|---------|-------------|
+| `breakpoint` | Set a breakpoint at the current command position |
+| `step` | Enable step-through mode (pause after each command) |
+| `continue` | Resume execution from paused state |
+| `inspect` | Show detailed state snapshot (stack, vars, arrays, dicts, strings, breakpoints, watched vars) |
+| `watch <var>` | Add variable to watch list for monitoring |
+| `unwatch <var>` | Remove variable from watch list |
+| `clear_breakpoints` | Remove all breakpoints |
+
+### Quick Debugging Example
+
+```techlang
+set counter 0
+watch counter
+
+loop 5
+    breakpoint       # Pause here each iteration
+    add counter 1
+    inspect          # Show current state
+end
+
+clear_breakpoints
+```
+
 ## Best Practices
 
 1. **Consistent Indentation**: Use 2 or 4 spaces for indentation inside blocks
@@ -290,6 +321,9 @@ boot ping ping print   # Output: 2
 3. **Comment Complex Logic**: Add comments to explain non-obvious code
 4. **Modular Structure**: Break large programs into smaller, reusable functions
 5. **Error Checking**: Validate inputs and handle potential errors gracefully
+6. **Use the Debugger**: Set breakpoints and watches to understand program flow
+7. **Test with JSON**: Use `json_write` to save program state for debugging
+8. **Leverage Comments**: Use all three comment styles (`#`, `//`, `/* */`) appropriately
 
 ## Complete Example
 

@@ -16,7 +16,9 @@ Welcome to the TechLang documentation. Use the section links below for the full,
 | Memory Management | [docs/memory.md](docs/memory.md) |
 | Concurrency & Async | [docs/concurrency.md](docs/concurrency.md) |
 | System & Processes | [docs/system.md](docs/system.md) |
+| Debugging | [docs/debugging.md](docs/debugging.md) |
 | Help & CLI | [docs/help-cli.md](docs/help-cli.md) |
 | Examples Index | [docs/examples.md](docs/examples.md) |
+| Cookbook & Recipes | [docs/cookbook.md](docs/cookbook.md) |
 
 Tip: Use the CLI to try examples inline: `tl -i` for REPL, or `tl path/file.tl` to run a file.

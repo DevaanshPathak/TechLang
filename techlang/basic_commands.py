@@ -44,6 +44,10 @@ class BasicCommandHandler:
     "math_deg2rad", "math_rad2deg", "math_pi", "math_e", "now", "format_date",
         # Help
         "help",
+        # Function control
+        "return",
+        # Module/Library API
+        "export",
         # Debugger commands
         "breakpoint", "step", "continue", "inspect", "watch", "unwatch", "clear_breakpoints",
         # Threading & Async
@@ -176,3 +180,86 @@ class BasicCommandHandler:
     @staticmethod
     def handle_yield(state: InterpreterState) -> None:
         BasicCommandHandler._sleep_seconds(0.0)
+    
+    @staticmethod
+    def handle_return(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Return values from a function.
+        Syntax: return [value1] [value2] ...
+        Examples:
+          return 42
+          return x
+          return x "success"
+          return  # return nothing
+        """
+        # Clear previous return values
+        state.return_values.clear()
+        
+        # Collect all values after 'return' until we hit a block keyword or run out
+        i = index + 1
+        while i < len(tokens):
+            token = tokens[i]
+            # Stop at block keywords
+            if token in {"end", "case", "default", "catch", "else"}:
+                break
+            
+            # Resolve the value (could be variable, string, or literal number)
+            value = BasicCommandHandler._resolve_return_value(state, token)
+            if value is not None:
+                state.return_values.append(value)
+            i += 1
+        
+        # Return count of consumed tokens (everything after 'return')
+        return i - index - 1
+    
+    @staticmethod
+    def _resolve_return_value(state: InterpreterState, token: str) -> Optional[Union[int, str]]:
+        """Resolve a token to its actual value for returning."""
+        # Check if it's a quoted string
+        if token.startswith('"') and token.endswith('"'):
+            return token[1:-1]  # Remove quotes
+        
+        # Check if it's a string variable
+        if token in state.strings:
+            return state.strings[token]
+        
+        # Check if it's a numeric variable
+        if token in state.variables:
+            val = state.variables[token]
+            # Convert to string if it's a string value in variables
+            return val if isinstance(val, (int, str)) else str(val)
+        
+        # Try to parse as integer
+        try:
+            return int(token)
+        except ValueError:
+            pass
+        
+        # Try to parse as float and convert to int
+        try:
+            return int(float(token))
+        except ValueError:
+            pass
+        
+        # If we can't resolve it, return the token as-is (as string)
+        return token
+
+    @staticmethod
+    def handle_export(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Mark a function as exported (public API).
+        Syntax: export func_name
+        
+        Exported functions can be called from outside the module.
+        Non-exported functions are private and only callable within the module.
+        Note: export can be called before or after the function is defined.
+        """
+        if index + 1 >= len(tokens):
+            state.add_error("export requires a function name")
+            return 0
+        
+        func_name = tokens[index + 1]
+        
+        # Mark as exported (don't check if function exists yet - it may be defined later)
+        state.exported_functions.add(func_name)
+        return 1

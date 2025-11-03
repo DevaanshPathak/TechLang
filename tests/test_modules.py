@@ -15,6 +15,7 @@ def test_package_use_namespace(tmp_path):
     def increment
         add x 1
     end
+    export increment
     """
     write_module(str(tmp_path), "helper", module_code)
 
@@ -50,3 +51,46 @@ def test_package_use_missing_module(tmp_path):
     """
     output = run(program, base_dir=str(tmp_path)).strip()
     assert "[Module Error: Module 'missing_mod' not found." in output
+
+
+def test_stdlib_alias_for_stl():
+    """Test that 'stdlib' works as an alias for 'stl'"""
+    # Test 1: Load with stl, call with stl
+    code1 = """
+    package use stl/validation
+    set n 5
+    call stl.validation.is_positive n result
+    print result
+    """
+    output1 = run(code1, base_dir="d:/TechLang").strip()
+    assert output1 == "1"
+    
+    # Test 2: Load with stl, call with stdlib
+    code2 = """
+    package use stl/validation
+    set n -3
+    call stdlib.validation.is_negative n result
+    print result
+    """
+    output2 = run(code2, base_dir="d:/TechLang").strip()
+    assert output2 == "1"
+    
+    # Test 3: Load with stdlib, call with stl
+    code3 = """
+    package use stdlib/validation
+    set n 0
+    call stl.validation.is_zero n result
+    print result
+    """
+    output3 = run(code3, base_dir="d:/TechLang").strip()
+    assert output3 == "1"
+    
+    # Test 4: Test with :: separator
+    code4 = """
+    package use stl/validation
+    set n 10
+    call stl::validation::is_positive n result
+    print result
+    """
+    output4 = run(code4, base_dir="d:/TechLang").strip()
+    assert output4 == "1"

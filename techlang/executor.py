@@ -145,6 +145,10 @@ class CommandExecutor:
                 StackHandler.handle_fork(self.state)
             elif token == "debug":
                 StackHandler.handle_debug(self.state)
+            elif token == "return":
+                consumed = BasicCommandHandler.handle_return(self.state, tokens, i)
+            elif token == "export":
+                consumed = BasicCommandHandler.handle_export(self.state, tokens, i)
             
             # Control flow - loops, conditions, and functions
             elif token == "loop":

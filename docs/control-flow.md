@@ -86,13 +86,89 @@ end
 
 ## Functions
 
-`def <name> ... end` stores the raw token list for later reuse. Call a function with `call <name>`. Functions capture the state in which they were defined, so they are safe to invoke from threads and modules.
+`def <name> [param1 param2 ...] ... end` stores the function body for later reuse. Functions can accept parameters and return multiple values. Call a function with `call <name> [args...] [returnVar1 returnVar2 ...]`.
+
+### Basic Functions
 
 ```techlang
 def greet
     print "hello"
 end
 call greet
+```
+
+### Functions with Parameters
+
+Parameters are passed by position and create local variables within the function scope:
+
+```techlang
+def double x
+    mul x 2
+    return x
+end
+
+set num 5
+call double num result
+print result  # prints 10
+```
+
+Parameters can be numeric or string variables:
+
+```techlang
+def make_greeting name
+    str_create msg "Hello "
+    str_concat msg name
+    return msg
+end
+
+str_create username "Alice"
+call make_greeting username greeting
+print greeting  # prints "Hello Alice"
+```
+
+### Multiple Return Values
+
+Functions can return multiple values using the `return` keyword:
+
+```techlang
+def swap a b
+    return b a
+end
+
+set x 10
+set y 20
+call swap x y first second
+print first  # prints 20
+print second  # prints 10
+```
+
+### Local Scope
+
+Parameters are local to the function and don't affect global variables with the same name:
+
+```techlang
+set global 100
+def modify x
+    set x 999
+    return x
+end
+call modify global local
+print local  # prints 999
+print global  # still prints 100
+```
+
+### Literal Arguments
+
+You can pass literal values directly to functions:
+
+```techlang
+def square n
+    mul n n
+    return n
+end
+
+call square 7 result
+print result  # prints 49
 ```
 
 ## Try / Catch
