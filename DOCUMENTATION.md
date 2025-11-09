@@ -17,6 +17,8 @@ Welcome to the TechLang documentation. Use the section links below for the full,
 | Concurrency & Async | [docs/concurrency.md](docs/concurrency.md) |
 | System & Processes | [docs/system.md](docs/system.md) |
 | Debugging | [docs/debugging.md](docs/debugging.md) |
+| **Advanced Macro System** | [docs/macros-advanced.md](docs/macros-advanced.md) |
+| **REPL Guide** | [docs/repl-guide.md](docs/repl-guide.md) |
 | Help & CLI | [docs/help-cli.md](docs/help-cli.md) |
 | Examples Index | [docs/examples.md](docs/examples.md) |
 | Cookbook & Recipes | [docs/cookbook.md](docs/cookbook.md) |

@@ -225,6 +225,21 @@ Three styles supported: `#` single-line, `//` C-style single-line, `/* */` multi
 ### Control Flow
 `loop ... end`, `if ... end`, `while ... end`, `switch/case/default`, `try/catch`, `def ... end`, `call`
 
+### Macro System ✨ NEW
+- **Conditional Macros**: `macro name if condition param do ... end` - Expand only when condition is true
+- **Nested Macros**: Macros can invoke other macros with full parameter substitution
+- **Macro Libraries**: Load reusable macro collections from external files
+- **REPL Integration**: `:loadmacro` command for interactive macro loading
+- See [Advanced Macro Guide](docs/macros-advanced.md) for details
+
+### Enhanced REPL ✨ NEW
+- **Persistent State**: Variables, functions, and macros persist across commands
+- **Introspection**: `:state` shows all variables, `:macros` lists macros
+- **State Management**: `:reset` clears state without restarting
+- **Macro Loading**: `:loadmacro file` loads macro libraries interactively
+- **Command History**: Full readline support with persistent history
+- See [REPL Guide](docs/repl-guide.md) for complete reference
+
 ### Data Types
 - Arrays: `array_create`, `array_set`, `array_get`, `array_push`, `array_pop`, `array_map`, `array_filter`
 - Strings: `str_create`, `str_concat`, `str_length`, `str_substring`, `str_split`, `str_replace`, `str_trim`, `str_upper`, `str_lower`, `str_contains`, `str_reverse`

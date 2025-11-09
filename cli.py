@@ -86,11 +86,15 @@ def _show_repl_help():
     """Display REPL meta-commands."""
     help_text = """
 TechLang REPL Meta-Commands:
-  :load <file.tl>   Load and execute a TechLang file
-  :help             Show this help message
-  :clear            Clear the current buffer
-  :history          Show command history
-  exit / quit       Exit the REPL (or Ctrl-D)
+  :load <file.tl>      Load and execute a TechLang file
+  :loadmacro <file>    Load macros from a file (without executing)
+  :help                Show this help message
+  :clear               Clear the current buffer
+  :history             Show command history
+  :state               Show current interpreter state (variables, strings, etc.)
+  :macros              List all defined macros
+  :reset               Reset the interpreter state (clear all variables, etc.)
+  exit / quit          Exit the REPL (or Ctrl-D)
 
 For TechLang language help, use: help
 For specific command help, use: help <command>
@@ -99,10 +103,23 @@ For specific command help, use: help <command>
 
 
 def repl(verbose: bool = False):
-    print("TechLang REPL. Type 'exit' or Ctrl-D to quit. Type ':help' for meta-commands.")
+    print("TechLang REPL v1.1 - Enhanced Edition")
+    print("Type 'exit' or Ctrl-D to quit. Type ':help' for meta-commands.")
     
     # Set up history persistence
     history_file = _setup_history()
+    
+    # Import here to avoid circular dependency
+    from techlang.core import InterpreterState
+    from techlang.parser import parse
+    from techlang.macros import MacroHandler
+    from techlang.aliases import AliasHandler
+    from techlang.executor import CommandExecutor
+    
+    # Persistent state for REPL session
+    repl_state = InterpreterState()
+    from techlang.interpreter import initialize_state
+    initialize_state(repl_state)
     
     buffer = []
     block_depth = 0
@@ -133,6 +150,44 @@ def repl(verbose: bool = False):
                         block_depth = 0
                         print("[Buffer cleared]")
                         continue
+                    elif meta_cmd == 'reset':
+                        from techlang.interpreter import initialize_state
+                        repl_state = InterpreterState()
+                        initialize_state(repl_state)
+                        buffer.clear()
+                        block_depth = 0
+                        print("[Interpreter state reset]")
+                        continue
+                    elif meta_cmd == 'state':
+                        print("\n=== Interpreter State ===")
+                        print(f"Value: {repl_state.value}")
+                        if repl_state.variables:
+                            print(f"Variables: {dict(list(repl_state.variables.items())[:10])}")
+                            if len(repl_state.variables) > 10:
+                                print(f"  ... and {len(repl_state.variables) - 10} more")
+                        if repl_state.strings:
+                            print(f"Strings: {dict(list(repl_state.strings.items())[:5])}")
+                            if len(repl_state.strings) > 5:
+                                print(f"  ... and {len(repl_state.strings) - 5} more")
+                        if repl_state.arrays:
+                            print(f"Arrays: {list(repl_state.arrays.keys())}")
+                        if repl_state.dictionaries:
+                            print(f"Dictionaries: {list(repl_state.dictionaries.keys())}")
+                        if repl_state.functions:
+                            print(f"Functions: {list(repl_state.functions.keys())}")
+                        print()
+                        continue
+                    elif meta_cmd == 'macros':
+                        if not repl_state.macros:
+                            print("[No macros defined]")
+                        else:
+                            print("\n=== Defined Macros ===")
+                            for name, macro in repl_state.macros.items():
+                                params = ', '.join(macro.parameters) if macro.parameters else 'none'
+                                cond = f" [if {macro.condition}]" if macro.condition else ""
+                                print(f"  {name}({params}){cond}")
+                            print()
+                        continue
                     elif meta_cmd == 'history':
                         if not HAS_READLINE:
                             print("[History not available on this platform]")
@@ -144,6 +199,20 @@ def repl(verbose: bool = False):
                             item = readline.get_history_item(i)
                             if item:
                                 print(f"{i:4d}  {item}")
+                        continue
+                    elif meta_cmd == 'loadmacro':
+                        if len(cmd_parts) < 2:
+                            print("[Error: :loadmacro requires a filename]")
+                            continue
+                        filename = cmd_parts[1]
+                        if not filename.endswith('.tl'):
+                            filename += '.tl'
+                        base_dir = os.path.dirname(os.path.abspath(filename)) if '/' in filename or '\\' in filename else '.'
+                        lib_name = os.path.splitext(os.path.basename(filename))[0]
+                        if MacroHandler.load_macro_library(lib_name, repl_state, base_dir):
+                            print(f"[Loaded macros from {filename}]")
+                        else:
+                            print(f"[Failed to load macros from {filename}]")
                         continue
                     elif meta_cmd == 'load':
                         if len(cmd_parts) < 2:
@@ -193,9 +262,25 @@ def repl(verbose: bool = False):
                 if block_depth == 0:
                     code = '\n'.join(buffer)
                     buffer.clear()
-                    out = run(code)
-                    if out.strip():
-                        print(out)
+                    
+                    # Execute with persistent state
+                    try:
+                        tokens = parse(code)
+                        tokens = MacroHandler.process_macros(tokens, repl_state)
+                        tokens = AliasHandler.process_aliases(repl_state, tokens)
+                        executor = CommandExecutor(repl_state, os.getcwd())
+                        executor.execute_block(tokens)
+                        
+                        # Display output
+                        if repl_state.output:
+                            for line in repl_state.output:
+                                print(line)
+                            repl_state.output.clear()
+                    except Exception as e:
+                        print(f"[Error: {e}]")
+                        if verbose:
+                            import traceback
+                            traceback.print_exc()
                         
             except (EOFError, KeyboardInterrupt):
                 print()

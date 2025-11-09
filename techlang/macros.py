@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Optional
 from .core import InterpreterState
 from .blocks import BlockCollector
 
@@ -9,19 +9,66 @@ class MacroDefinition:
     name: str
     parameters: List[str]
     body: List[str]
+    condition: Optional[str] = None  # Optional condition for conditional expansion
 
 
 class MacroHandler:
-    """Collects and expands compile-time macros before execution."""
+    """Collects and expands compile-time macros before execution with conditional expansion support."""
 
     @staticmethod
-    def process_macros(tokens: List[str], state: InterpreterState) -> List[str]:
+    def process_macros(tokens: List[str], state: InterpreterState, expand_inline: bool = True) -> List[str]:
+        """
+        Process macro definitions and optionally expand inline calls.
+        
+        Args:
+            tokens: List of tokens to process
+            state: Interpreter state
+            expand_inline: If True, expand inline calls immediately. If False, leave them for runtime expansion.
+        """
         macros, without_definitions = MacroHandler._collect_macros(tokens, state)
         state.macros = macros
-        return MacroHandler._expand_macros(without_definitions, state)
+        
+        if expand_inline:
+            return MacroHandler._expand_macros(without_definitions, state)
+        else:
+            return without_definitions
 
     @staticmethod
-    def _collect_macros(tokens: List[str], state: InterpreterState) -> (Dict[str, MacroDefinition], List[str]):
+    def load_macro_library(library_name: str, state: InterpreterState, base_dir: Optional[str] = None) -> bool:
+        """Load macros from a .tl file into the state's macro collection."""
+        import os
+        from .parser import parse
+        
+        # Resolve library path
+        if base_dir:
+            library_path = os.path.join(base_dir, f"{library_name}.tl")
+        else:
+            library_path = f"{library_name}.tl"
+        
+        if not os.path.exists(library_path):
+            state.add_error(f"Macro library '{library_name}' not found at {library_path}")
+            return False
+        
+        try:
+            with open(library_path, 'r', encoding='utf-8') as f:
+                library_code = f.read()
+            
+            # Parse and collect macros from library
+            library_tokens = parse(library_code)
+            library_macros, _ = MacroHandler._collect_macros(library_tokens, state)
+            
+            # Merge into state's macros
+            if state.macros is None:
+                state.macros = {}
+            state.macros.update(library_macros)
+            
+            return True
+        except Exception as e:
+            state.add_error(f"Error loading macro library '{library_name}': {e}")
+            return False
+
+    @staticmethod
+    def _collect_macros(tokens: List[str], state: InterpreterState) -> tuple[Dict[str, MacroDefinition], List[str]]:
         macros: Dict[str, MacroDefinition] = {}
         output: List[str] = []
         i = 0
@@ -72,7 +119,15 @@ class MacroHandler:
                 continue
 
             body_tokens, end_index = BlockCollector.collect_block(cursor, tokens)
-            macros[name] = MacroDefinition(name=name, parameters=params, body=body_tokens)
+            
+            # Check for conditional macro (if condition specified before 'do')
+            condition = None
+            if params and params[0] == 'if' and len(params) > 1:
+                # Extract condition: macro name if condition do ... end
+                condition = params[1]
+                params = params[2:]  # Remove 'if' and condition from params
+            
+            macros[name] = MacroDefinition(name=name, parameters=params, body=body_tokens, condition=condition)
             i = end_index + 1
 
         return macros, output
@@ -106,6 +161,14 @@ class MacroHandler:
                 i += 2
                 continue
 
+            # Check conditional expansion
+            if macro.condition:
+                condition_met = MacroHandler._check_condition(macro.condition, state)
+                if not condition_met:
+                    # Skip macro expansion if condition not met
+                    i += 2 + len(macro.parameters)
+                    continue
+
             arg_count = len(macro.parameters)
             args = tokens[i + 2 : i + 2 + arg_count]
             if len(args) < arg_count:
@@ -138,3 +201,11 @@ class MacroHandler:
             i += 2 + arg_count
 
         return result
+
+    @staticmethod
+    def _check_condition(condition: str, state: InterpreterState) -> bool:
+        """Check if a conditional macro should be expanded based on a variable value."""
+        # Simple condition check: variable exists and is non-zero
+        if condition in state.variables:
+            return state.variables[condition] != 0
+        return False
