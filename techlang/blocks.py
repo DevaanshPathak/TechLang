@@ -16,6 +16,19 @@ class BlockCollector:
             # Any of these tokens start a nested block
             if token in {"def", "if", "loop", "while", "switch", "match", "try", "macro"}:
                 depth += 1
+                block.append(token)
+                i += 1
+                
+                # For 'if' statements, skip the condition tokens (var op value)
+                # so that 'end' used as a variable name isn't treated as block terminator
+                if token == "if" and i + 2 < len(tokens_list):
+                    # Append the next 3 tokens (variable, operator, value) without interpreting them
+                    block.append(tokens_list[i])      # variable
+                    block.append(tokens_list[i + 1])  # operator
+                    block.append(tokens_list[i + 2])  # value (could be 'end' as variable name!)
+                    i += 3
+                continue
+                
             elif token == "struct":
                 next_token = tokens_list[i + 1] if i + 1 < len(tokens_list) else ""
                 if next_token not in {"new", "set", "get", "dump"}:

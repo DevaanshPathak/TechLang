@@ -113,12 +113,16 @@ class ControlFlowHandler:
         
         varname = tokens[index + 1]
         op = tokens[index + 2]
+        compare_token = tokens[index + 3]
         
-        try:
-            compare_val = int(tokens[index + 3])
-        except ValueError:
-            state.add_error(f"Expected a number for comparison, but got '{tokens[index + 3]}'. Please provide a valid integer.")
-            return 0
+        # Try to resolve compare_token as a variable first, then as a literal
+        compare_val = state.get_variable(compare_token, None)
+        if compare_val is None:
+            try:
+                compare_val = int(compare_token)
+            except ValueError:
+                state.add_error(f"Expected a number or variable for comparison, but got '{compare_token}'. Please provide a valid integer or variable name.")
+                return 0
         
         start_index = index + 4  # Start after 'if', variable, operator, and value
         
@@ -126,6 +130,11 @@ class ControlFlowHandler:
         var_value = state.get_variable(varname, 0)
         if not isinstance(var_value, int):
             state.add_error(f"Variable '{varname}' is not a number. Cannot perform comparison.")
+            return 0
+        
+        # Ensure compare_val is an integer
+        if not isinstance(compare_val, int):
+            state.add_error(f"Comparison value must be a number, but got type '{type(compare_val).__name__}'.")
             return 0
         
         # Check condition
@@ -383,11 +392,12 @@ class ControlFlowHandler:
         # Parameters are tokens before the function body starts
         # We need to find where params end and body begins
         # Body starts when we encounter tokens that look like commands or we run out of simple identifiers
+        # Note: 'end' can be a valid parameter name, so we don't stop at 'end'
         while param_index < len(tokens):
             token = tokens[param_index]
-            # If we hit a known command or quoted string, that's the start of the body
+            # If we hit a known command (except 'end') or quoted string, that's the start of the body
             from .basic_commands import BasicCommandHandler
-            if token in BasicCommandHandler.KNOWN_COMMANDS or token.startswith('"'):
+            if (token in BasicCommandHandler.KNOWN_COMMANDS and token != "end") or token.startswith('"'):
                 break
             # Otherwise it's a parameter name
             params.append(token)

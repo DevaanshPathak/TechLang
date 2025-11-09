@@ -17,13 +17,23 @@ class VariableHandler:
             return 0
         
         varname = tokens[index + 1]
-        try:
-            varvalue = int(tokens[index + 2])
-            state.set_variable(varname, varvalue)
-            return 2  # Consume variable name and value
-        except ValueError:
-            state.add_error(f"Expected a number for variable '{varname}', but got '{tokens[index + 2]}'. Please provide a valid integer.")
+        value_token = tokens[index + 2]
+        
+        # Try to resolve value_token as a variable first, then as a literal
+        varvalue = state.get_variable(value_token, None)
+        if varvalue is None:
+            try:
+                varvalue = int(value_token)
+            except ValueError:
+                state.add_error(f"Expected a number or variable for '{varname}', but got '{value_token}'. Please provide a valid integer or variable name.")
+                return 0
+        
+        if not isinstance(varvalue, int):
+            state.add_error(f"Value must be a number, but got type '{type(varvalue).__name__}'.")
             return 0
+        
+        state.set_variable(varname, varvalue)
+        return 2  # Consume variable name and value
     
     @staticmethod
     def handle_math_operation(state: InterpreterState, tokens: List[str], index: int, operation: str) -> int:
