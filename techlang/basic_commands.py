@@ -40,7 +40,7 @@ class BasicCommandHandler:
         "mem_alloc", "mem_free", "mem_read", "mem_write", "mem_dump",
     # Math & time commands
     "math_sin", "math_cos", "math_tan", "math_asin", "math_acos", "math_atan",
-    "math_sqrt", "math_pow", "math_random", "math_round", "math_floor", "math_ceil",
+    "math_sqrt", "math_pow", "math_mod", "math_random", "math_round", "math_floor", "math_ceil",
     "math_deg2rad", "math_rad2deg", "math_pi", "math_e", "now", "format_date",
         # Help
         "help",
@@ -208,6 +208,9 @@ class BasicCommandHandler:
             if value is not None:
                 state.return_values.append(value)
             i += 1
+        
+        # Set flag to stop execution (early return from function)
+        state.should_return = True
         
         # Return count of consumed tokens (everything after 'return')
         return i - index - 1

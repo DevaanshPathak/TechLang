@@ -114,6 +114,22 @@ class MathOpsHandler:
         return 2
 
     @staticmethod
+    def handle_math_mod(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 2 >= len(tokens):
+            state.add_error("math_mod requires dividend and divisor")
+            return 0
+        dividend = MathOpsHandler._get_int(state, tokens[index + 1])
+        divisor = MathOpsHandler._get_int(state, tokens[index + 2])
+        if divisor == 0:
+            state.add_error("Cannot compute modulo by zero")
+            return 2
+        result = dividend % divisor
+        # Store result back in the dividend variable
+        var_name = tokens[index + 1]
+        state.variables[var_name] = result
+        return 2
+
+    @staticmethod
     def handle_math_random(state: InterpreterState, tokens: List[str], index: int) -> int:
         if index + 2 >= len(tokens):
             state.add_error("math_random requires min and max")

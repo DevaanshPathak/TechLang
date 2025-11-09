@@ -107,6 +107,8 @@ class CommandExecutor:
                 consumed = MathOpsHandler.handle_math_sqrt(self.state, tokens, i)
             elif token == "math_pow":
                 consumed = MathOpsHandler.handle_math_pow(self.state, tokens, i)
+            elif token == "math_mod":
+                consumed = MathOpsHandler.handle_math_mod(self.state, tokens, i)
             elif token == "math_random":
                 consumed = MathOpsHandler.handle_math_random(self.state, tokens, i)
             elif token == "math_round":
@@ -397,6 +399,10 @@ class CommandExecutor:
             # Unknown command - something we don't recognize
             else:
                 self.state.add_error(f"Unknown command '{token}'. Check your syntax and make sure all commands are spelled correctly.")
+            
+            # Check if we should stop execution (early return from function)
+            if self.state.should_return:
+                break
             
             # Move to the next command, skipping any tokens this command used
             i += 1 + consumed

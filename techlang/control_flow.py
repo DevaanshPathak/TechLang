@@ -555,8 +555,14 @@ class ControlFlowHandler:
         # Clear return values before executing
         state.return_values.clear()
         
+        # Clear should_return flag for this function call
+        state.should_return = False
+        
         # Execute the function body
         execute_block(body)
+        
+        # Clear should_return flag after function execution
+        state.should_return = False
         
         # Restore parameter variables (clean up local scope)
         for param in params:

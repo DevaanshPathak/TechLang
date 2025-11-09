@@ -45,18 +45,20 @@ print padded  # Output: 00042
 ### 🔢 math.tl - Math Utilities
 Mathematical helper functions.
 
-**Functions:**
-- `min(a, b)` - Return minimum of two numbers
-- `max(a, b)` - Return maximum of two numbers
-- `abs(n)` - Return absolute value
-- `clamp(value, min_val, max_val)` - Clamp value between min and max
-- `sign(n)` - Return sign (-1, 0, or 1)
-- `is_even(n)` - Check if number is even
-- `is_odd(n)` - Check if number is odd
-- `sum_range(start, end)` - Sum integers from start to end
-- `factorial(n)` - Calculate factorial (n!)
-- `gcd(a, b)` - Greatest common divisor
-- `lerp(a, b, t)` - Linear interpolation between a and b
+**Working Functions:**
+- ✅ `min(a, b)` - Return minimum of two numbers
+- ✅ `max(a, b)` - Return maximum of two numbers
+- ✅ `abs(n)` - Return absolute value
+- ✅ `clamp(value, min_val, max_val)` - Clamp value between min and max
+- ✅ `is_even(n)` - Check if number is even
+- ✅ `is_odd(n)` - Check if number is odd
+- ✅ `factorial(n)` - Calculate factorial (n!)
+- ✅ `lerp(a, b, t)` - Linear interpolation between a and b
+
+**Partially Working / Limitations:**
+- ⚠️ `sign(n)` - Return sign (-1, 0, or 1) - Single call works, multiple calls fail
+- ⚠️ `sum_range(start, end)` - Sum integers from start to end - Implementation issue
+- ⚠️ `gcd(a, b)` - Greatest common divisor - Placeholder (returns first argument only)
 
 **Example:**
 ```techlang

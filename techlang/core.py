@@ -78,6 +78,9 @@ class InterpreterState:
     
     # Debugger state
     breakpoints: Set[int] = None  # Line numbers where execution should pause
+    
+    # Return statement control
+    should_return: bool = False  # Flag to stop execution when return is called
     debug_mode: bool = False  # Whether debugger is active
     stepping: bool = False  # Whether to pause after each command
     watched_vars: Set[str] = None  # Variables to monitor

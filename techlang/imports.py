@@ -249,10 +249,16 @@ class ModuleHandler:
                     else:
                         module_state.variables[param_name] = arg_value
                 
+                # Clear should_return flag for this function call
+                module_state.should_return = False
+                
                 # Execute function body
                 from .executor import CommandExecutor
                 executor = CommandExecutor(module_state, module_info.base_dir)
                 executor.execute_block(func_block)
+                
+                # Clear should_return flag after function execution
+                module_state.should_return = False
                 
                 # Restore saved state (clean up local parameters but keep other changes)
                 # Remove parameters from module state
@@ -267,9 +273,15 @@ class ModuleHandler:
                     module_state.strings[str_name] = str_value
             else:
                 # No parameters: use shared scope (backward compatibility)
+                # Clear should_return flag for this function call
+                module_state.should_return = False
+                
                 from .executor import CommandExecutor
                 executor = CommandExecutor(module_state, module_info.base_dir)
                 executor.execute_block(func_block)
+                
+                # Clear should_return flag after function execution
+                module_state.should_return = False
             
             # Handle return values
             if module_state.return_values:
