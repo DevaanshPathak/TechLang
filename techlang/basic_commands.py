@@ -111,7 +111,7 @@ class BasicCommandHandler:
 
                 state.add_output(StructHandler.format_instance(state.structs[lookahead]))
                 return 1
-            elif lookahead.isalpha() and lookahead not in BasicCommandHandler.KNOWN_COMMANDS:
+            elif lookahead not in BasicCommandHandler.KNOWN_COMMANDS and (lookahead.isalnum() or '_' in lookahead):
                 # It's a variable name, print its value
                 if lookahead in state.strings:
                     # It's a string variable

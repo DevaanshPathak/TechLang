@@ -452,16 +452,14 @@ class ControlFlowHandler:
             else:
                 param_count = 0
             
-            # Collect arguments
+            # Collect arguments - collect exactly param_count arguments
+            # Don't stop early for KNOWN_COMMANDS since variables can have those names
             args = []
             consumed = 1  # function name
             for _ in range(param_count):
                 if index + 1 + consumed >= len(tokens):
                     break
                 arg_token = tokens[index + 1 + consumed]
-                from .basic_commands import BasicCommandHandler
-                if arg_token in BasicCommandHandler.KNOWN_COMMANDS:
-                    break
                 args.append(arg_token)
                 consumed += 1
             
@@ -507,14 +505,11 @@ class ControlFlowHandler:
         consumed = 1  # Start at 1 for function name
         
         # Collect arguments (same number as parameters)
+        # Don't stop early for KNOWN_COMMANDS since variables can have those names
         for i in range(len(params)):
             if index + 1 + consumed >= len(tokens):
                 break
             arg_token = tokens[index + 1 + consumed]
-            # Stop if we hit a keyword
-            from .basic_commands import BasicCommandHandler
-            if arg_token in BasicCommandHandler.KNOWN_COMMANDS:
-                break
             args.append(arg_token)
             consumed += 1
         

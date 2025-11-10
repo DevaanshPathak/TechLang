@@ -72,15 +72,16 @@ def is_odd n
 end
 
 def sum_range start end
+    set sum 0
     set i start
     loop 1000
         if i > end
-            return start
+            return sum
         end
-        add start i
+        add sum i
         add i 1
     end
-    return start
+    return sum
 end
 
 def factorial n
@@ -98,6 +99,16 @@ def factorial n
 end
 
 def gcd a b
+    # Euclidean algorithm
+    loop 1000
+        if b == 0
+            return a
+        end
+        set temp b
+        math_mod a b
+        set b a
+        set a temp
+    end
     return a
 end
 
