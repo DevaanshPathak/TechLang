@@ -19,6 +19,11 @@ class VariableHandler:
         varname = tokens[index + 1]
         value_token = tokens[index + 2]
         
+        # Allow quoted string literals (mirrors input behavior, and enables tests for non-numeric vars)
+        if value_token.startswith('"') and value_token.endswith('"'):
+            state.set_variable(varname, value_token[1:-1])
+            return 2
+
         # Try to resolve value_token as a variable first, then as a literal
         varvalue = state.get_variable(value_token, None)
         if varvalue is None:
@@ -27,11 +32,11 @@ class VariableHandler:
             except ValueError:
                 state.add_error(f"Expected a number or variable for '{varname}', but got '{value_token}'. Please provide a valid integer or variable name.")
                 return 0
-        
+
         if not isinstance(varvalue, int):
             state.add_error(f"Value must be a number, but got type '{type(varvalue).__name__}'.")
             return 0
-        
+
         state.set_variable(varname, varvalue)
         return 2  # Consume variable name and value
     

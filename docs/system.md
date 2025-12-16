@@ -31,6 +31,11 @@ The process commands let you start a long-running program and interact with it l
 
 Commands that accept a path or command string must use double quotes. All commands run relative to the interpreter's base directory, so you can reference project scripts directly.
 
+Notes:
+
+- On Windows, `proc_spawn "python" ...` uses the interpreter running TechLang (avoids the Microsoft Store alias) for more predictable behavior.
+- `proc_status` may do a short internal wait once a process has been alive briefly, to reduce flakiness from slow process startup.
+
 ```techlang
 proc_spawn "\"python\" -c \"import time; time.sleep(1)\""
 proc_status 1    # running

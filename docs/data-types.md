@@ -67,6 +67,10 @@ str_create message "hello world"
 str_length message              # Outputs: 11
 str_concat message " again"     # Appends to message
 print message                   # hello world again
+
+# Store length into a variable (no output)
+str_length message len
+print len                       # 17
 ```
 
 ### String Transformation
@@ -109,8 +113,16 @@ str_create text "techlang is awesome"
 str_contains text "lang"        # 1 (true)
 str_contains text "python"      # 0 (false)
 
+// Store contains result into a variable (no output)
+str_contains text "lang" found
+print found                     # 1
+
 // Get substring
 str_substring text 0 8          # "techlang"
+
+// Store substring into a string variable (no output)
+str_substring text 0 8 head
+print head                      # techlang
 ```
 
 ### String Operations Summary
@@ -140,6 +152,24 @@ array_get numbers 0      # 10
 array_push numbers 20
 array_pop numbers
 ```
+
+### Dynamic arrays (size optional)
+
+You can also create a dynamic array without a fixed size:
+
+```techlang
+array_create nums
+array_push nums 5
+array_push nums 10
+
+# Store into a variable instead of printing
+array_get nums 1 value
+print value               # 10
+```
+
+For dynamic arrays, `array_set` grows the array automatically.
+
+For dynamic arrays, out-of-bounds `array_get <array> <index> <target>` stores `0` (sentinel) into `<target>`. (Without a target, out-of-bounds reads still raise an error.)
 
 ### Array Operations
 

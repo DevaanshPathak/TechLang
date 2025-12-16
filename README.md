@@ -48,7 +48,7 @@ TechLang/
 │   ├── linter.py        # Code linter
 │   └── __init__.py
 │
-├── tests/               # Pytest-based unit tests (255 tests)
+├── tests/               # Pytest-based unit tests (331 collected; 324 passing, 7 skipped)
 │   ├── test_interpreter.py
 │   ├── test_database.py
 │   ├── test_database_advanced.py

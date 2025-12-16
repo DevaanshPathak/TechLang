@@ -3,8 +3,28 @@
 The TechLang STL provides reusable modules for common programming tasks. All modules follow the export/public API system for clean interfaces.
 
 **Alias:** You can use `stl` as an alias for `stl` (for compatibility):
-- `package use stl/validation` (or `stl/validation`)
-- `call stl.validation.is_positive` (or `stl.validation.is_positive`)
+**Alias:** You can use `stdlib` as an alias for `stl` (for compatibility):
+- `package use stdlib/validation` (or `stl/validation`)
+- `call stdlib.validation.is_positive` (or `stl.validation.is_positive`)
+
+## ✅ Runtime Assumptions (STL Compatibility)
+
+Some STL modules rely on “store into target” forms of core commands (so helpers can avoid printing intermediate values):
+
+- `str_length <string> <targetVar>` stores the length in `<targetVar>`.
+- `str_substring <string> <start> <end> <targetString>` stores into `<targetString>`.
+- `str_contains <string> <substring> <targetVar>` stores `1/0` into `<targetVar>`.
+- `array_get <array> <index> <target>` stores the value into `<target>`.
+
+Arrays used by STL are typically **dynamic arrays** created via:
+
+- `array_create <name>` (no size) creates a dynamic array.
+- For dynamic arrays, `array_set` grows as needed.
+- For dynamic arrays, out-of-bounds `array_get ... <target>` stores `0` (sentinel) instead of erroring. This is used by `stl/collections` loops.
+
+Control-flow also accepts operator synonyms used in examples:
+
+- `eq/ne/gt/lt/ge/le` map to `==/!=/>/</>=/<=`.
 
 ## 📚 Available Modules
 

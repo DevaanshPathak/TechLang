@@ -17,7 +17,13 @@ if score < 60
 end
 ```
 
-Comparisons support `==`, `!=`, `<`, `<=`, `>` and `>=`. The right-hand side accepts integers or existing variables.
+Comparisons support `==`, `!=`, `<`, `<=`, `>` and `>=`.
+
+For convenience (and for compatibility with some examples), these operator aliases are also accepted:
+
+- `eq/ne/gt/lt/ge/le` map to `==/!=/>/</>=/<=`.
+
+The right-hand side accepts integers or existing variables. Equality/inequality also works with string operands (for example comparing two string variables).
 
 ## Loops
 

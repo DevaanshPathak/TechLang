@@ -2,6 +2,7 @@ import json
 from typing import List, Dict, Union, Optional
 from .core import InterpreterState
 from .system_ops import ProcessOpsHandler
+from .basic_commands import BasicCommandHandler
 
 
 class DataTypesHandler:
@@ -74,23 +75,32 @@ class DataTypesHandler:
         Like creating an empty box with a certain number of slots.
         Example: array_create mylist 5 creates an array with 5 empty slots.
         """
-        if index + 2 >= len(tokens):
-            state.add_error("array_create requires array name and size. Use: array_create <name> <size>")
+        if index + 1 >= len(tokens):
+            state.add_error("array_create requires array name. Use: array_create <name> [size]")
             return 0
-        
+
         array_name = tokens[index + 1]
-        try:
-            size = int(tokens[index + 2])
-            if size < 0:
-                state.add_error("Array size must be non-negative")
-                return 0
-            # Create an array filled with zeros
-            state.arrays[array_name] = [0] * size
-            state.add_output(f"Array '{array_name}' created with size {size}")
-            return 2  # Tell the interpreter we used 2 tokens
-        except ValueError:
-            state.add_error(f"Array size must be a number, got '{tokens[index + 2]}'")
+
+        # Optional size argument. If omitted (or next token is clearly another command), create a dynamic array.
+        size_token: Optional[str] = None
+        if index + 2 < len(tokens) and tokens[index + 2] not in BasicCommandHandler.KNOWN_COMMANDS:
+            size_token = tokens[index + 2]
+
+        if size_token is None:
+            state.arrays[array_name] = []
+            state.dynamic_arrays.add(array_name)
+            return 1
+
+        size = DataTypesHandler._resolve_int_token(state, size_token, "Array size")
+        if size is None:
             return 0
+        if size < 0:
+            state.add_error("Array size must be non-negative")
+            return 0
+        state.arrays[array_name] = [0] * size
+        state.dynamic_arrays.discard(array_name)
+        state.add_output(f"Array '{array_name}' created with size {size}")
+        return 2
     
     @staticmethod
     def handle_array_set(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -105,19 +115,9 @@ class DataTypesHandler:
         
         array_name = tokens[index + 1]
         
-        # Try to get array index - could be a number or variable
-        try:
-            array_index = int(tokens[index + 2])
-        except ValueError:
-            # Check if it's a variable
-            if state.has_variable(tokens[index + 2]):
-                array_index = state.get_variable(tokens[index + 2])
-                if not isinstance(array_index, int):
-                    state.add_error(f"Variable '{tokens[index + 2]}' is not a number. Array index must be a number.")
-                    return 0
-            else:
-                state.add_error(f"Array index must be a number or variable, but got '{tokens[index + 2]}'")
-                return 0
+        array_index = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "Array index")
+        if array_index is None:
+            return 0
         
         value = tokens[index + 3]
         
@@ -125,7 +125,15 @@ class DataTypesHandler:
             state.add_error(f"Array '{array_name}' does not exist")
             return 0
         
-        if array_index < 0 or array_index >= len(state.arrays[array_name]):
+        if array_index < 0:
+            state.add_error(f"Array index {array_index} out of bounds for array '{array_name}'")
+            return 0
+
+        # Dynamic arrays grow on demand.
+        if array_name in state.dynamic_arrays and array_index >= len(state.arrays[array_name]):
+            state.arrays[array_name].extend([0] * (array_index - len(state.arrays[array_name]) + 1))
+
+        if array_index >= len(state.arrays[array_name]):
             state.add_error(f"Array index {array_index} out of bounds for array '{array_name}'")
             return 0
         
@@ -154,27 +162,53 @@ class DataTypesHandler:
         Example: array_get mylist 0 gets the value in the first slot of mylist.
         """
         if index + 2 >= len(tokens):
-            state.add_error("array_get requires array name and index. Use: array_get <name> <index>")
+            state.add_error("array_get requires array name and index. Use: array_get <name> <index> [target]")
             return 0
-        
+
         array_name = tokens[index + 1]
-        try:
-            array_index = int(tokens[index + 2])
-            
-            if array_name not in state.arrays:
-                state.add_error(f"Array '{array_name}' does not exist")
-                return 0
-            
-            if array_index < 0 or array_index >= len(state.arrays[array_name]):
-                state.add_error(f"Array index {array_index} out of bounds for array '{array_name}'")
-                return 0
-            
-            value = state.arrays[array_name][array_index]
-            state.add_output(str(value))
-            return 2  # Consume array name and index
-        except ValueError:
-            state.add_error("Array index must be a number")
+        array_index = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "Array index")
+        if array_index is None:
             return 0
+
+        target: Optional[str] = None
+        if index + 3 < len(tokens) and tokens[index + 3] not in BasicCommandHandler.KNOWN_COMMANDS:
+            candidate = tokens[index + 3]
+            if not (candidate.startswith('"') and candidate.endswith('"')):
+                target = candidate
+
+        if array_name not in state.arrays:
+            state.add_error(f"Array '{array_name}' does not exist")
+            return 0
+
+        if array_index < 0:
+            state.add_error(f"Array index {array_index} out of bounds for array '{array_name}'")
+            return 0
+
+        out_of_bounds = array_index >= len(state.arrays[array_name])
+        if out_of_bounds:
+            if target is not None and array_name in state.dynamic_arrays:
+                # STL-style sentinel for dynamic arrays
+                state.variables.pop(target, None)
+                state.strings.pop(target, None)
+                state.set_variable(target, 0)
+                return 3
+            state.add_error(f"Array index {array_index} out of bounds for array '{array_name}'")
+            return 0
+
+        value = state.arrays[array_name][array_index]
+
+        if target is None:
+            state.add_output(str(value))
+            return 2
+
+        # Store result in target without producing output
+        if isinstance(value, str):
+            state.variables.pop(target, None)
+            state.strings[target] = value
+        else:
+            state.strings.pop(target, None)
+            state.set_variable(target, int(value))
+        return 3
     
     @staticmethod
     def handle_array_push(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -462,18 +496,30 @@ class DataTypesHandler:
         Example: str_length mystring returns how many characters are in mystring.
         """
         if index + 1 >= len(tokens):
-            state.add_error("str_length requires string name. Use: str_length <name>")
+            state.add_error("str_length requires string name. Use: str_length <name> [target]")
             return 0
-        
+
         string_name = tokens[index + 1]
-        
+
         if string_name not in state.strings:
             state.add_error(f"String '{string_name}' does not exist")
             return 0
-        
+
+        target: Optional[str] = None
+        if index + 2 < len(tokens) and tokens[index + 2] not in BasicCommandHandler.KNOWN_COMMANDS:
+            candidate = tokens[index + 2]
+            if not (candidate.startswith('"') and candidate.endswith('"')):
+                target = candidate
+
         length = len(state.strings[string_name])
-        state.add_output(str(length))
-        return 1  # Consume string name
+
+        if target is None:
+            state.add_output(str(length))
+            return 1
+
+        state.strings.pop(target, None)
+        state.set_variable(target, length)
+        return 2
     
     @staticmethod
     def handle_str_substring(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -483,28 +529,39 @@ class DataTypesHandler:
         Example: str_substring mystring 0 5 gets characters 0 through 4 from mystring.
         """
         if index + 3 >= len(tokens):
-            state.add_error("str_substring requires string name, start, and end. Use: str_substring <name> <start> <end>")
+            state.add_error("str_substring requires string name, start, and end. Use: str_substring <name> <start> <end> [target]")
             return 0
-        
+
         string_name = tokens[index + 1]
-        try:
-            start = int(tokens[index + 2])
-            end = int(tokens[index + 3])
-            
-            if string_name not in state.strings:
-                state.add_error(f"String '{string_name}' does not exist")
-                return 0
-            
-            if start < 0 or end > len(state.strings[string_name]) or start > end:
-                state.add_error("Invalid substring range")
-                return 0
-            
-            substring = state.strings[string_name][start:end]
-            state.add_output(substring)
-            return 3  # Consume string name, start, and end
-        except ValueError:
-            state.add_error("Start and end positions must be numbers")
+        start = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "Start position")
+        if start is None:
             return 0
+        end = DataTypesHandler._resolve_int_token(state, tokens[index + 3], "End position")
+        if end is None:
+            return 0
+
+        target: Optional[str] = None
+        if index + 4 < len(tokens) and tokens[index + 4] not in BasicCommandHandler.KNOWN_COMMANDS:
+            candidate = tokens[index + 4]
+            if not (candidate.startswith('"') and candidate.endswith('"')):
+                target = candidate
+
+        if string_name not in state.strings:
+            state.add_error(f"String '{string_name}' does not exist")
+            return 0
+
+        if start < 0 or end > len(state.strings[string_name]) or start > end:
+            state.add_error("Invalid substring range")
+            return 0
+
+        substring = state.strings[string_name][start:end]
+        if target is None:
+            state.add_output(substring)
+            return 3
+
+        state.variables.pop(target, None)
+        state.strings[target] = substring
+        return 4
     
     @staticmethod
     def handle_str_split(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -632,7 +689,7 @@ class DataTypesHandler:
         Example: str_contains mystring "hello" prints 1 if "hello" is in mystring, 0 otherwise.
         """
         if index + 2 >= len(tokens):
-            state.add_error("str_contains requires string name and substring. Use: str_contains <string> <substring>")
+            state.add_error("str_contains requires string name and substring. Use: str_contains <string> <substring> [target]")
             return 0
         
         string_name = tokens[index + 1]
@@ -646,9 +703,20 @@ class DataTypesHandler:
         if substring.startswith('"') and substring.endswith('"'):
             substring = substring[1:-1]
         
+        target: Optional[str] = None
+        if index + 3 < len(tokens) and tokens[index + 3] not in BasicCommandHandler.KNOWN_COMMANDS:
+            candidate = tokens[index + 3]
+            if not (candidate.startswith('"') and candidate.endswith('"')):
+                target = candidate
+
         result = 1 if substring in state.strings[string_name] else 0
-        state.add_output(str(result))
-        return 2  # Consume string name and substring
+        if target is None:
+            state.add_output(str(result))
+            return 2
+
+        state.strings.pop(target, None)
+        state.set_variable(target, result)
+        return 3
     
     @staticmethod
     def handle_str_reverse(state: InterpreterState, tokens: List[str], index: int) -> int:

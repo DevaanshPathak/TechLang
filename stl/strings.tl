@@ -33,13 +33,29 @@ def is_empty s
 end
 
 def capitalize source_text
-    # Capitalize first character (simple version - just uppercase first char, keep rest as-is)
+    # Capitalize first character and lowercase the rest
     # Args: source_text - string to capitalize
     # Returns: capitalized string
-    # Note: This is a simplified implementation due to scoping limitations
+    str_length source_text len
+    if len == 0
+        str_create result ""
+        return result
+    end
+
+    str_substring source_text 0 1 first
+    str_substring source_text 1 len rest
+
+    str_create first_up ""
+    str_concat first_up first
+    str_upper first_up
+
+    str_create rest_low ""
+    str_concat rest_low rest
+    str_lower rest_low
+
     str_create result ""
-    str_concat result source_text
-    str_upper result
+    str_concat result first_up
+    str_concat result rest_low
     return result
 end
 

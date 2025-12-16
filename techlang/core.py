@@ -50,6 +50,9 @@ class InterpreterState:
     
     # Arrays that can store lists of numbers or text
     arrays: Dict[str, List[Union[int, str]]] = None
+
+    # Arrays created without a fixed size (allow growth via array_set and safe out-of-bounds reads)
+    dynamic_arrays: Set[str] = None
     
     # Text strings that can be manipulated
     strings: Dict[str, str] = None
@@ -75,6 +78,9 @@ class InterpreterState:
     # Subprocess management
     processes: Dict[int, object] = None
     next_process_id: int = 1
+
+    # Subprocess timing (used for more deterministic status polling)
+    process_start_times: Dict[int, float] = None
     
     # Debugger state
     breakpoints: Set[int] = None  # Line numbers where execution should pause
@@ -119,6 +125,8 @@ class InterpreterState:
             self.loaded_modules = set()
         if self.arrays is None:
             self.arrays = {}
+        if self.dynamic_arrays is None:
+            self.dynamic_arrays = set()
         if self.strings is None:
             self.strings = {}
         if self.dictionaries is None:
@@ -139,6 +147,8 @@ class InterpreterState:
             self.queues = {}
         if self.processes is None:
             self.processes = {}
+        if self.process_start_times is None:
+            self.process_start_times = {}
         if self.breakpoints is None:
             self.breakpoints = set()
         if self.watched_vars is None:
@@ -161,6 +171,7 @@ class InterpreterState:
         self.aliases.clear()
         self.input_queue.clear()
         self.arrays.clear()
+        self.dynamic_arrays.clear()
         self.strings.clear()
         self.dictionaries.clear()
         self.struct_defs.clear()
@@ -174,6 +185,7 @@ class InterpreterState:
         self.queues.clear()
         self.processes.clear()
         self.next_process_id = 1
+        self.process_start_times.clear()
         self.modules.clear()
         self.loaded_modules.clear()
     

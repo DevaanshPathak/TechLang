@@ -161,6 +161,7 @@ class ModuleHandler:
         module_state.output = host_state.output
         module_state.variables = host_state.variables
         module_state.arrays = host_state.arrays
+        module_state.dynamic_arrays = host_state.dynamic_arrays
         module_state.strings = host_state.strings
         module_state.dictionaries = host_state.dictionaries
         module_state.struct_defs = host_state.struct_defs
@@ -176,6 +177,7 @@ class ModuleHandler:
         module_state.next_thread_id = host_state.next_thread_id
         module_state.processes = host_state.processes
         module_state.next_process_id = host_state.next_process_id
+        module_state.process_start_times = host_state.process_start_times
         module_state.loaded_files = host_state.loaded_files
         module_state.loaded_modules = host_state.loaded_modules
         module_state.modules = host_state.modules
@@ -240,9 +242,26 @@ class ModuleHandler:
                 # Save current state for local scope
                 saved_vars = dict(module_state.variables)
                 saved_strings = dict(module_state.strings)
+
+                # Save any parameter names that already exist as arrays/dicts (so we can cleanly restore/cleanup)
+                saved_param_arrays = {p: module_state.arrays[p] for p in params if p in module_state.arrays}
+                saved_param_dicts = {p: module_state.dictionaries[p] for p in params if p in module_state.dictionaries}
+                saved_param_dynamic = {p: (p in module_state.dynamic_arrays) for p in params}
                 
                 # Bind arguments to parameters
                 for param_name, arg_token in zip(params, args):
+                    # Arrays and dictionaries are passed by name (alias the underlying container)
+                    if arg_token in module_state.arrays:
+                        module_state.arrays[param_name] = module_state.arrays[arg_token]
+                        if arg_token in module_state.dynamic_arrays:
+                            module_state.dynamic_arrays.add(param_name)
+                        else:
+                            module_state.dynamic_arrays.discard(param_name)
+                        continue
+                    if arg_token in module_state.dictionaries:
+                        module_state.dictionaries[param_name] = module_state.dictionaries[arg_token]
+                        continue
+
                     arg_value = ControlFlowHandler._resolve_arg_value(state, arg_token)
                     if isinstance(arg_value, str):
                         module_state.strings[param_name] = arg_value
@@ -265,12 +284,28 @@ class ModuleHandler:
                 for param_name in params:
                     module_state.variables.pop(param_name, None)
                     module_state.strings.pop(param_name, None)
+                    module_state.arrays.pop(param_name, None)
+                    module_state.dictionaries.pop(param_name, None)
+                    # Remove dynamic-array aliases unless they existed before
+                    if not saved_param_dynamic.get(param_name, False):
+                        module_state.dynamic_arrays.discard(param_name)
                 
                 # Restore original values for variables that existed before
                 for var_name, var_value in saved_vars.items():
                     module_state.variables[var_name] = var_value
                 for str_name, str_value in saved_strings.items():
                     module_state.strings[str_name] = str_value
+
+                # Restore any array/dict entries that were shadowed by parameter names
+                for name, arr in saved_param_arrays.items():
+                    module_state.arrays[name] = arr
+                for name, dct in saved_param_dicts.items():
+                    module_state.dictionaries[name] = dct
+                for name, was_dynamic in saved_param_dynamic.items():
+                    if was_dynamic:
+                        module_state.dynamic_arrays.add(name)
+                    else:
+                        module_state.dynamic_arrays.discard(name)
             else:
                 # No parameters: use shared scope (backward compatibility)
                 # Clear should_return flag for this function call

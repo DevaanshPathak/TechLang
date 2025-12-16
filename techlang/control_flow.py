@@ -83,7 +83,7 @@ class ControlFlowHandler:
             # Get current variable value for comparison
             var_value = state.get_variable(varname, 0)
             if not isinstance(var_value, int):
-                state.add_error(f"Variable '{varname}' is not a number. Cannot perform comparison.")
+                state.add_error(f"Expected a number for variable '{varname}', but got '{var_value}'.")
                 return 0
             
             # Check if condition is still true
@@ -114,30 +114,34 @@ class ControlFlowHandler:
         varname = tokens[index + 1]
         op = tokens[index + 2]
         compare_token = tokens[index + 3]
-        
-        # Try to resolve compare_token as a variable first, then as a literal
-        compare_val = state.get_variable(compare_token, None)
-        if compare_val is None:
+
+        start_index = index + 4  # Start after 'if', variable, operator, and value
+
+        # Resolve left operand: variables first, then strings (for stl-style string comparisons)
+        if state.has_variable(varname):
+            var_value: Union[int, str] = state.get_variable(varname, 0)
+        elif varname in state.strings:
+            var_value = state.strings[varname]
+        else:
+            var_value = 0
+
+        # Resolve right operand: variables, strings, quoted literals, then ints
+        if state.has_variable(compare_token):
+            compare_val: Union[int, str] = state.get_variable(compare_token, 0)
+        elif compare_token in state.strings:
+            compare_val = state.strings[compare_token]
+        elif compare_token.startswith('"') and compare_token.endswith('"'):
+            compare_val = compare_token[1:-1]
+        else:
             try:
                 compare_val = int(compare_token)
             except ValueError:
-                state.add_error(f"Expected a number or variable for comparison, but got '{compare_token}'. Please provide a valid integer or variable name.")
+                state.add_error(
+                    f"Expected a number or variable for comparison, but got '{compare_token}'. Please provide a valid integer or variable name."
+                )
                 return 0
-        
-        start_index = index + 4  # Start after 'if', variable, operator, and value
-        
-        # Get variable value for comparison
-        var_value = state.get_variable(varname, 0)
-        if not isinstance(var_value, int):
-            state.add_error(f"Variable '{varname}' is not a number. Cannot perform comparison.")
-            return 0
-        
-        # Ensure compare_val is an integer
-        if not isinstance(compare_val, int):
-            state.add_error(f"Comparison value must be a number, but got type '{type(compare_val).__name__}'.")
-            return 0
-        
-        # Check condition
+
+        # Check condition (supports string equality and operator synonyms)
         condition_met = ControlFlowHandler._evaluate_condition(var_value, op, compare_val)
         
         # Collect the if block
@@ -686,18 +690,35 @@ class ControlFlowHandler:
         return line
     
     @staticmethod
-    def _evaluate_condition(var_value: int, op: str, compare_val: int) -> bool:
-        if op == "==":
+    def _evaluate_condition(var_value: Union[int, str], op: str, compare_val: Union[int, str]) -> bool:
+        # Support common word operators used in examples/stdlib
+        op_map = {
+            "eq": "==",
+            "ne": "!=",
+            "gt": ">",
+            "lt": "<",
+            "ge": ">=",
+            "le": "<=",
+        }
+        normalized_op = op_map.get(op, op)
+
+        # Equality works across types (mismatched types simply compare False/True)
+        if normalized_op == "==":
             return var_value == compare_val
-        elif op == "!=":
+        if normalized_op == "!=":
             return var_value != compare_val
-        elif op == ">":
+
+        # Ordering comparisons require integers
+        if not isinstance(var_value, int) or not isinstance(compare_val, int):
+            return False
+
+        if normalized_op == ">":
             return var_value > compare_val
-        elif op == "<":
+        if normalized_op == "<":
             return var_value < compare_val
-        elif op == ">=":
+        if normalized_op == ">=":
             return var_value >= compare_val
-        elif op == "<=":
+        if normalized_op == "<=":
             return var_value <= compare_val
-        else:
-            return False  # Unknown operator
+
+        return False  # Unknown operator

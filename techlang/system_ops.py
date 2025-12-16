@@ -1,6 +1,7 @@
 import os
 import shlex
 import subprocess
+import sys
 import time
 import datetime as dt
 from typing import Dict, List
@@ -112,10 +113,18 @@ class ProcessOpsHandler:
             cmd = cmd_text
         try:
             args = shlex.split(cmd)
+
+            # On Windows, `python` may resolve to an App Execution Alias (Store shim).
+            # Prefer the interpreter running TechLang to keep behavior deterministic.
+            if args:
+                exe = os.path.basename(args[0]).lower()
+                if exe in {"python", "python.exe"}:
+                    args[0] = sys.executable
             p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             pid = state.next_process_id
             state.next_process_id += 1
             state.processes[pid] = p
+            state.process_start_times[pid] = time.monotonic()
             # Reset any cached output for this pid (ids restart each interpreter run)
             out_key = f"proc_{pid}_out"
             err_key = f"proc_{pid}_err"
@@ -155,6 +164,7 @@ class ProcessOpsHandler:
             ProcessOpsHandler._stream_process_output(state, pid, out, is_stdout=True)
             ProcessOpsHandler._stream_process_output(state, pid, err, is_stdout=False)
             state.set_variable(f"proc_{pid}_status", p.returncode)
+            state.process_start_times.pop(pid, None)
             return 1 if index + 2 >= len(tokens) else 2
         except subprocess.TimeoutExpired:
             state.add_error("proc_wait timeout")
@@ -177,6 +187,7 @@ class ProcessOpsHandler:
         try:
             p.kill()
             state.add_output(f"Killed {pid}")
+            state.process_start_times.pop(pid, None)
             return 1
         except Exception as e:
             state.add_error(f"proc_kill failed: {e}")
@@ -198,10 +209,22 @@ class ProcessOpsHandler:
             return 1
         code = p.poll()
         if code is None:
+            # On Windows, process startup can be slow (especially for Python).
+            # If the process has been alive for a bit, do a short wait to reduce flakiness.
+            started = state.process_start_times.get(pid)
+            if started is not None:
+                elapsed = time.monotonic() - started
+                if elapsed >= 0.15:
+                    try:
+                        code = p.wait(timeout=1.0)
+                    except subprocess.TimeoutExpired:
+                        code = None
+        if code is None:
             state.add_output("running")
         else:
             state.set_variable(f"proc_{pid}_status", code)
             state.add_output(str(code))
+            state.process_start_times.pop(pid, None)
         return 1
 
     @staticmethod

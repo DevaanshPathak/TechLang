@@ -1170,8 +1170,35 @@ tl> # State persists!
 
 ---
 
-**Last Updated:** 2025-11-09  
-**Total Features Added:** 8  
-**Total Tests:** 333+ (233 core + 40 stl + 6 macros + rest)
+### 2025-12-14: STL Compatibility + Deterministic Process Status
+
+**Status:** ✅ Completed
+
+### Summary
+Improved core runtime semantics to support the existing `stl/*` modules and stabilized `proc_status` behavior on Windows.
+
+### Implementation Details
+- Added “store into target” forms for core string/array operations (`str_length`, `str_substring`, `str_contains`, `array_get`) so STL helpers can compute without emitting intermediate output.
+- Added dynamic arrays (`array_create <name>` with no size) that grow via `array_set` and allow sentinel `0` on out-of-bounds `array_get ... <target>`.
+- Expanded control-flow operator support to include `eq/ne/gt/lt/ge/le` aliases and allowed string equality in `if` conditions.
+- Made `proc_spawn "python" ...` use the active interpreter and made `proc_status` less flaky by doing a short internal wait when appropriate.
+
+### Files Modified
+- techlang/core.py
+- techlang/data_types.py
+- techlang/control_flow.py
+- techlang/variables.py
+- techlang/imports.py
+- techlang/system_ops.py
+- stl/strings.tl
+
+### Validation
+- ✅ `D:/TechLang/.venv/Scripts/python.exe -m pytest -q` → `324 passed, 7 skipped`
+
+---
+
+**Last Updated:** 2025-12-14  
+**Total Features Added:** 9  
+**Total Tests:** 331 collected (324 passing, 7 skipped)
 **REPL Version:** 1.1 - Enhanced Edition
 
