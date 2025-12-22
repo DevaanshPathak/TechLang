@@ -579,15 +579,12 @@ class ControlFlowHandler:
         for i, var_name in enumerate(return_var_names):
             if i < len(state.return_values):
                 value = state.return_values[i]
-                # If it's a string, store in strings; if numeric, store in variables
+                # Preserve returned type: strings stay strings, ints stay ints.
                 if isinstance(value, str):
-                    try:
-                        # Try to parse as number
-                        state.variables[var_name] = int(value)
-                    except ValueError:
-                        # It's a string
-                        state.strings[var_name] = value
+                    state.variables.pop(var_name, None)
+                    state.strings[var_name] = value
                 else:
+                    state.strings.pop(var_name, None)
                     state.variables[var_name] = value
             else:
                 # Not enough return values - set to 0/empty

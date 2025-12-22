@@ -95,6 +95,24 @@ class InterpreterState:
     
     # Export/visibility control for library APIs
     exported_functions: Set[str] = None  # Functions marked as public (callable from outside modules)
+
+    # GUI (tkinter/customtkinter) specification storage
+    # Note: GUI widgets are stored as *specs* during execution; real windows are created by gui_mainloop.
+    gui_backend: str = "tk"  # "tk" | "ctk"
+    gui_specs: Dict[str, Dict[str, object]] = None  # name -> spec dict
+    gui_order: List[str] = None  # creation order (used to realize widgets deterministically)
+
+    # GUI runtime storage (populated only while gui_mainloop is running)
+    gui_runtime_widgets: Dict[str, object] = None  # name -> tk/ctk widget object
+    gui_runtime_vars: Dict[str, object] = None  # name -> tk variable object (StringVar/IntVar/...)
+    gui_runtime_base_dir: str = "."
+
+    # GUI variable specs (Tk variables)
+    gui_vars: Dict[str, Dict[str, object]] = None  # name -> {type, value}
+
+    # GUI ttk style specs
+    gui_ttk_styles: Dict[str, Dict[str, object]] = None  # style name -> options
+    gui_ttk_theme: str = ""  # optional theme name
     
     def __post_init__(self):
         """
@@ -155,6 +173,25 @@ class InterpreterState:
             self.watched_vars = set()
         if self.exported_functions is None:
             self.exported_functions = set()
+
+        if self.gui_specs is None:
+            self.gui_specs = {}
+        if self.gui_order is None:
+            self.gui_order = []
+
+        if self.gui_runtime_widgets is None:
+            self.gui_runtime_widgets = {}
+        if self.gui_runtime_vars is None:
+            self.gui_runtime_vars = {}
+        if not hasattr(self, "gui_runtime_base_dir") or self.gui_runtime_base_dir is None:
+            self.gui_runtime_base_dir = "."
+        if self.gui_vars is None:
+            self.gui_vars = {}
+
+        if self.gui_ttk_styles is None:
+            self.gui_ttk_styles = {}
+        if not hasattr(self, "gui_ttk_theme") or self.gui_ttk_theme is None:
+            self.gui_ttk_theme = ""
     
     def reset(self) -> None:
         """

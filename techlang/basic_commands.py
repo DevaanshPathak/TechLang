@@ -56,6 +56,24 @@ class BasicCommandHandler:
         # System & Processes
         "sys_exec", "sys_env", "sys_time", "sys_date", "sys_sleep", "sys_cwd", "sys_exit",
         "proc_spawn", "proc_kill", "proc_wait", "proc_status"
+
+        ,
+        # GUI (tkinter/customtkinter)
+        "gui_backend", "gui_window", "gui_label", "gui_button", "gui_entry",
+        "gui_entry_get", "gui_entry_set", "gui_destroy", "gui_mainloop",
+        # GUI Phase 1 primitives
+        "gui_set", "gui_get", "gui_pack", "gui_grid", "gui_bind",
+        # GUI Phase 2 widgets + vars
+        "gui_frame", "gui_checkbutton", "gui_radiobutton", "gui_text", "gui_listbox", "gui_canvas", "gui_scrollbar",
+        "gui_canvas_create_line", "gui_canvas_move", "gui_canvas_delete", "gui_canvas_coords",
+        "gui_text_insert", "gui_text_get", "gui_text_delete", "gui_text_tag_add", "gui_text_tag_config",
+        "gui_var_new", "gui_var_set", "gui_var_get",
+        # GUI Phase 3 menus + dialogs
+        "gui_menubar", "gui_menu", "gui_menu_item", "gui_messagebox", "gui_filedialog_open", "gui_filedialog_save",
+        # GUI Phase 4 ttk
+        "gui_ttk_style_set", "gui_ttk_theme_use",
+        "gui_ttk_button", "gui_ttk_label", "gui_ttk_entry", "gui_ttk_combobox", "gui_ttk_treeview",
+        "gui_ttk_notebook", "gui_ttk_notebook_tab", "gui_ttk_progressbar", "gui_ttk_separator"
     }
     
     @staticmethod

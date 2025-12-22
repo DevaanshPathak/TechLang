@@ -17,6 +17,7 @@ from .thread_ops import ThreadOpsHandler
 from .system_ops import SystemOpsHandler, ProcessOpsHandler
 from .math_ops import MathOpsHandler
 from .debugger import DebuggerHandler
+from .gui_ops import GuiOpsHandler
 
 
 class CommandExecutor:
@@ -315,6 +316,108 @@ class CommandExecutor:
                 consumed = GraphicsOpsHandler.handle_graphics_draw_text(self.state, tokens, i)
             elif token == "graphics_show":
                 GraphicsOpsHandler.handle_graphics_show(self.state)
+
+            # GUI (tkinter/customtkinter)
+            elif token == "gui_backend":
+                consumed = GuiOpsHandler.handle_gui_backend(self.state, tokens, i)
+            elif token == "gui_window":
+                consumed = GuiOpsHandler.handle_gui_window(self.state, tokens, i)
+            elif token == "gui_set":
+                consumed = GuiOpsHandler.handle_gui_set(self.state, tokens, i)
+            elif token == "gui_get":
+                consumed = GuiOpsHandler.handle_gui_get(self.state, tokens, i)
+            elif token == "gui_pack":
+                consumed = GuiOpsHandler.handle_gui_pack(self.state, tokens, i)
+            elif token == "gui_grid":
+                consumed = GuiOpsHandler.handle_gui_grid(self.state, tokens, i)
+            elif token == "gui_bind":
+                consumed = GuiOpsHandler.handle_gui_bind(self.state, tokens, i)
+            elif token == "gui_label":
+                consumed = GuiOpsHandler.handle_gui_label(self.state, tokens, i)
+            elif token == "gui_button":
+                consumed = GuiOpsHandler.handle_gui_button(self.state, tokens, i)
+            elif token == "gui_entry":
+                consumed = GuiOpsHandler.handle_gui_entry(self.state, tokens, i)
+            elif token == "gui_frame":
+                consumed = GuiOpsHandler.handle_gui_frame(self.state, tokens, i)
+            elif token == "gui_checkbutton":
+                consumed = GuiOpsHandler.handle_gui_checkbutton(self.state, tokens, i)
+            elif token == "gui_radiobutton":
+                consumed = GuiOpsHandler.handle_gui_radiobutton(self.state, tokens, i)
+            elif token == "gui_text":
+                consumed = GuiOpsHandler.handle_gui_text(self.state, tokens, i)
+            elif token == "gui_listbox":
+                consumed = GuiOpsHandler.handle_gui_listbox(self.state, tokens, i)
+            elif token == "gui_canvas":
+                consumed = GuiOpsHandler.handle_gui_canvas(self.state, tokens, i)
+            elif token == "gui_scrollbar":
+                consumed = GuiOpsHandler.handle_gui_scrollbar(self.state, tokens, i)
+            elif token == "gui_canvas_create_line":
+                consumed = GuiOpsHandler.handle_gui_canvas_create_line(self.state, tokens, i)
+            elif token == "gui_canvas_move":
+                consumed = GuiOpsHandler.handle_gui_canvas_move(self.state, tokens, i)
+            elif token == "gui_canvas_delete":
+                consumed = GuiOpsHandler.handle_gui_canvas_delete(self.state, tokens, i)
+            elif token == "gui_canvas_coords":
+                consumed = GuiOpsHandler.handle_gui_canvas_coords(self.state, tokens, i)
+            elif token == "gui_text_insert":
+                consumed = GuiOpsHandler.handle_gui_text_insert(self.state, tokens, i)
+            elif token == "gui_text_get":
+                consumed = GuiOpsHandler.handle_gui_text_get(self.state, tokens, i)
+            elif token == "gui_text_delete":
+                consumed = GuiOpsHandler.handle_gui_text_delete(self.state, tokens, i)
+            elif token == "gui_text_tag_add":
+                consumed = GuiOpsHandler.handle_gui_text_tag_add(self.state, tokens, i)
+            elif token == "gui_text_tag_config":
+                consumed = GuiOpsHandler.handle_gui_text_tag_config(self.state, tokens, i)
+            elif token == "gui_var_new":
+                consumed = GuiOpsHandler.handle_gui_var_new(self.state, tokens, i)
+            elif token == "gui_var_set":
+                consumed = GuiOpsHandler.handle_gui_var_set(self.state, tokens, i)
+            elif token == "gui_var_get":
+                consumed = GuiOpsHandler.handle_gui_var_get(self.state, tokens, i)
+            elif token == "gui_menubar":
+                consumed = GuiOpsHandler.handle_gui_menubar(self.state, tokens, i)
+            elif token == "gui_menu":
+                consumed = GuiOpsHandler.handle_gui_menu(self.state, tokens, i)
+            elif token == "gui_menu_item":
+                consumed = GuiOpsHandler.handle_gui_menu_item(self.state, tokens, i)
+            elif token == "gui_messagebox":
+                consumed = GuiOpsHandler.handle_gui_messagebox(self.state, tokens, i)
+            elif token == "gui_filedialog_open":
+                consumed = GuiOpsHandler.handle_gui_filedialog_open(self.state, tokens, i)
+            elif token == "gui_filedialog_save":
+                consumed = GuiOpsHandler.handle_gui_filedialog_save(self.state, tokens, i)
+            elif token == "gui_ttk_style_set":
+                consumed = GuiOpsHandler.handle_gui_ttk_style_set(self.state, tokens, i)
+            elif token == "gui_ttk_theme_use":
+                consumed = GuiOpsHandler.handle_gui_ttk_theme_use(self.state, tokens, i)
+            elif token == "gui_ttk_button":
+                consumed = GuiOpsHandler.handle_gui_ttk_button(self.state, tokens, i)
+            elif token == "gui_ttk_label":
+                consumed = GuiOpsHandler.handle_gui_ttk_label(self.state, tokens, i)
+            elif token == "gui_ttk_entry":
+                consumed = GuiOpsHandler.handle_gui_ttk_entry(self.state, tokens, i)
+            elif token == "gui_ttk_combobox":
+                consumed = GuiOpsHandler.handle_gui_ttk_combobox(self.state, tokens, i)
+            elif token == "gui_ttk_treeview":
+                consumed = GuiOpsHandler.handle_gui_ttk_treeview(self.state, tokens, i)
+            elif token == "gui_ttk_notebook":
+                consumed = GuiOpsHandler.handle_gui_ttk_notebook(self.state, tokens, i)
+            elif token == "gui_ttk_notebook_tab":
+                consumed = GuiOpsHandler.handle_gui_ttk_notebook_tab(self.state, tokens, i)
+            elif token == "gui_ttk_progressbar":
+                consumed = GuiOpsHandler.handle_gui_ttk_progressbar(self.state, tokens, i)
+            elif token == "gui_ttk_separator":
+                consumed = GuiOpsHandler.handle_gui_ttk_separator(self.state, tokens, i)
+            elif token == "gui_entry_get":
+                consumed = GuiOpsHandler.handle_gui_entry_get(self.state, tokens, i)
+            elif token == "gui_entry_set":
+                consumed = GuiOpsHandler.handle_gui_entry_set(self.state, tokens, i)
+            elif token == "gui_destroy":
+                consumed = GuiOpsHandler.handle_gui_destroy(self.state, tokens, i)
+            elif token == "gui_mainloop":
+                consumed = GuiOpsHandler.handle_gui_mainloop(self.state, tokens, i, self.base_dir)
 
             # Memory
             elif token == "mem_alloc":

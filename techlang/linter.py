@@ -86,28 +86,34 @@ class TechLangLinter:
         block_stack = []  # Track which blocks are open
         
         for line_num, tokens in enumerate(tokens_per_line, start=1):
-            for col, token in enumerate(tokens):
-                if token in self.BLOCK_START_KEYWORDS:
+            if not tokens:
+                continue
+
+            # In TechLang, block markers are commands and appear as the first token on a line.
+            # Treating any occurrence of 'end' as a terminator causes false positives when
+            # 'end' is used as an argument (e.g., gui_text_insert <text> end "..."
+            cmd = tokens[0]
+            if cmd in self.BLOCK_START_KEYWORDS:
+                depth += 1
+                block_stack.append((cmd, line_num, 0))
+            elif cmd == 'struct':
+                # Check if it's a type definition
+                next_token = tokens[1] if len(tokens) > 1 else ""
+                if next_token not in self.STRUCT_OPERATIONS:
                     depth += 1
-                    block_stack.append((token, line_num, col))
-                elif token == 'struct':
-                    # Check if it's a type definition
-                    next_token = tokens[col + 1] if col + 1 < len(tokens) else ""
-                    if next_token not in self.STRUCT_OPERATIONS:
-                        depth += 1
-                        block_stack.append((token, line_num, col))
-                elif token == 'end':
-                    if depth == 0:
-                        self.issues.append(LintIssue(
-                            line=line_num,
-                            column=col + 1,
-                            severity='error',
-                            code='E001',
-                            message="Unmatched 'end' keyword (no corresponding block start)"
-                        ))
-                    else:
-                        depth -= 1
-                        block_stack.pop()
+                    block_stack.append((cmd, line_num, 0))
+            elif cmd == 'end':
+                if depth == 0:
+                    self.issues.append(LintIssue(
+                        line=line_num,
+                        column=1,
+                        severity='error',
+                        code='E001',
+                        message="Unmatched 'end' keyword (no corresponding block start)"
+                    ))
+                else:
+                    depth -= 1
+                    block_stack.pop()
         
         # Check for unclosed blocks
         if depth > 0:

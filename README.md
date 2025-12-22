@@ -202,6 +202,13 @@ python app.py
 python playground/gui.py
 ```
 
+### GUI docs & examples
+
+- Docs: `docs/gui.md`
+- Examples:
+	- `examples/gui_ttk_demo.tl`
+	- `examples/gui_text_canvas_demo.tl`
+
 ---
 
 ## 🧪 Running Tests

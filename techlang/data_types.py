@@ -693,15 +693,22 @@ class DataTypesHandler:
             return 0
         
         string_name = tokens[index + 1]
-        substring = tokens[index + 2]
+        substring_token = tokens[index + 2]
         
         if string_name not in state.strings:
             state.add_error(f"String '{string_name}' does not exist")
             return 0
         
-        # Remove quotes from substring if present
-        if substring.startswith('"') and substring.endswith('"'):
-            substring = substring[1:-1]
+        # Resolve substring:
+        # - if it's a string variable name, use its content
+        # - else if quoted literal, unquote
+        # - else treat as literal token
+        if substring_token in state.strings:
+            substring = state.strings[substring_token]
+        elif substring_token.startswith('"') and substring_token.endswith('"'):
+            substring = substring_token[1:-1]
+        else:
+            substring = substring_token
         
         target: Optional[str] = None
         if index + 3 < len(tokens) and tokens[index + 3] not in BasicCommandHandler.KNOWN_COMMANDS:

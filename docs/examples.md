@@ -4,6 +4,15 @@ This page provides runnable code samples for each major feature of TechLang. Cop
 
 ---
 
+## GUI (Tkinter)
+
+Runnable examples (recommended):
+
+- `examples/gui_ttk_demo.tl` — ttk widgets (Notebook, styles) + dialog from click handler
+- `examples/gui_text_canvas_demo.tl` — Text insert/tags + Canvas line items
+
+---
+
 ## General Rules & Syntax
 
 ### Basic Syntax

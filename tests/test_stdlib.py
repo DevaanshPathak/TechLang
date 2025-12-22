@@ -13,7 +13,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from techlang.interpreter import run
 
 
-@pytest.mark.skip(reason="capitalize has scoping issues with intermediate string variables")
 def test_stl_strings_capitalize():
     """Test strings.capitalize function"""
     code = """
@@ -26,7 +25,6 @@ def test_stl_strings_capitalize():
     assert output == "Hello"
 
 
-@pytest.mark.skip(reason="title_case has scoping issues with intermediate string variables")
 def test_stl_strings_title_case():
     """Test strings.title_case function"""
     code = """
@@ -51,7 +49,6 @@ def test_stl_strings_repeat():
     assert output == "xxxxx"
 
 
-@pytest.mark.skip(reason="pad_left has scoping issues with intermediate string variables")
 def test_stl_strings_pad_left():
     """Test strings.pad_left function"""
     code = """
@@ -64,7 +61,6 @@ def test_stl_strings_pad_left():
     assert output == "00042"
 
 
-@pytest.mark.skip(reason="pad_right has scoping issues with intermediate string variables")
 def test_stl_strings_pad_right():
     """Test strings.pad_right function"""
     code = """
@@ -77,7 +73,6 @@ def test_stl_strings_pad_right():
     assert output == "hi..."
 
 
-@pytest.mark.skip(reason="starts_with has scoping issues with intermediate string variables")
 def test_stl_strings_starts_with():
     """Test strings.starts_with function"""
     code = """
@@ -90,7 +85,6 @@ def test_stl_strings_starts_with():
     assert output == "1"
 
 
-@pytest.mark.skip(reason="ends_with has scoping issues with intermediate string variables")
 def test_stl_strings_ends_with():
     """Test strings.ends_with function"""
     code = """
@@ -103,7 +97,6 @@ def test_stl_strings_ends_with():
     assert output == "1"
 
 
-@pytest.mark.skip(reason="count_char has scoping issues with intermediate string variables")
 def test_stl_strings_count_char():
     """Test strings.count_char function"""
     code = """
@@ -504,6 +497,51 @@ def test_stl_validation_is_url():
     """
     output = run(code, base_dir="d:\\TechLang").strip()
     assert output == "1"
+
+
+def test_stl_validation_is_numeric_string():
+    code = """
+    package use stl/validation
+    str_create s1 "123456"
+    call stl.validation.is_numeric_string s1 ok1
+    print ok1
+
+    str_create s2 "12a3"
+    call stl.validation.is_numeric_string s2 ok2
+    print ok2
+    """
+    output = run(code, base_dir="d:\\TechLang").strip().splitlines()
+    assert output == ["1", "0"]
+
+
+def test_stl_validation_is_alpha_string():
+    code = """
+    package use stl/validation
+    str_create s1 "AbcXYZ"
+    call stl.validation.is_alpha_string s1 ok1
+    print ok1
+
+    str_create s2 "abc123"
+    call stl.validation.is_alpha_string s2 ok2
+    print ok2
+    """
+    output = run(code, base_dir="d:\\TechLang").strip().splitlines()
+    assert output == ["1", "0"]
+
+
+def test_stl_validation_is_alphanumeric_string():
+    code = """
+    package use stl/validation
+    str_create s1 "abc123XYZ"
+    call stl.validation.is_alphanumeric_string s1 ok1
+    print ok1
+
+    str_create s2 "abc-123"
+    call stl.validation.is_alphanumeric_string s2 ok2
+    print ok2
+    """
+    output = run(code, base_dir="d:\\TechLang").strip().splitlines()
+    assert output == ["1", "0"]
 
 
 def test_stl_validation_require_all():

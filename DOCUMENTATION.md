@@ -16,6 +16,7 @@ Welcome to the TechLang documentation. Use the section links below for the full,
 | Memory Management | [docs/memory.md](docs/memory.md) |
 | Concurrency & Async | [docs/concurrency.md](docs/concurrency.md) |
 | System & Processes | [docs/system.md](docs/system.md) |
+| GUI (Tkinter) | [docs/gui.md](docs/gui.md) |
 | Debugging | [docs/debugging.md](docs/debugging.md) |
 | **Advanced Macro System** | [docs/macros-advanced.md](docs/macros-advanced.md) |
 | **REPL Guide** | [docs/repl-guide.md](docs/repl-guide.md) |

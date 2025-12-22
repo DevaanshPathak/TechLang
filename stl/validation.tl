@@ -59,7 +59,7 @@ end
 # ============================================
 
 def is_numeric_string s
-    # Check if string contains only digits
+    # Check if string contains only digits 0-9
     # Args: s - string name
     # Returns: 1 if all digits, 0 otherwise
     str_length s len
@@ -67,45 +67,77 @@ def is_numeric_string s
         set result 0
         return result
     end
-    
+
+    str_create digits "0123456789"
     set i 0
     loop len
-        str_substring s i 1 char
-        # Check if char is between '0' and '9'
-        # This is simplified - real check would use ASCII comparison
-        str_create zero "0"
-        str_create nine "9"
-        # Placeholder: assume valid for now
+        set end_pos i
+        add end_pos 1
+        str_substring s i end_pos char
+        str_contains digits char ok
+        if ok == 0
+            set result 0
+            return result
+        end
         add i 1
     end
+
     set result 1
     return result
 end
 
 def is_alpha_string s
-    # Check if string contains only letters
+    # Check if string contains only ASCII letters a-z / A-Z
     # Args: s - string name
-    # Returns: 1 if all letters, 0 otherwise (placeholder)
+    # Returns: 1 if all letters, 0 otherwise
     str_length s len
     if len == 0
         set result 0
         return result
     end
-    # Placeholder implementation
+
+    str_create letters "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    set i 0
+    loop len
+        set end_pos i
+        add end_pos 1
+        str_substring s i end_pos char
+        str_contains letters char ok
+        if ok == 0
+            set result 0
+            return result
+        end
+        add i 1
+    end
+
     set result 1
     return result
 end
 
 def is_alphanumeric_string s
-    # Check if string contains only letters and digits
+    # Check if string contains only ASCII letters and digits
     # Args: s - string name
-    # Returns: 1 if alphanumeric, 0 otherwise (placeholder)
+    # Returns: 1 if alphanumeric, 0 otherwise
     str_length s len
     if len == 0
         set result 0
         return result
     end
-    # Placeholder implementation
+
+    str_create allowed "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    set i 0
+    loop len
+        set end_pos i
+        add end_pos 1
+        str_substring s i end_pos char
+        str_contains allowed char ok
+        if ok == 0
+            set result 0
+            return result
+        end
+        add i 1
+    end
+
     set result 1
     return result
 end
