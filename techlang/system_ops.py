@@ -43,8 +43,20 @@ class SystemOpsHandler:
         return 1
 
     @staticmethod
-    def handle_sys_time(state: InterpreterState) -> None:
-        state.add_output(str(int(time.time())))
+    def handle_sys_time(state: InterpreterState, tokens: List[str], index: int) -> int:
+        value = int(time.time())
+
+        # Optional store form: sys_time <targetVar>
+        if index + 1 < len(tokens):
+            target = tokens[index + 1]
+            from .basic_commands import BasicCommandHandler
+
+            if not (target.startswith('"') and target.endswith('"')) and target not in BasicCommandHandler.KNOWN_COMMANDS:
+                state.variables[target] = value
+                return 1
+
+        state.add_output(str(value))
+        return 0
 
     @staticmethod
     def handle_sys_date(state: InterpreterState) -> None:

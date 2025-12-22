@@ -18,6 +18,20 @@ class NetOpsHandler:
         return token
 
     @staticmethod
+    def _resolve_url_token(state: InterpreterState, token: str) -> str:
+        # Allow URLs to be passed as:
+        # - quoted literals: "http://..."
+        # - string variables: myUrl
+        # - raw tokens (fallback): http://...
+        if token in state.strings:
+            return state.strings[token]
+        if state.has_variable(token):
+            value = state.get_variable(token, None)
+            if isinstance(value, str):
+                return value
+        return NetOpsHandler._unquote(token)
+
+    @staticmethod
     def handle_http_get(state: InterpreterState, tokens: List[str], index: int) -> int:
         if index + 2 >= len(tokens):
             state.add_error("http_get requires a URL and a response name")
@@ -25,7 +39,7 @@ class NetOpsHandler:
         if requests is None:
             state.add_error("'requests' library not available")
             return 2
-        url = NetOpsHandler._unquote(tokens[index + 1])
+        url = NetOpsHandler._resolve_url_token(state, tokens[index + 1])
         name = tokens[index + 2]
         try:
             resp = requests.get(url, timeout=10)
@@ -44,7 +58,7 @@ class NetOpsHandler:
         if requests is None:
             state.add_error("'requests' library not available")
             return 2
-        url = NetOpsHandler._unquote(tokens[index + 1])
+        url = NetOpsHandler._resolve_url_token(state, tokens[index + 1])
         data_token = tokens[index + 2]
         # Resolve data: prefer string var, then quoted literal, then numeric var
         if data_token in state.strings:

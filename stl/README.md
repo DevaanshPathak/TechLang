@@ -2,8 +2,7 @@
 
 The TechLang STL provides reusable modules for common programming tasks. All modules follow the export/public API system for clean interfaces.
 
-**Alias:** You can use `stl` as an alias for `stl` (for compatibility):
-**Alias:** You can use `stdlib` as an alias for `stl` (for compatibility):
+**Alias:** You can use `stdlib` as an alias for `stl`:
 - `package use stdlib/validation` (or `stl/validation`)
 - `call stdlib.validation.is_positive` (or `stl.validation.is_positive`)
 
@@ -44,7 +43,6 @@ Advanced string manipulation functions.
 
 **Example:**
 ```techlang
-# Can use 'stl' or 'stl' - both work!
 package use stl/strings
 
 str_create name "alice"
@@ -56,7 +54,7 @@ call stl.strings.repeat text 3 repeated
 print repeated  # Output: hellohellohello
 
 str_create num "42"
-call stl/strings.pad_left num 5 "0" padded
+call stl.strings.pad_left num 5 "0" padded
 print padded  # Output: 00042
 ```
 
@@ -65,20 +63,18 @@ print padded  # Output: 00042
 ### 🔢 math.tl - Math Utilities
 Mathematical helper functions.
 
-**Working Functions:**
-- ✅ `min(a, b)` - Return minimum of two numbers
-- ✅ `max(a, b)` - Return maximum of two numbers
-- ✅ `abs(n)` - Return absolute value
-- ✅ `clamp(value, min_val, max_val)` - Clamp value between min and max
-- ✅ `is_even(n)` - Check if number is even
-- ✅ `is_odd(n)` - Check if number is odd
-- ✅ `factorial(n)` - Calculate factorial (n!)
-- ✅ `lerp(a, b, t)` - Linear interpolation between a and b
-
-**Partially Working / Limitations:**
-- ⚠️ `sign(n)` - Return sign (-1, 0, or 1) - Single call works, multiple calls fail
-- ⚠️ `sum_range(start, end)` - Sum integers from start to end - Implementation issue
-- ⚠️ `gcd(a, b)` - Greatest common divisor - Placeholder (returns first argument only)
+**Functions:**
+- `min(a, b)` - Return minimum of two numbers
+- `max(a, b)` - Return maximum of two numbers
+- `abs(n)` - Return absolute value
+- `clamp(value, min_val, max_val)` - Clamp value between min and max
+- `sign(n)` - Return -1, 0, or 1
+- `is_even(n)` - Check if number is even
+- `is_odd(n)` - Check if number is odd
+- `sum_range(start, end)` - Sum integers from start to end
+- `factorial(n)` - Calculate factorial (n!)
+- `gcd(a, b)` - Greatest common divisor
+- `lerp(a, b, t)` - Linear interpolation between a and b
 
 **Example:**
 ```techlang
@@ -205,6 +201,55 @@ print meets_min  # Output: 1
 ```
 
 ---
+
+### 🧾 json.tl - JSON Utilities
+Thin wrappers over core `json_*` commands.
+
+**Functions:**
+- `parse(source, target)` - Wrapper for `json_parse`
+- `stringify(source, target_str)` - Wrapper for `json_stringify`
+- `read(path, target)` - Wrapper for `json_read`
+- `write(source, path)` - Wrapper for `json_write`
+- `try_parse(source, target)` - Returns `1` on success, else `0`
+
+**Example:**
+```techlang
+package use stl/json
+
+str_create payload "[1, 2, 3]"
+call stl.json.parse payload arr
+
+call stl.json.stringify arr out
+print out
+
+str_create bad "not-json"
+call stl.json.try_parse bad tmp ok
+print ok  # Output: 0
+```
+
+---
+
+### 🌐 net.tl - Network Utilities
+Convenience wrappers over core `http_*` commands.
+
+**Functions:**
+- `get(url, resp_name)` - Wrapper for `http_get`
+- `get_text(url)` - Returns `(body, status)`
+- `get_json(url, target_dict)` - Parses JSON into `target_dict`, returns `status`
+- `post_text(url, data_token)` - Returns `(body, status)`
+
+**Example:**
+```techlang
+package use stl/net
+
+str_create url "https://example.com"
+call stl.net.get_text url body status
+print status
+
+# When the response body is JSON:
+call stl.net.get_json url obj status
+print status
+```
 
 ## 🎯 Usage Patterns
 

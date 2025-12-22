@@ -618,9 +618,11 @@ class ControlFlowHandler:
             return int(float(token))
         except ValueError:
             pass
-        
-        # If we can't resolve it, treat as 0
-        return 0
+
+        # If we can't resolve it, preserve the raw token.
+        # This is important for passing container/target names through functions
+        # (e.g., array names, dict names) without forcing callers to quote them.
+        return token
     
     @staticmethod
     def _split_module_call(func_name: str) -> Optional[Tuple[str, str]]:

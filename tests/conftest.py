@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 
 # When pytest is launched via the Windows console entrypoint (pytest.exe), Python
 # sets sys.path[0] to the venv Scripts directory, not the project root.
@@ -12,3 +14,9 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+
+@pytest.fixture()
+def base_dir() -> str:
+    """Repo root as TechLang base_dir for module loading in tests."""
+    return str(PROJECT_ROOT)

@@ -112,6 +112,8 @@ class CommandExecutor:
                 consumed = MathOpsHandler.handle_math_mod(self.state, tokens, i)
             elif token == "math_random":
                 consumed = MathOpsHandler.handle_math_random(self.state, tokens, i)
+            elif token == "math_seed":
+                consumed = MathOpsHandler.handle_math_seed(self.state, tokens, i)
             elif token == "math_round":
                 consumed = MathOpsHandler.handle_math_round(self.state, tokens, i)
             elif token == "math_floor":
@@ -127,7 +129,7 @@ class CommandExecutor:
             elif token == "math_e":
                 MathOpsHandler.handle_math_e(self.state)
             elif token == "now":
-                MathOpsHandler.handle_now(self.state)
+                consumed = MathOpsHandler.handle_now(self.state, tokens, i)
             elif token == "format_date":
                 consumed = MathOpsHandler.handle_format_date(self.state, tokens, i)
             
@@ -288,6 +290,16 @@ class CommandExecutor:
                 consumed = FileOpsHandler.handle_file_delete(self.state, tokens, i, self.base_dir)
             elif token == "file_list":
                 consumed = FileOpsHandler.handle_file_list(self.state, tokens, i, self.base_dir)
+
+            # Path helpers (store into target)
+            elif token == "path_join":
+                consumed = FileOpsHandler.handle_path_join(self.state, tokens, i)
+            elif token == "path_basename":
+                consumed = FileOpsHandler.handle_path_basename(self.state, tokens, i)
+            elif token == "path_dirname":
+                consumed = FileOpsHandler.handle_path_dirname(self.state, tokens, i)
+            elif token == "path_extname":
+                consumed = FileOpsHandler.handle_path_extname(self.state, tokens, i)
 
             # HTTP client
             elif token == "http_get":
@@ -471,7 +483,7 @@ class CommandExecutor:
             elif token == "sys_env":
                 consumed = SystemOpsHandler.handle_sys_env(self.state, tokens, i)
             elif token == "sys_time":
-                SystemOpsHandler.handle_sys_time(self.state)
+                consumed = SystemOpsHandler.handle_sys_time(self.state, tokens, i)
             elif token == "sys_date":
                 SystemOpsHandler.handle_sys_date(self.state)
             elif token == "sys_sleep":

@@ -53,7 +53,7 @@ def test_package_use_missing_module(tmp_path):
     assert "[Module Error: Module 'missing_mod' not found." in output
 
 
-def test_stdlib_alias_for_stl():
+def test_stdlib_alias_for_stl(base_dir: str):
     """Test that 'stdlib' works as an alias for 'stl'"""
     # Test 1: Load with stl, call with stl
     code1 = """
@@ -62,7 +62,7 @@ def test_stdlib_alias_for_stl():
     call stl.validation.is_positive n result
     print result
     """
-    output1 = run(code1, base_dir="d:/TechLang").strip()
+    output1 = run(code1, base_dir=base_dir).strip()
     assert output1 == "1"
     
     # Test 2: Load with stl, call with stdlib
@@ -72,7 +72,7 @@ def test_stdlib_alias_for_stl():
     call stdlib.validation.is_negative n result
     print result
     """
-    output2 = run(code2, base_dir="d:/TechLang").strip()
+    output2 = run(code2, base_dir=base_dir).strip()
     assert output2 == "1"
     
     # Test 3: Load with stdlib, call with stl
@@ -82,7 +82,7 @@ def test_stdlib_alias_for_stl():
     call stl.validation.is_zero n result
     print result
     """
-    output3 = run(code3, base_dir="d:/TechLang").strip()
+    output3 = run(code3, base_dir=base_dir).strip()
     assert output3 == "1"
     
     # Test 4: Test with :: separator
@@ -92,5 +92,5 @@ def test_stdlib_alias_for_stl():
     call stl::validation::is_positive n result
     print result
     """
-    output4 = run(code4, base_dir="d:/TechLang").strip()
+    output4 = run(code4, base_dir=base_dir).strip()
     assert output4 == "1"

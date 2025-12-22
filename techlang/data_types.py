@@ -65,6 +65,44 @@ class DataTypesHandler:
         return token
 
     @staticmethod
+    def _resolve_target_name(state: InterpreterState, token: str) -> str:
+        # Resolve a token intended to represent a *target name*.
+        # STL module functions often pass target names through string parameters.
+        if token in state.strings:
+            return state.strings[token]
+        if state.has_variable(token):
+            value = state.get_variable(token, None)
+            if isinstance(value, str):
+                return value
+        return token
+
+    @staticmethod
+    def _resolve_existing_name(state: InterpreterState, token: str) -> str:
+        # Resolve a token intended to represent an *existing* object name.
+        # Only indirect if the resolved value points at an existing container/var.
+        if token in state.strings:
+            candidate = state.strings[token]
+            if (
+                candidate in state.dictionaries
+                or candidate in state.arrays
+                or candidate in state.strings
+                or state.has_variable(candidate)
+            ):
+                return candidate
+        if state.has_variable(token):
+            value = state.get_variable(token, None)
+            if isinstance(value, str):
+                candidate = value
+                if (
+                    candidate in state.dictionaries
+                    or candidate in state.arrays
+                    or candidate in state.strings
+                    or state.has_variable(candidate)
+                ):
+                    return candidate
+        return token
+
+    @staticmethod
     def _format_descriptor(name: str, argument: Optional[str]) -> str:
         return name if argument is None else f"{name} {argument}"
     
@@ -79,7 +117,7 @@ class DataTypesHandler:
             state.add_error("array_create requires array name. Use: array_create <name> [size]")
             return 0
 
-        array_name = tokens[index + 1]
+        array_name = DataTypesHandler._resolve_target_name(state, tokens[index + 1])
 
         # Optional size argument. If omitted (or next token is clearly another command), create a dynamic array.
         size_token: Optional[str] = None
@@ -113,7 +151,7 @@ class DataTypesHandler:
             state.add_error("array_set requires array name, index, and value. Use: array_set <name> <index> <value>")
             return 0
         
-        array_name = tokens[index + 1]
+        array_name = DataTypesHandler._resolve_existing_name(state, tokens[index + 1])
         
         array_index = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "Array index")
         if array_index is None:
@@ -165,7 +203,7 @@ class DataTypesHandler:
             state.add_error("array_get requires array name and index. Use: array_get <name> <index> [target]")
             return 0
 
-        array_name = tokens[index + 1]
+        array_name = DataTypesHandler._resolve_existing_name(state, tokens[index + 1])
         array_index = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "Array index")
         if array_index is None:
             return 0
@@ -861,12 +899,14 @@ class DataTypesHandler:
             return 0
         
         source_name = tokens[index + 1]
-        target_name = tokens[index + 2]
+        target_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
         
         # Get the JSON string
         json_str = None
         if source_name in state.strings:
             json_str = state.strings[source_name]
+        elif state.has_variable(source_name) and isinstance(state.get_variable(source_name, None), str):
+            json_str = state.get_variable(source_name)
         elif source_name.startswith('"') and source_name.endswith('"'):
             json_str = source_name[1:-1]
         else:
@@ -918,8 +958,8 @@ class DataTypesHandler:
             state.add_error("json_stringify requires source name and target string. Use: json_stringify <source> <target>")
             return 0
         
-        source_name = tokens[index + 1]
-        target_name = tokens[index + 2]
+        source_name = DataTypesHandler._resolve_existing_name(state, tokens[index + 1])
+        target_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
         
         # Determine what to stringify
         obj = None
@@ -957,7 +997,10 @@ class DataTypesHandler:
             return 0
         
         file_path = tokens[index + 1]
-        target_name = tokens[index + 2]
+        target_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+
+        # Allow path to be provided via a string/variable value.
+        file_path = DataTypesHandler._resolve_target_name(state, file_path)
         
         # Remove quotes from path if present
         if file_path.startswith('"') and file_path.endswith('"'):
@@ -1022,8 +1065,8 @@ class DataTypesHandler:
             state.add_error("json_write requires source name and file path. Use: json_write <source> <path>")
             return 0
         
-        source_name = tokens[index + 1]
-        file_path = tokens[index + 2]
+        source_name = DataTypesHandler._resolve_existing_name(state, tokens[index + 1])
+        file_path = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
         
         # Get the data to write
         obj = None

@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from techlang.interpreter import run
 
 
-def test_stl_strings_capitalize():
+def test_stl_strings_capitalize(base_dir: str):
     """Test strings.capitalize function"""
     code = """
     package use stl/strings
@@ -21,11 +21,11 @@ def test_stl_strings_capitalize():
     call stl.strings.capitalize src result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "Hello"
 
 
-def test_stl_strings_title_case():
+def test_stl_strings_title_case(base_dir: str):
     """Test strings.title_case function"""
     code = """
     package use stl/strings
@@ -33,11 +33,11 @@ def test_stl_strings_title_case():
     call stl.strings.title_case src result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "Hello World Test"
 
 
-def test_stl_strings_repeat():
+def test_stl_strings_repeat(base_dir: str):
     """Test strings.repeat function"""
     code = """
     package use stl/strings
@@ -45,11 +45,11 @@ def test_stl_strings_repeat():
     call stl.strings.repeat char 5 result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "xxxxx"
 
 
-def test_stl_strings_pad_left():
+def test_stl_strings_pad_left(base_dir: str):
     """Test strings.pad_left function"""
     code = """
     package use stl/strings
@@ -57,11 +57,11 @@ def test_stl_strings_pad_left():
     call stl.strings.pad_left num 5 "0" result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "00042"
 
 
-def test_stl_strings_pad_right():
+def test_stl_strings_pad_right(base_dir: str):
     """Test strings.pad_right function"""
     code = """
     package use stl/strings
@@ -69,11 +69,11 @@ def test_stl_strings_pad_right():
     call stl.strings.pad_right text 5 "." result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "hi..."
 
 
-def test_stl_strings_starts_with():
+def test_stl_strings_starts_with(base_dir: str):
     """Test strings.starts_with function"""
     code = """
     package use stl/strings
@@ -81,11 +81,11 @@ def test_stl_strings_starts_with():
     call stl.strings.starts_with filename "report" result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_strings_ends_with():
+def test_stl_strings_ends_with(base_dir: str):
     """Test strings.ends_with function"""
     code = """
     package use stl/strings
@@ -93,11 +93,11 @@ def test_stl_strings_ends_with():
     call stl.strings.ends_with filename ".pdf" result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_strings_count_char():
+def test_stl_strings_count_char(base_dir: str):
     """Test strings.count_char function"""
     code = """
     package use stl/strings
@@ -106,11 +106,11 @@ def test_stl_strings_count_char():
     call stl.strings.count_char text search result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "3"
 
 
-def test_stl_math_min():
+def test_stl_math_min(base_dir: str):
     """Test math.min function"""
     code = """
     package use stl/math
@@ -119,11 +119,11 @@ def test_stl_math_min():
     call stl.math.min x y result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "15"
 
 
-def test_stl_math_max():
+def test_stl_math_max(base_dir: str):
     """Test math.max function"""
     code = """
     package use stl/math
@@ -132,11 +132,11 @@ def test_stl_math_max():
     call stl.math.max x y result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "42"
 
 
-def test_stl_math_abs():
+def test_stl_math_abs(base_dir: str):
     """Test math.abs function"""
     code = """
     package use stl/math
@@ -144,11 +144,11 @@ def test_stl_math_abs():
     call stl.math.abs n result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "25"
 
 
-def test_stl_math_clamp():
+def test_stl_math_clamp(base_dir: str):
     """Test math.clamp function"""
     code = """
     package use stl/math
@@ -158,11 +158,11 @@ def test_stl_math_clamp():
     call stl.math.clamp val min_val max_val result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "100"
 
 
-def test_stl_math_sign():
+def test_stl_math_sign(base_dir: str):
     """Test math.sign function"""
     code = """
     package use stl/math
@@ -176,11 +176,11 @@ def test_stl_math_sign():
     call stl.math.sign zero result3
     print result3
     """
-    output = run(code, base_dir="d:\\TechLang").strip().splitlines()
+    output = run(code, base_dir=base_dir).strip().splitlines()
     assert output == ["1", "-1", "0"]
 
 
-def test_stl_math_is_even():
+def test_stl_math_is_even(base_dir: str):
     """Test math.is_even function"""
     code = """
     package use stl/math
@@ -188,11 +188,11 @@ def test_stl_math_is_even():
     call stl.math.is_even n result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_math_is_odd():
+def test_stl_math_is_odd(base_dir: str):
     """Test math.is_odd function"""
     code = """
     package use stl/math
@@ -200,11 +200,11 @@ def test_stl_math_is_odd():
     call stl.math.is_odd n result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_math_sum_range():
+def test_stl_math_sum_range(base_dir: str):
     """Test math.sum_range function"""
     code = """
     package use stl/math
@@ -213,11 +213,11 @@ def test_stl_math_sum_range():
     call stl.math.sum_range start end result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "55"  # 1+2+3+4+5+6+7+8+9+10 = 55
 
 
-def test_stl_math_factorial():
+def test_stl_math_factorial(base_dir: str):
     """Test math.factorial function"""
     code = """
     package use stl/math
@@ -225,11 +225,11 @@ def test_stl_math_factorial():
     call stl.math.factorial n result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "120"  # 5! = 120
 
 
-def test_stl_math_gcd():
+def test_stl_math_gcd(base_dir: str):
     """Test math.gcd function"""
     code = """
     package use stl/math
@@ -238,11 +238,11 @@ def test_stl_math_gcd():
     call stl.math.gcd a b result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "6"
 
 
-def test_stl_math_lerp():
+def test_stl_math_lerp(base_dir: str):
     """Test math.lerp function"""
     code = """
     package use stl/math
@@ -252,14 +252,14 @@ def test_stl_math_lerp():
     call stl.math.lerp a b t result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     # 0 + (100-0) * 0.5 = 50
     # But t=50 is treated as 50 (not 0.5), so result is 0 + 100*50 = 5000
     # Actually: lerp multiplies diff by t, so 100 * 50 = 5000, then 0 + 5000 = 5000
     assert output == "5000"
 
 
-def test_stl_collections_array_sum():
+def test_stl_collections_array_sum(base_dir: str):
     """Test collections.array_sum function"""
     code = """
     package use stl/collections
@@ -270,11 +270,11 @@ def test_stl_collections_array_sum():
     call stl.collections.array_sum nums result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "30"
 
 
-def test_stl_collections_array_product():
+def test_stl_collections_array_product(base_dir: str):
     """Test collections.array_product function"""
     code = """
     package use stl/collections
@@ -285,11 +285,11 @@ def test_stl_collections_array_product():
     call stl.collections.array_product nums result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "24"
 
 
-def test_stl_collections_array_min():
+def test_stl_collections_array_min(base_dir: str):
     """Test collections.array_min function"""
     code = """
     package use stl/collections
@@ -301,11 +301,11 @@ def test_stl_collections_array_min():
     call stl.collections.array_min nums result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "5"
 
 
-def test_stl_collections_array_max():
+def test_stl_collections_array_max(base_dir: str):
     """Test collections.array_max function"""
     code = """
     package use stl/collections
@@ -317,11 +317,11 @@ def test_stl_collections_array_max():
     call stl.collections.array_max nums result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "20"
 
 
-def test_stl_collections_array_contains():
+def test_stl_collections_array_contains(base_dir: str):
     """Test collections.array_contains function"""
     code = """
     package use stl/collections
@@ -333,11 +333,11 @@ def test_stl_collections_array_contains():
     call stl.collections.array_contains nums target result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_collections_array_index_of():
+def test_stl_collections_array_index_of(base_dir: str):
     """Test collections.array_index_of function"""
     code = """
     package use stl/collections
@@ -349,11 +349,11 @@ def test_stl_collections_array_index_of():
     call stl.collections.array_index_of nums target result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "2"
 
 
-def test_stl_collections_array_count():
+def test_stl_collections_array_count(base_dir: str):
     """Test collections.array_count function"""
     code = """
     package use stl/collections
@@ -364,11 +364,11 @@ def test_stl_collections_array_count():
     call stl.collections.array_count nums result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "3"
 
 
-def test_stl_collections_array_fill():
+def test_stl_collections_array_fill(base_dir: str):
     """Test collections.array_fill function"""
     code = """
     package use stl/collections
@@ -381,11 +381,11 @@ def test_stl_collections_array_fill():
     print val1
     print val2
     """
-    output = run(code, base_dir="d:\\TechLang").strip().splitlines()
+    output = run(code, base_dir=base_dir).strip().splitlines()
     assert output == ["7", "7", "7"]
 
 
-def test_stl_validation_is_positive():
+def test_stl_validation_is_positive(base_dir: str):
     """Test validation.is_positive function"""
     code = """
     package use stl/validation
@@ -393,11 +393,11 @@ def test_stl_validation_is_positive():
     call stl.validation.is_positive n result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_validation_is_negative():
+def test_stl_validation_is_negative(base_dir: str):
     """Test validation.is_negative function"""
     code = """
     package use stl/validation
@@ -405,11 +405,11 @@ def test_stl_validation_is_negative():
     call stl.validation.is_negative n result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_validation_is_zero():
+def test_stl_validation_is_zero(base_dir: str):
     """Test validation.is_zero function"""
     code = """
     package use stl/validation
@@ -417,11 +417,11 @@ def test_stl_validation_is_zero():
     call stl.validation.is_zero n result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_validation_is_in_range():
+def test_stl_validation_is_in_range(base_dir: str):
     """Test validation.is_in_range function"""
     code = """
     package use stl/validation
@@ -431,11 +431,11 @@ def test_stl_validation_is_in_range():
     call stl.validation.is_in_range val min_val max_val result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_validation_min_length():
+def test_stl_validation_min_length(base_dir: str):
     """Test validation.min_length function"""
     code = """
     package use stl/validation
@@ -444,11 +444,11 @@ def test_stl_validation_min_length():
     call stl.validation.min_length text min_len result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_validation_max_length():
+def test_stl_validation_max_length(base_dir: str):
     """Test validation.max_length function"""
     code = """
     package use stl/validation
@@ -457,11 +457,11 @@ def test_stl_validation_max_length():
     call stl.validation.max_length text max_len result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_validation_length_between():
+def test_stl_validation_length_between(base_dir: str):
     """Test validation.length_between function"""
     code = """
     package use stl/validation
@@ -471,11 +471,11 @@ def test_stl_validation_length_between():
     call stl.validation.length_between text min_len max_len result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_validation_is_email():
+def test_stl_validation_is_email(base_dir: str):
     """Test validation.is_email function"""
     code = """
     package use stl/validation
@@ -483,11 +483,11 @@ def test_stl_validation_is_email():
     call stl.validation.is_email email result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_validation_is_url():
+def test_stl_validation_is_url(base_dir: str):
     """Test validation.is_url function"""
     code = """
     package use stl/validation
@@ -495,11 +495,11 @@ def test_stl_validation_is_url():
     call stl.validation.is_url url result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_validation_is_numeric_string():
+def test_stl_validation_is_numeric_string(base_dir: str):
     code = """
     package use stl/validation
     str_create s1 "123456"
@@ -510,11 +510,11 @@ def test_stl_validation_is_numeric_string():
     call stl.validation.is_numeric_string s2 ok2
     print ok2
     """
-    output = run(code, base_dir="d:\\TechLang").strip().splitlines()
+    output = run(code, base_dir=base_dir).strip().splitlines()
     assert output == ["1", "0"]
 
 
-def test_stl_validation_is_alpha_string():
+def test_stl_validation_is_alpha_string(base_dir: str):
     code = """
     package use stl/validation
     str_create s1 "AbcXYZ"
@@ -525,11 +525,11 @@ def test_stl_validation_is_alpha_string():
     call stl.validation.is_alpha_string s2 ok2
     print ok2
     """
-    output = run(code, base_dir="d:\\TechLang").strip().splitlines()
+    output = run(code, base_dir=base_dir).strip().splitlines()
     assert output == ["1", "0"]
 
 
-def test_stl_validation_is_alphanumeric_string():
+def test_stl_validation_is_alphanumeric_string(base_dir: str):
     code = """
     package use stl/validation
     str_create s1 "abc123XYZ"
@@ -540,11 +540,11 @@ def test_stl_validation_is_alphanumeric_string():
     call stl.validation.is_alphanumeric_string s2 ok2
     print ok2
     """
-    output = run(code, base_dir="d:\\TechLang").strip().splitlines()
+    output = run(code, base_dir=base_dir).strip().splitlines()
     assert output == ["1", "0"]
 
 
-def test_stl_validation_require_all():
+def test_stl_validation_require_all(base_dir: str):
     """Test validation.require_all function"""
     code = """
     package use stl/validation
@@ -553,11 +553,11 @@ def test_stl_validation_require_all():
     call stl.validation.require_all c1 c2 result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_validation_require_any():
+def test_stl_validation_require_any(base_dir: str):
     """Test validation.require_any function"""
     code = """
     package use stl/validation
@@ -566,11 +566,11 @@ def test_stl_validation_require_any():
     call stl.validation.require_any c1 c2 result
     print result
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "1"
 
 
-def test_stl_combined_usage():
+def test_stl_combined_usage(base_dir: str):
     """Test using multiple stl modules together"""
     code = """
     package use stl/math
@@ -587,11 +587,11 @@ def test_stl_combined_usage():
     end
     print x
     """
-    output = run(code, base_dir="d:\\TechLang").strip()
+    output = run(code, base_dir=base_dir).strip()
     assert output == "100"
 
 
-def test_stl_multiple_calls():
+def test_stl_multiple_calls(base_dir: str):
     """Test calling stl functions multiple times"""
     code = """
     package use stl/strings
@@ -604,7 +604,7 @@ def test_stl_multiple_calls():
     call stl.strings.capitalize src2 result2
     print result2
     """
-    output = run(code, base_dir="d:\\TechLang").strip().splitlines()
+    output = run(code, base_dir=base_dir).strip().splitlines()
     assert output == ["Hello", "World"]
 
 

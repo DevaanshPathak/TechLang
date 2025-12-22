@@ -138,8 +138,32 @@ class MathOpsHandler:
         hi = MathOpsHandler._get_int(state, tokens[index + 2])
         if lo > hi:
             lo, hi = hi, lo
-        state.add_output(str(random.randint(lo, hi)))
+        result = int(random.randint(lo, hi))
+
+        # Optional store form: math_random <min> <max> <targetVar>
+        if index + 3 < len(tokens):
+            target = tokens[index + 3]
+            from .basic_commands import BasicCommandHandler
+
+            if not (target.startswith('"') and target.endswith('"')) and target not in BasicCommandHandler.KNOWN_COMMANDS:
+                state.variables[target] = result
+                return 3
+
+        state.add_output(str(result))
         return 2
+
+    @staticmethod
+    def handle_math_seed(state: InterpreterState, tokens: List[str], index: int) -> int:
+        if index + 1 >= len(tokens):
+            state.add_error("math_seed requires a number")
+            return 0
+        try:
+            seed_value = MathOpsHandler._get_int(state, tokens[index + 1])
+        except ValueError:
+            state.add_error("math_seed expects a numeric seed")
+            return 0
+        random.seed(seed_value)
+        return 1
 
     @staticmethod
     def handle_math_round(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -195,8 +219,20 @@ class MathOpsHandler:
         state.add_output(str(math.e))
 
     @staticmethod
-    def handle_now(state: InterpreterState) -> None:
-        state.add_output(datetime.now(timezone.utc).isoformat())
+    def handle_now(state: InterpreterState, tokens: List[str], index: int) -> int:
+        value = datetime.now(timezone.utc).isoformat()
+
+        # Optional store form: now <targetStr>
+        if index + 1 < len(tokens):
+            target = tokens[index + 1]
+            from .basic_commands import BasicCommandHandler
+
+            if not (target.startswith('"') and target.endswith('"')) and target not in BasicCommandHandler.KNOWN_COMMANDS:
+                state.strings[target] = value
+                return 1
+
+        state.add_output(value)
+        return 0
 
     @staticmethod
     def handle_format_date(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -216,6 +252,9 @@ class MathOpsHandler:
             if fmt_token.startswith('"') and fmt_token.endswith('"'):
                 fmt = fmt_token[1:-1]
                 consumed = 2
+            elif fmt_token in state.strings:
+                fmt = state.strings[fmt_token]
+                consumed = 2
         try:
             dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
         except (OverflowError, OSError, ValueError):
@@ -223,9 +262,25 @@ class MathOpsHandler:
             return consumed
 
         try:
-            state.add_output(dt.strftime(fmt))
+            formatted = dt.strftime(fmt)
         except ValueError as exc:
             state.add_error(f"Invalid format string: {exc}")
+            return consumed
+
+        # Optional store form:
+        # - format_date <ts> <targetStr>
+        # - format_date <ts> "fmt" <targetStr>
+        # - format_date <ts> fmt_var <targetStr>
+        target_index = index + 1 + consumed
+        if target_index < len(tokens):
+            candidate = tokens[target_index]
+            from .basic_commands import BasicCommandHandler
+
+            if not (candidate.startswith('"') and candidate.endswith('"')) and candidate not in BasicCommandHandler.KNOWN_COMMANDS:
+                state.strings[candidate] = formatted
+                return consumed + 1
+
+        state.add_output(formatted)
         return consumed
 
 

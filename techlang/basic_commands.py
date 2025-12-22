@@ -30,7 +30,8 @@ class BasicCommandHandler:
         # JSON commands - for parsing and stringifying JSON data
         "json_parse", "json_stringify", "json_read", "json_write",
         # File I/O commands
-    "file_read", "file_write", "file_append", "file_exists", "file_delete", "file_list",
+            "file_read", "file_write", "file_append", "file_exists", "file_delete", "file_list",
+            "path_join", "path_basename", "path_dirname", "path_extname",
         # Network commands
         "http_get", "http_post", "http_status", "server_start", "server_route", "server_stop",
         # Graphics commands
@@ -41,7 +42,7 @@ class BasicCommandHandler:
     # Math & time commands
     "math_sin", "math_cos", "math_tan", "math_asin", "math_acos", "math_atan",
     "math_sqrt", "math_pow", "math_mod", "math_random", "math_round", "math_floor", "math_ceil",
-    "math_deg2rad", "math_rad2deg", "math_pi", "math_e", "now", "format_date",
+            "math_deg2rad", "math_rad2deg", "math_pi", "math_e", "math_seed", "now", "format_date",
         # Help
         "help",
         # Function control
