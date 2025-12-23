@@ -113,6 +113,11 @@ class InterpreterState:
     # GUI ttk style specs
     gui_ttk_styles: Dict[str, Dict[str, object]] = None  # style name -> options
     gui_ttk_theme: str = ""  # optional theme name
+
+    # GUI CustomTkinter (CTk) settings specs
+    gui_ctk_appearance: str = ""  # light|dark|system
+    gui_ctk_theme: str = ""  # built-in name or path
+    gui_ctk_scaling: float = 0.0  # percent (e.g., 100, 125)
     
     def __post_init__(self):
         """
@@ -192,6 +197,13 @@ class InterpreterState:
             self.gui_ttk_styles = {}
         if not hasattr(self, "gui_ttk_theme") or self.gui_ttk_theme is None:
             self.gui_ttk_theme = ""
+
+        if not hasattr(self, "gui_ctk_appearance") or self.gui_ctk_appearance is None:
+            self.gui_ctk_appearance = ""
+        if not hasattr(self, "gui_ctk_theme") or self.gui_ctk_theme is None:
+            self.gui_ctk_theme = ""
+        if not hasattr(self, "gui_ctk_scaling") or self.gui_ctk_scaling is None:
+            self.gui_ctk_scaling = 0.0
     
     def reset(self) -> None:
         """

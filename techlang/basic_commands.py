@@ -62,6 +62,11 @@ class BasicCommandHandler:
         # GUI (tkinter/customtkinter)
         "gui_backend", "gui_window", "gui_label", "gui_button", "gui_entry",
         "gui_entry_get", "gui_entry_set", "gui_destroy", "gui_mainloop",
+        # GUI CTk (CustomTkinter) settings
+        "gui_ctk_appearance", "gui_ctk_theme", "gui_ctk_scaling",
+        # GUI CTk (CustomTkinter) widgets
+        "gui_ctk_switch", "gui_ctk_slider", "gui_ctk_progressbar", "gui_ctk_progress_set",
+        "gui_ctk_optionmenu", "gui_ctk_combobox", "gui_ctk_tabview", "gui_ctk_tab",
         # GUI Phase 1 primitives
         "gui_set", "gui_get", "gui_pack", "gui_grid", "gui_bind",
         # GUI Phase 2 widgets + vars

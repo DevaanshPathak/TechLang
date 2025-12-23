@@ -1,4 +1,4 @@
-# GUI (Tkinter)
+# GUI (Tkinter + CustomTkinter)
 
 TechLang’s GUI support is **spec-first**: GUI commands build a *spec* in `InterpreterState`, and only `gui_mainloop <window>` realizes widgets and starts the event loop.
 
@@ -45,7 +45,7 @@ Stores a binding in the spec and (if runtime is active) binds it immediately. Ca
 
 ---
 
-## Phase 2: Core widget coverage (tk)
+## Phase 2: Core widget coverage (tk + ctk)
 
 ### Basic widgets
 
@@ -57,6 +57,54 @@ gui_entry <name> <parent>
 gui_entry_get <entry> <target> [str|var]
 gui_entry_set <entry> <"text"|stringVar>
 ```
+
+Notes:
+- With `gui_backend ctk`, these widgets are realized using CustomTkinter equivalents when available.
+- Some widget kinds still fall back to Tk widgets under the CTk backend (see “CTk parity & fallbacks”).
+
+---
+
+## CTk settings (ctk backend)
+
+These commands are spec-first and applied when `gui_mainloop` realizes the window.
+
+```techlang
+gui_ctk_appearance <light|dark|system>
+gui_ctk_theme <"blue"|"dark-blue"|"green"|"path.json">
+gui_ctk_scaling <percent>
+```
+
+---
+
+## CTk-first widgets (ctk backend)
+
+These commands store widget specs and require `gui_backend ctk` at runtime.
+
+```techlang
+gui_ctk_switch <name> <parent> "text" [var]
+gui_ctk_slider <name> <parent> [var]
+gui_ctk_progressbar <name> <parent> [var]
+gui_ctk_progress_set <progressbar> <value>
+gui_ctk_optionmenu <name> <parent> <values> [var]
+gui_ctk_combobox <name> <parent> <values> [var]
+gui_ctk_tabview <name> <parent>
+gui_ctk_tab <name> <tabview> "label"
+```
+
+`<values>` can be either:
+- an array name (e.g., `vals`) or
+- a comma-separated quoted string (e.g., `"A,B,C"`).
+
+---
+
+## CTk parity & fallbacks
+
+Not all tkinter widgets have direct CTk equivalents. Under `gui_backend ctk`, TechLang uses CTk widgets when possible and falls back to Tk widgets when necessary:
+
+- `gui_text` uses `CTkTextbox` when available, otherwise Tk `Text`
+- `gui_checkbutton` uses `CTkCheckBox` when available, otherwise Tk `Checkbutton`
+- `gui_radiobutton` uses `CTkRadioButton` when available, otherwise Tk `Radiobutton`
+- `gui_listbox` / `gui_canvas` currently always use Tk widgets (even under CTk)
 
 ### Additional widgets
 

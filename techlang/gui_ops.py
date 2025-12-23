@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from .core import InterpreterState
@@ -51,8 +52,6 @@ class GuiOpsHandler:
         options: Dict[str, object] = {}
         consumed = 0
         j = start
-
-        # Local import avoids an import cycle at module import time.
         from .basic_commands import BasicCommandHandler
 
         while j + 1 < len(tokens):
@@ -65,8 +64,7 @@ class GuiOpsHandler:
             if val_token in BasicCommandHandler.KNOWN_COMMANDS and val_token not in {"end", "case", "default", "catch"}:
                 # Likely a missing value; stop parsing options.
                 break
-            key = GuiOpsHandler._strip_quotes(key_token)
-            options[key] = GuiOpsHandler._resolve_value_token(state, val_token)
+            options[str(key_token)] = GuiOpsHandler._resolve_value_token(state, val_token)
             j += 2
             consumed += 2
 
@@ -98,6 +96,329 @@ class GuiOpsHandler:
             return 0
         state.gui_backend = backend
         return 1
+
+    @staticmethod
+    def handle_gui_ctk_appearance(state: InterpreterState, tokens: List[str], index: int) -> int:
+        # gui_ctk_appearance <light|dark|system>
+        if index + 1 >= len(tokens):
+            state.add_error("gui_ctk_appearance requires: gui_ctk_appearance <light|dark|system>")
+            return 0
+        mode = tokens[index + 1].lower()
+        if mode not in {"light", "dark", "system"}:
+            state.add_error("gui_ctk_appearance must be light, dark, or system")
+            return 0
+        state.gui_ctk_appearance = mode
+        return 1
+
+    @staticmethod
+    def handle_gui_ctk_theme(state: InterpreterState, tokens: List[str], index: int) -> int:
+        # gui_ctk_theme <"name"|nameStrVar>
+        if index + 1 >= len(tokens):
+            state.add_error('gui_ctk_theme requires: gui_ctk_theme "name_or_path"')
+            return 0
+        theme = DataTypesHandler._resolve_string_token(state, tokens[index + 1], "CTk theme")
+        if theme is None:
+            return 0
+        state.gui_ctk_theme = theme
+        return 1
+
+    @staticmethod
+    def handle_gui_ctk_scaling(state: InterpreterState, tokens: List[str], index: int) -> int:
+        # gui_ctk_scaling <percent>
+        if index + 1 >= len(tokens):
+            state.add_error("gui_ctk_scaling requires: gui_ctk_scaling <percent>")
+            return 0
+        raw = GuiOpsHandler._resolve_value_token(state, tokens[index + 1])
+        try:
+            val = float(raw)
+        except Exception:
+            state.add_error("gui_ctk_scaling percent must be numeric")
+            return 0
+
+        # Roadmap syntax is percent. If user supplies a ratio (<= 10), convert.
+        if 0 < val <= 10:
+            val = val * 100.0
+        if val <= 0:
+            state.add_error("gui_ctk_scaling percent must be positive")
+            return 0
+
+        state.gui_ctk_scaling = val
+        return 1
+
+    # -----------------
+    # CTK-4: CTk-first widgets (spec-first)
+    # -----------------
+
+    @staticmethod
+    def _resolve_values_list(state: InterpreterState, token: str) -> Optional[List[str]]:
+        # Accept an array name (from state.arrays) or a quoted CSV string.
+        if token in state.arrays and isinstance(state.arrays.get(token), list):
+            return [str(v) for v in state.arrays.get(token, [])]
+        values = DataTypesHandler._resolve_string_token(state, token, "Values")
+        if values is None:
+            return None
+        raw = str(values)
+        if not raw:
+            return []
+        return [part.strip() for part in raw.split(",") if part.strip()]
+
+    @staticmethod
+    def handle_gui_ctk_switch(state: InterpreterState, tokens: List[str], index: int) -> int:
+        # gui_ctk_switch <name> <parent> "text" [var]
+        if index + 3 >= len(tokens):
+            state.add_error('gui_ctk_switch requires: gui_ctk_switch <name> <parent> "text" [var]')
+            return 0
+        name = tokens[index + 1]
+        parent = tokens[index + 2]
+        text = DataTypesHandler._resolve_string_token(state, tokens[index + 3], "Switch text")
+        if text is None:
+            return 0
+
+        var_name: Optional[str] = None
+        consumed = 3
+        if index + 4 < len(tokens):
+            candidate = tokens[index + 4]
+            from .basic_commands import BasicCommandHandler
+
+            if (
+                candidate not in {"end", "case", "default", "catch"}
+                and candidate not in BasicCommandHandler.KNOWN_COMMANDS
+                and not (candidate.startswith('"') and candidate.endswith('"'))
+            ):
+                var_name = candidate
+                consumed = 4
+
+        parent_spec = GuiOpsHandler._require_spec(state, parent)
+        if parent_spec is None:
+            return 0
+        state.gui_specs[name] = {
+            "type": "ctk_switch",
+            "parent": parent,
+            "text": text,
+            "var": var_name,
+            "options": {},
+            "bindings": {},
+        }
+        state.gui_order.append(name)
+        GuiOpsHandler._add_child(state, parent, name)
+        return consumed
+
+    @staticmethod
+    def handle_gui_ctk_slider(state: InterpreterState, tokens: List[str], index: int) -> int:
+        # gui_ctk_slider <name> <parent> [var]
+        if index + 2 >= len(tokens):
+            state.add_error("gui_ctk_slider requires: gui_ctk_slider <name> <parent> [var]")
+            return 0
+        name = tokens[index + 1]
+        parent = tokens[index + 2]
+
+        var_name: Optional[str] = None
+        consumed = 2
+        if index + 3 < len(tokens):
+            candidate = tokens[index + 3]
+            from .basic_commands import BasicCommandHandler
+
+            if (
+                candidate not in {"end", "case", "default", "catch"}
+                and candidate not in BasicCommandHandler.KNOWN_COMMANDS
+                and not (candidate.startswith('"') and candidate.endswith('"'))
+            ):
+                var_name = candidate
+                consumed = 3
+
+        parent_spec = GuiOpsHandler._require_spec(state, parent)
+        if parent_spec is None:
+            return 0
+        state.gui_specs[name] = {"type": "ctk_slider", "parent": parent, "var": var_name, "options": {}, "bindings": {}}
+        state.gui_order.append(name)
+        GuiOpsHandler._add_child(state, parent, name)
+        return consumed
+
+    @staticmethod
+    def handle_gui_ctk_progressbar(state: InterpreterState, tokens: List[str], index: int) -> int:
+        # gui_ctk_progressbar <name> <parent> [var]
+        if index + 2 >= len(tokens):
+            state.add_error("gui_ctk_progressbar requires: gui_ctk_progressbar <name> <parent> [var]")
+            return 0
+        name = tokens[index + 1]
+        parent = tokens[index + 2]
+
+        var_name: Optional[str] = None
+        consumed = 2
+        if index + 3 < len(tokens):
+            candidate = tokens[index + 3]
+            from .basic_commands import BasicCommandHandler
+
+            if (
+                candidate not in {"end", "case", "default", "catch"}
+                and candidate not in BasicCommandHandler.KNOWN_COMMANDS
+                and not (candidate.startswith('"') and candidate.endswith('"'))
+            ):
+                var_name = candidate
+                consumed = 3
+
+        parent_spec = GuiOpsHandler._require_spec(state, parent)
+        if parent_spec is None:
+            return 0
+        state.gui_specs[name] = {
+            "type": "ctk_progressbar",
+            "parent": parent,
+            "var": var_name,
+            "value": 0,
+            "options": {},
+            "bindings": {},
+        }
+        state.gui_order.append(name)
+        GuiOpsHandler._add_child(state, parent, name)
+        return consumed
+
+    @staticmethod
+    def handle_gui_ctk_progress_set(state: InterpreterState, tokens: List[str], index: int) -> int:
+        # gui_ctk_progress_set <progressbar> <value>
+        if index + 2 >= len(tokens):
+            state.add_error("gui_ctk_progress_set requires: gui_ctk_progress_set <progressbar> <value>")
+            return 0
+        name = tokens[index + 1]
+        value_token = tokens[index + 2]
+        spec = GuiOpsHandler._require_spec(state, name, kind="ctk_progressbar")
+        if spec is None:
+            return 0
+
+        value_obj = GuiOpsHandler._resolve_value_token(state, value_token)
+        try:
+            value = float(value_obj)
+        except Exception:
+            state.add_error("Progress value must be a number")
+            return 0
+
+        spec["value"] = value
+        widget = state.gui_runtime_widgets.get(name)
+        if widget is not None and hasattr(widget, "set"):
+            try:
+                widget.set(value)
+            except Exception:
+                pass
+        return 2
+
+    @staticmethod
+    def handle_gui_ctk_optionmenu(state: InterpreterState, tokens: List[str], index: int) -> int:
+        # gui_ctk_optionmenu <name> <parent> <values> [var]
+        if index + 3 >= len(tokens):
+            state.add_error("gui_ctk_optionmenu requires: gui_ctk_optionmenu <name> <parent> <values> [var]")
+            return 0
+        name = tokens[index + 1]
+        parent = tokens[index + 2]
+        values_token = tokens[index + 3]
+        values = GuiOpsHandler._resolve_values_list(state, values_token)
+        if values is None:
+            return 0
+
+        var_name: Optional[str] = None
+        consumed = 3
+        if index + 4 < len(tokens):
+            candidate = tokens[index + 4]
+            from .basic_commands import BasicCommandHandler
+
+            if (
+                candidate not in {"end", "case", "default", "catch"}
+                and candidate not in BasicCommandHandler.KNOWN_COMMANDS
+                and not (candidate.startswith('"') and candidate.endswith('"'))
+            ):
+                var_name = candidate
+                consumed = 4
+
+        parent_spec = GuiOpsHandler._require_spec(state, parent)
+        if parent_spec is None:
+            return 0
+        state.gui_specs[name] = {
+            "type": "ctk_optionmenu",
+            "parent": parent,
+            "values": values,
+            "var": var_name,
+            "options": {},
+            "bindings": {},
+        }
+        state.gui_order.append(name)
+        GuiOpsHandler._add_child(state, parent, name)
+        return consumed
+
+    @staticmethod
+    def handle_gui_ctk_combobox(state: InterpreterState, tokens: List[str], index: int) -> int:
+        # gui_ctk_combobox <name> <parent> <values> [var]
+        if index + 3 >= len(tokens):
+            state.add_error("gui_ctk_combobox requires: gui_ctk_combobox <name> <parent> <values> [var]")
+            return 0
+        name = tokens[index + 1]
+        parent = tokens[index + 2]
+        values_token = tokens[index + 3]
+        values = GuiOpsHandler._resolve_values_list(state, values_token)
+        if values is None:
+            return 0
+
+        var_name: Optional[str] = None
+        consumed = 3
+        if index + 4 < len(tokens):
+            candidate = tokens[index + 4]
+            from .basic_commands import BasicCommandHandler
+
+            if (
+                candidate not in {"end", "case", "default", "catch"}
+                and candidate not in BasicCommandHandler.KNOWN_COMMANDS
+                and not (candidate.startswith('"') and candidate.endswith('"'))
+            ):
+                var_name = candidate
+                consumed = 4
+
+        parent_spec = GuiOpsHandler._require_spec(state, parent)
+        if parent_spec is None:
+            return 0
+        state.gui_specs[name] = {
+            "type": "ctk_combobox",
+            "parent": parent,
+            "values": values,
+            "var": var_name,
+            "options": {},
+            "bindings": {},
+        }
+        state.gui_order.append(name)
+        GuiOpsHandler._add_child(state, parent, name)
+        return consumed
+
+    @staticmethod
+    def handle_gui_ctk_tabview(state: InterpreterState, tokens: List[str], index: int) -> int:
+        # gui_ctk_tabview <name> <parent>
+        if index + 2 >= len(tokens):
+            state.add_error("gui_ctk_tabview requires: gui_ctk_tabview <name> <parent>")
+            return 0
+        name = tokens[index + 1]
+        parent = tokens[index + 2]
+        parent_spec = GuiOpsHandler._require_spec(state, parent)
+        if parent_spec is None:
+            return 0
+        state.gui_specs[name] = {"type": "ctk_tabview", "parent": parent, "options": {}, "bindings": {}, "children": []}
+        state.gui_order.append(name)
+        GuiOpsHandler._add_child(state, parent, name)
+        return 2
+
+    @staticmethod
+    def handle_gui_ctk_tab(state: InterpreterState, tokens: List[str], index: int) -> int:
+        # gui_ctk_tab <name> <tabview> "label"
+        if index + 3 >= len(tokens):
+            state.add_error('gui_ctk_tab requires: gui_ctk_tab <name> <tabview> "label"')
+            return 0
+        name = tokens[index + 1]
+        parent = tokens[index + 2]
+        label = DataTypesHandler._resolve_string_token(state, tokens[index + 3], "Tab label")
+        if label is None:
+            return 0
+
+        parent_spec = GuiOpsHandler._require_spec(state, parent, kind="ctk_tabview")
+        if parent_spec is None:
+            return 0
+        state.gui_specs[name] = {"type": "ctk_tab", "parent": parent, "label": label, "options": {}, "bindings": {}, "children": []}
+        state.gui_order.append(name)
+        GuiOpsHandler._add_child(state, parent, name)
+        return 3
 
     @staticmethod
     def handle_gui_window(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -993,12 +1314,38 @@ class GuiOpsHandler:
                 except Exception:
                     state.add_error("'customtkinter' library not available")
                     return 0
+
+                # Apply CTk settings before creating any widgets.
+                try:
+                    if isinstance(state.gui_ctk_appearance, str) and state.gui_ctk_appearance:
+                        ctk.set_appearance_mode(state.gui_ctk_appearance)
+                except Exception:
+                    pass
+                try:
+                    if isinstance(state.gui_ctk_theme, str) and state.gui_ctk_theme:
+                        theme_value = state.gui_ctk_theme
+                        if theme_value.lower().endswith(".json") or ("/" in theme_value) or ("\\" in theme_value):
+                            theme_path = Path(theme_value)
+                            if not theme_path.is_absolute():
+                                theme_path = Path(base_dir) / theme_path
+                            ctk.set_default_color_theme(str(theme_path))
+                        else:
+                            ctk.set_default_color_theme(theme_value)
+                except Exception:
+                    pass
+                try:
+                    if isinstance(state.gui_ctk_scaling, (int, float)) and state.gui_ctk_scaling:
+                        ctk.set_widget_scaling(float(state.gui_ctk_scaling) / 100.0)
+                except Exception:
+                    pass
+
                 ui = ctk
                 root_factory = ctk.CTk
                 toplevel_factory = ctk.CTkToplevel
                 label_factory = ctk.CTkLabel
                 button_factory = ctk.CTkButton
                 entry_factory = ctk.CTkEntry
+                frame_factory = ctk.CTkFrame
             else:
                 import tkinter as tk
 
@@ -1008,6 +1355,7 @@ class GuiOpsHandler:
                 label_factory = tk.Label
                 button_factory = tk.Button
                 entry_factory = tk.Entry
+                frame_factory = tk.Frame
         except Exception as e:
             state.add_error(f"GUI backend import failed: {e}")
             return 0
@@ -1046,25 +1394,25 @@ class GuiOpsHandler:
             if window_name not in realized:
                 realized[window_name] = _make_window(window_name, window_spec)
 
-            # Now that root exists, create Tk variables (tk backend only).
-            if backend != "ctk":
-                try:
+            # Now that root exists, create Tk variables (works for both tk and ctk).
+            try:
+                if tk_mod is not None:
                     for var_name, var_spec in state.gui_vars.items():
                         vtype = str(var_spec.get("type", "string")).lower()
                         if vtype == "int":
-                            runtime_vars[var_name] = ui.IntVar(master=root)
+                            runtime_vars[var_name] = tk_mod.IntVar(master=root)
                         elif vtype == "bool":
-                            runtime_vars[var_name] = ui.BooleanVar(master=root)
+                            runtime_vars[var_name] = tk_mod.BooleanVar(master=root)
                         elif vtype == "double":
-                            runtime_vars[var_name] = ui.DoubleVar(master=root)
+                            runtime_vars[var_name] = tk_mod.DoubleVar(master=root)
                         else:
-                            runtime_vars[var_name] = ui.StringVar(master=root)
+                            runtime_vars[var_name] = tk_mod.StringVar(master=root)
                         try:
                             runtime_vars[var_name].set(var_spec.get("value", ""))
                         except Exception:
                             pass
-                except Exception:
-                    runtime_vars = {}
+            except Exception:
+                runtime_vars = {}
 
             # Create non-window widgets in order
             from .executor import CommandExecutor  # local import to avoid cycles at module import time
@@ -1184,7 +1532,7 @@ class GuiOpsHandler:
                     if "value" in spec and hasattr(w, "insert"):
                         w.insert(0, str(spec.get("value", "")))
                 elif kind == "frame":
-                    w = ui.Frame(parent_obj, **runtime_options)
+                    w = frame_factory(parent_obj, **runtime_options)
                 elif kind == "ttk_button":
                     if ttk is None:
                         state.add_error("ttk widgets require tk backend")
@@ -1237,16 +1585,25 @@ class GuiOpsHandler:
                     var_obj = runtime_vars.get(var_name) if isinstance(var_name, str) else None
                     if var_obj is not None:
                         runtime_options.setdefault("variable", var_obj)
-                    w = ui.Checkbutton(parent_obj, text=str(spec.get("text", "")), **runtime_options)
+                    if backend == "ctk" and ctk_mod is not None and hasattr(ctk_mod, "CTkCheckBox"):
+                        w = ctk_mod.CTkCheckBox(parent_obj, text=str(spec.get("text", "")), **runtime_options)
+                    else:
+                        w = tk_mod.Checkbutton(parent_obj, text=str(spec.get("text", "")), **runtime_options)
                 elif kind == "radiobutton":
                     var_name = spec.get("var")
                     var_obj = runtime_vars.get(var_name) if isinstance(var_name, str) else None
                     if var_obj is not None:
                         runtime_options.setdefault("variable", var_obj)
                     runtime_options.setdefault("value", spec.get("value"))
-                    w = ui.Radiobutton(parent_obj, text=str(spec.get("text", "")), **runtime_options)
+                    if backend == "ctk" and ctk_mod is not None and hasattr(ctk_mod, "CTkRadioButton"):
+                        w = ctk_mod.CTkRadioButton(parent_obj, text=str(spec.get("text", "")), **runtime_options)
+                    else:
+                        w = tk_mod.Radiobutton(parent_obj, text=str(spec.get("text", "")), **runtime_options)
                 elif kind == "text":
-                    w = ui.Text(parent_obj, **runtime_options)
+                    if backend == "ctk" and ctk_mod is not None and hasattr(ctk_mod, "CTkTextbox"):
+                        w = ctk_mod.CTkTextbox(parent_obj, **runtime_options)
+                    else:
+                        w = tk_mod.Text(parent_obj, **runtime_options)
                     # Apply spec-first content, if any
                     content = spec.get("content")
                     if isinstance(content, str) and hasattr(w, "insert"):
@@ -1266,9 +1623,9 @@ class GuiOpsHandler:
                                 except Exception:
                                     pass
                 elif kind == "listbox":
-                    w = ui.Listbox(parent_obj, **runtime_options)
+                    w = tk_mod.Listbox(parent_obj, **runtime_options)
                 elif kind == "canvas":
-                    w = ui.Canvas(parent_obj, **runtime_options)
+                    w = tk_mod.Canvas(parent_obj, **runtime_options)
                     items = spec.get("items")
                     if isinstance(items, list):
                         for item in items:
@@ -1282,11 +1639,115 @@ class GuiOpsHandler:
                                 pass
                 elif kind == "scrollbar":
                     orient = str(spec.get("orient", "vertical")).lower()
-                    if orient == "horizontal":
-                        runtime_options.setdefault("orient", ui.HORIZONTAL)
+                    if backend == "ctk" and ctk_mod is not None and hasattr(ctk_mod, "CTkScrollbar"):
+                        # CTkScrollbar uses `orientation` (string) rather than tk's `orient` constants.
+                        runtime_options.pop("orient", None)
+                        runtime_options.setdefault("orientation", "horizontal" if orient == "horizontal" else "vertical")
+                        try:
+                            w = ctk_mod.CTkScrollbar(parent_obj, **runtime_options)
+                        except Exception:
+                            # Fallback to tk.Scrollbar
+                            runtime_options.pop("orientation", None)
+                            if orient == "horizontal":
+                                runtime_options.setdefault("orient", tk_mod.HORIZONTAL)
+                            else:
+                                runtime_options.setdefault("orient", tk_mod.VERTICAL)
+                            w = tk_mod.Scrollbar(parent_obj, **runtime_options)
                     else:
-                        runtime_options.setdefault("orient", ui.VERTICAL)
-                    w = ui.Scrollbar(parent_obj, **runtime_options)
+                        if orient == "horizontal":
+                            runtime_options.setdefault("orient", tk_mod.HORIZONTAL)
+                        else:
+                            runtime_options.setdefault("orient", tk_mod.VERTICAL)
+                        w = tk_mod.Scrollbar(parent_obj, **runtime_options)
+
+                # --- CTk-first widgets (CTK-4) ---
+                elif kind == "ctk_switch":
+                    if backend != "ctk" or ctk_mod is None:
+                        state.add_error("ctk widgets require ctk backend")
+                        return 0
+                    var_name = spec.get("var")
+                    var_obj = runtime_vars.get(var_name) if isinstance(var_name, str) else None
+                    if var_obj is not None:
+                        runtime_options.setdefault("variable", var_obj)
+                    w = ctk_mod.CTkSwitch(parent_obj, text=str(spec.get("text", "")), **runtime_options)
+
+                elif kind == "ctk_slider":
+                    if backend != "ctk" or ctk_mod is None:
+                        state.add_error("ctk widgets require ctk backend")
+                        return 0
+                    var_name = spec.get("var")
+                    var_obj = runtime_vars.get(var_name) if isinstance(var_name, str) else None
+                    if var_obj is not None:
+                        runtime_options.setdefault("variable", var_obj)
+                    w = ctk_mod.CTkSlider(parent_obj, **runtime_options)
+
+                elif kind == "ctk_progressbar":
+                    if backend != "ctk" or ctk_mod is None:
+                        state.add_error("ctk widgets require ctk backend")
+                        return 0
+                    var_name = spec.get("var")
+                    var_obj = runtime_vars.get(var_name) if isinstance(var_name, str) else None
+                    if var_obj is not None:
+                        runtime_options.setdefault("variable", var_obj)
+                    w = ctk_mod.CTkProgressBar(parent_obj, **runtime_options)
+                    if "value" in spec and hasattr(w, "set"):
+                        try:
+                            w.set(float(spec.get("value", 0)))
+                        except Exception:
+                            pass
+
+                elif kind == "ctk_optionmenu":
+                    if backend != "ctk" or ctk_mod is None:
+                        state.add_error("ctk widgets require ctk backend")
+                        return 0
+                    values = spec.get("values")
+                    if not isinstance(values, list):
+                        values = []
+                    var_name = spec.get("var")
+                    var_obj = runtime_vars.get(var_name) if isinstance(var_name, str) else None
+                    if var_obj is not None:
+                        runtime_options.setdefault("variable", var_obj)
+                    w = ctk_mod.CTkOptionMenu(parent_obj, values=[str(v) for v in values], **runtime_options)
+
+                elif kind == "ctk_combobox":
+                    if backend != "ctk" or ctk_mod is None:
+                        state.add_error("ctk widgets require ctk backend")
+                        return 0
+                    values = spec.get("values")
+                    if not isinstance(values, list):
+                        values = []
+                    var_name = spec.get("var")
+                    var_obj = runtime_vars.get(var_name) if isinstance(var_name, str) else None
+                    if var_obj is not None:
+                        runtime_options.setdefault("variable", var_obj)
+                    w = ctk_mod.CTkComboBox(parent_obj, values=[str(v) for v in values], **runtime_options)
+
+                elif kind == "ctk_tabview":
+                    if backend != "ctk" or ctk_mod is None:
+                        state.add_error("ctk widgets require ctk backend")
+                        return 0
+                    w = ctk_mod.CTkTabview(parent_obj, **runtime_options)
+
+                elif kind == "ctk_tab":
+                    if backend != "ctk" or ctk_mod is None:
+                        state.add_error("ctk widgets require ctk backend")
+                        return 0
+                    label = str(spec.get("label", ""))
+                    if not hasattr(parent_obj, "add"):
+                        state.add_error("ctk_tab parent must be a ctk_tabview")
+                        return 0
+                    try:
+                        w = parent_obj.add(label)
+                    except Exception:
+                        if hasattr(parent_obj, "tab"):
+                            try:
+                                w = parent_obj.tab(label)
+                            except Exception:
+                                state.add_error("Failed to create ctk tab")
+                                return 0
+                        else:
+                            state.add_error("Failed to create ctk tab")
+                            return 0
                 else:
                     state.add_error(f"Unsupported GUI widget type '{kind}'")
                     return 0
@@ -1311,7 +1772,8 @@ class GuiOpsHandler:
                         except Exception:
                             pass
 
-                _apply_layout(w, spec)
+                if kind != "ctk_tab":
+                    _apply_layout(w, spec)
 
             # Notebook tab attachments (ttk)
             if backend != "ctk" and ttk is not None:
@@ -1404,6 +1866,19 @@ class GuiOpsHandler:
             if root is None:
                 state.add_error("GUI could not start (no root window)")
                 return 0
+
+            # Optional integration-test helper: schedule an auto-close.
+            # Only active when TECHLANG_GUI_AUTOCLOSE_MS is set.
+            try:
+                import os
+
+                ms_raw = os.environ.get("TECHLANG_GUI_AUTOCLOSE_MS", "").strip()
+                if ms_raw:
+                    ms = int(ms_raw)
+                    if ms > 0 and hasattr(root, "after") and hasattr(root, "destroy"):
+                        root.after(ms, root.destroy)
+            except Exception:
+                pass
 
             root.mainloop()
 

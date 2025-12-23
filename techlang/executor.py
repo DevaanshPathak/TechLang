@@ -332,6 +332,28 @@ class CommandExecutor:
             # GUI (tkinter/customtkinter)
             elif token == "gui_backend":
                 consumed = GuiOpsHandler.handle_gui_backend(self.state, tokens, i)
+            elif token == "gui_ctk_appearance":
+                consumed = GuiOpsHandler.handle_gui_ctk_appearance(self.state, tokens, i)
+            elif token == "gui_ctk_theme":
+                consumed = GuiOpsHandler.handle_gui_ctk_theme(self.state, tokens, i)
+            elif token == "gui_ctk_scaling":
+                consumed = GuiOpsHandler.handle_gui_ctk_scaling(self.state, tokens, i)
+            elif token == "gui_ctk_switch":
+                consumed = GuiOpsHandler.handle_gui_ctk_switch(self.state, tokens, i)
+            elif token == "gui_ctk_slider":
+                consumed = GuiOpsHandler.handle_gui_ctk_slider(self.state, tokens, i)
+            elif token == "gui_ctk_progressbar":
+                consumed = GuiOpsHandler.handle_gui_ctk_progressbar(self.state, tokens, i)
+            elif token == "gui_ctk_progress_set":
+                consumed = GuiOpsHandler.handle_gui_ctk_progress_set(self.state, tokens, i)
+            elif token == "gui_ctk_optionmenu":
+                consumed = GuiOpsHandler.handle_gui_ctk_optionmenu(self.state, tokens, i)
+            elif token == "gui_ctk_combobox":
+                consumed = GuiOpsHandler.handle_gui_ctk_combobox(self.state, tokens, i)
+            elif token == "gui_ctk_tabview":
+                consumed = GuiOpsHandler.handle_gui_ctk_tabview(self.state, tokens, i)
+            elif token == "gui_ctk_tab":
+                consumed = GuiOpsHandler.handle_gui_ctk_tab(self.state, tokens, i)
             elif token == "gui_window":
                 consumed = GuiOpsHandler.handle_gui_window(self.state, tokens, i)
             elif token == "gui_set":

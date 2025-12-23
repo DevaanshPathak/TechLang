@@ -262,6 +262,111 @@ def test_gui_set_and_get_store_in_spec_without_mainloop():
     assert state.strings["out"] == "Updated"
 
 
+def test_gui_ctk_settings_store_spec_first_without_mainloop():
+    from techlang.core import InterpreterState
+    from techlang.parser import parse
+    from techlang.macros import MacroHandler
+    from techlang.aliases import AliasHandler
+    from techlang.executor import CommandExecutor
+
+    state = InterpreterState()
+    code = """
+    gui_backend ctk
+    gui_ctk_appearance dark
+    gui_ctk_theme "blue"
+    gui_ctk_scaling 125
+    """
+
+    tokens = parse(code)
+    tokens = MacroHandler.process_macros(tokens, state)
+    tokens = AliasHandler.process_aliases(tokens, state)
+    CommandExecutor(state, ".").execute_block(tokens)
+
+    assert "[Error:" not in state.get_output()
+    assert state.gui_backend == "ctk"
+    assert state.gui_ctk_appearance == "dark"
+    assert state.gui_ctk_theme == "blue"
+    assert float(state.gui_ctk_scaling) == 125.0
+
+
+def test_gui_ctk_appearance_rejects_invalid_value():
+    from techlang.core import InterpreterState
+    from techlang.gui_ops import GuiOpsHandler
+
+    state = InterpreterState()
+    consumed = GuiOpsHandler.handle_gui_ctk_appearance(state, ["gui_ctk_appearance", "nope"], 0)
+    assert consumed == 0
+    assert "gui_ctk_appearance must be" in state.get_output()
+
+
+def test_gui_ctk_scaling_rejects_non_numeric():
+    from techlang.core import InterpreterState
+    from techlang.gui_ops import GuiOpsHandler
+
+    state = InterpreterState()
+    consumed = GuiOpsHandler.handle_gui_ctk_scaling(state, ["gui_ctk_scaling", "abc"], 0)
+    assert consumed == 0
+    assert "must be numeric" in state.get_output()
+
+
+def test_gui_ctk_widgets_store_spec_first_without_mainloop():
+    from techlang.core import InterpreterState
+    from techlang.parser import parse
+    from techlang.macros import MacroHandler
+    from techlang.aliases import AliasHandler
+    from techlang.executor import CommandExecutor
+
+    state = InterpreterState()
+    # Provide an array for values-list resolution
+    state.arrays["vals"] = ["One", "Two"]
+
+    code = """
+    gui_backend ctk
+    gui_window win \"Title\" 200 100
+    gui_ctk_tabview tabs win
+    gui_ctk_tab tab1 tabs \"First\"
+
+    gui_ctk_switch sw tab1 \"Enabled\" v_enabled
+    gui_ctk_slider sl tab1 v_amount
+    gui_ctk_progressbar pb tab1
+    gui_ctk_progress_set pb 0.5
+
+    gui_ctk_optionmenu om tab1 \"A,B,C\" v_choice
+    gui_ctk_combobox cb tab1 vals v_choice2
+    """
+
+    tokens = parse(code)
+    tokens = MacroHandler.process_macros(tokens, state)
+    tokens = AliasHandler.process_aliases(tokens, state)
+    CommandExecutor(state, ".").execute_block(tokens)
+
+    assert "[Error:" not in state.get_output()
+    assert state.gui_specs["tabs"]["type"] == "ctk_tabview"
+    assert state.gui_specs["tab1"]["type"] == "ctk_tab"
+    assert state.gui_specs["sw"]["type"] == "ctk_switch"
+    assert state.gui_specs["sw"]["var"] == "v_enabled"
+    assert state.gui_specs["sl"]["type"] == "ctk_slider"
+    assert state.gui_specs["sl"]["var"] == "v_amount"
+    assert state.gui_specs["pb"]["type"] == "ctk_progressbar"
+    assert float(state.gui_specs["pb"]["value"]) == 0.5
+    assert state.gui_specs["om"]["values"] == ["A", "B", "C"]
+    assert state.gui_specs["cb"]["values"] == ["One", "Two"]
+
+
+def test_gui_ctk_progress_set_rejects_non_numeric():
+    from techlang.core import InterpreterState
+    from techlang.gui_ops import GuiOpsHandler
+
+    state = InterpreterState()
+    state.gui_specs["pb"] = {"type": "ctk_progressbar", "parent": "win", "options": {}, "bindings": {}}
+    state.gui_specs["win"] = {"type": "window", "title": "x", "width": 1, "height": 1}
+    state.gui_order.extend(["win", "pb"])
+
+    consumed = GuiOpsHandler.handle_gui_ctk_progress_set(state, ["gui_ctk_progress_set", "pb", "nope"], 0)
+    assert consumed == 0
+    assert "Progress value must be a number" in state.get_output()
+
+
 def test_gui_pack_and_grid_store_layout_options():
     from techlang.core import InterpreterState
     from techlang.parser import parse
