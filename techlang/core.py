@@ -82,6 +82,15 @@ class InterpreterState:
     current_exception: Optional[str] = None  # Current exception message
     exception_type: Optional[str] = None  # Current exception type
 
+    # Decorators
+    decorators: Dict[str, object] = None  # decorator_name -> DecoratorDefinition
+
+    # Context managers
+    context_managers: Dict[str, object] = None  # context_name -> ContextManager
+
+    # Async coroutines
+    async_coroutines: Dict[str, object] = None  # coro_name -> AsyncCoroutine
+
     # Simple memory model
     memory: Dict[int, int] = None
     next_address: int = 1
@@ -188,6 +197,12 @@ class InterpreterState:
             self.fn_values = {}
         if self.lambdas is None:
             self.lambdas = {}
+        if self.decorators is None:
+            self.decorators = {}
+        if self.context_managers is None:
+            self.context_managers = {}
+        if self.async_coroutines is None:
+            self.async_coroutines = {}
         if self.memory is None:
             self.memory = {}
         if self.threads is None:

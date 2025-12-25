@@ -20,6 +20,9 @@ from .debugger import DebuggerHandler
 from .gui_ops import GuiOpsHandler
 from .class_ops import ClassOpsHandler
 from .function_ops import FunctionOpsHandler
+from .decorator_ops import DecoratorOpsHandler
+from .context_ops import ContextOpsHandler
+from .async_ops import AsyncOpsHandler
 
 
 class CommandExecutor:
@@ -756,6 +759,30 @@ class CommandExecutor:
             # Exception handling - throw/raise
             elif token in ("throw", "raise"):
                 consumed = BasicCommandHandler.handle_throw(self.state, tokens, i)
+
+            # Decorators
+            elif token == "decorator":
+                consumed = DecoratorOpsHandler.handle_decorator_def(self.state, tokens, i)
+            elif token == "decorate":
+                consumed = DecoratorOpsHandler.handle_decorate(self.state, tokens, i, self.execute_block)
+
+            # Context managers
+            elif token == "context":
+                consumed = ContextOpsHandler.handle_context_def(self.state, tokens, i)
+
+            # Async/Await
+            elif token == "async":
+                consumed = AsyncOpsHandler.handle_async_def(self.state, tokens, i)
+            elif token == "await":
+                consumed = AsyncOpsHandler.handle_await(self.state, tokens, i, self.execute_block)
+            elif token == "spawn":
+                consumed = AsyncOpsHandler.handle_spawn_task(self.state, tokens, i, self.execute_block, self.base_dir)
+            elif token == "gather":
+                consumed = AsyncOpsHandler.handle_gather(self.state, tokens, i, self.execute_block)
+            elif token == "task_status":
+                consumed = AsyncOpsHandler.handle_task_status(self.state, tokens, i)
+            elif token == "task_cancel":
+                consumed = AsyncOpsHandler.handle_task_cancel(self.state, tokens, i)
 
             # End of block - marks the end of loops, functions, etc.
             elif token == "end":

@@ -41,6 +41,9 @@ TechLang/
 │   ├── debugger.py      # Debugger with breakpoints
 │   ├── class_ops.py     # OOP: classes, inheritance, methods
 │   ├── function_ops.py  # First-class functions, closures
+│   ├── decorator_ops.py # Python-like decorators
+│   ├── context_ops.py   # Context managers (with statement)
+│   ├── async_ops.py     # Async/await and event loop
 │   ├── help_ops.py      # Help system
 │   ├── imports.py       # Module imports
 │   ├── aliases.py       # Command aliases
@@ -50,7 +53,7 @@ TechLang/
 │   ├── linter.py        # Code linter
 │   └── __init__.py
 │
-├── tests/               # Pytest-based unit tests (756+ tests)
+├── tests/               # Pytest-based unit tests (776+ tests)
 │   ├── test_interpreter.py
 │   ├── test_database.py
 │   ├── test_database_advanced.py
@@ -303,6 +306,28 @@ Processes: `proc_spawn`, `proc_wait`, `proc_kill`
 - **Function Composition**: `compose f g composed` creates pipelines
 - **Lambda Expressions**: `lambda name param "expr"` for simple transforms
 - See [Functions Guide](docs/functions.md) for complete reference
+
+### Decorators ✨ NEW
+- **Decorator Definition**: `decorator name mode do ... end` (mode: before/after/both)
+- **Apply Decorator**: `decorate func decorator` wraps function with decorator
+- **Built-in Decorators**: `@log` and `@time` for common use cases
+- See [Decorators Guide](docs/decorators.md) for complete reference
+
+### Context Managers ✨ NEW
+- **Built-in Contexts**: `with timer do ... end`, `with suppress do ... end`
+- **File Context**: `with file "path" do ... end` for automatic file handling
+- **Lock Context**: `with lock mutex do ... end` for thread safety
+- **Transaction**: `with transaction do ... end` for database rollback
+- **Custom Contexts**: `context name enter exit do ... end`
+- See [Context Managers Guide](docs/context-managers.md) for complete reference
+
+### Async/Await ✨ NEW
+- **Async Functions**: `async def name do ... end` for coroutines
+- **Await**: `await coroutine -> result` for async results
+- **Task Spawning**: `spawn coroutine -> task_id` for background tasks
+- **Gathering**: `gather t1 t2 t3 -> results` for parallel execution
+- **Task Management**: `task_status`, `task_cancel` for control
+- See [Async/Await Guide](docs/async-await.md) for complete reference
 
 ### Exception Handling
 - **throw/raise**: `throw "message" [ErrorType]` to raise exceptions

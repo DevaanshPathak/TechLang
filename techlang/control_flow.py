@@ -825,8 +825,13 @@ class ControlFlowHandler:
             return ControlFlowHandler._with_suppress(state, args, body_block, execute_block, end_index - index)
         elif resource_type == "transaction":
             return ControlFlowHandler._with_transaction(state, args, body_block, execute_block, end_index - index)
+        elif resource_type == "lock":
+            return ControlFlowHandler._with_lock(state, args, body_block, execute_block, end_index - index)
         else:
-            state.add_error(f"Unknown resource type '{resource_type}'. Supported: file, timer, suppress, transaction")
+            # Check for user-defined context manager
+            if hasattr(state, 'context_managers') and state.context_managers and resource_type in state.context_managers:
+                return ControlFlowHandler._with_custom(state, resource_type, args, body_block, execute_block, end_index - index)
+            state.add_error(f"Unknown resource type '{resource_type}'. Supported: file, timer, suppress, transaction, lock")
             return end_index - index
 
     @staticmethod
@@ -921,6 +926,94 @@ class ControlFlowHandler:
         else:
             # Commit on success
             DatabaseHandler.handle_commit(state, ["db_commit"], 0)
+        
+        return consumed
+
+    @staticmethod
+    def _with_lock(state: InterpreterState, args: List[str], body: List[str], execute_block: Callable, consumed: int) -> int:
+        """Handle with lock <mutex_name> as <var> do ... end - auto-locks and unlocks mutex."""
+        if len(args) < 1:
+            state.add_error("with lock requires a mutex name")
+            return consumed
+        
+        mutex_name = args[0]
+        var_name = None
+        if len(args) >= 3 and args[1] == "as":
+            var_name = args[2]
+        
+        # Get the mutex
+        if mutex_name not in state.mutexes:
+            state.add_error(f"Mutex '{mutex_name}' not found. Create it with mutex_create first.")
+            return consumed
+        
+        mutex = state.mutexes[mutex_name]
+        
+        # Acquire lock
+        mutex.acquire()
+        
+        if var_name:
+            state.strings[var_name] = mutex_name
+        
+        try:
+            execute_block(body)
+        finally:
+            # Always release lock
+            mutex.release()
+            if var_name and var_name in state.strings:
+                del state.strings[var_name]
+        
+        return consumed
+
+    @staticmethod
+    def _with_custom(state: InterpreterState, ctx_name: str, args: List[str], body: List[str], execute_block: Callable, consumed: int) -> int:
+        """Handle user-defined context manager: with <custom_ctx> [args] as <var> do ... end"""
+        ctx = state.context_managers[ctx_name]
+        
+        # Find 'as' keyword to get variable name
+        var_name = None
+        ctx_args = []
+        for i, arg in enumerate(args):
+            if arg == "as" and i + 1 < len(args):
+                var_name = args[i + 1]
+                ctx_args = args[:i]
+                break
+        else:
+            ctx_args = args
+        
+        # Set up context parameters
+        for i, param in enumerate(ctx.params):
+            if i < len(ctx_args):
+                arg = ctx_args[i]
+                try:
+                    state.variables[param] = int(arg)
+                except ValueError:
+                    state.strings[param] = arg.strip('"') if arg.startswith('"') else arg
+        
+        # Execute enter block
+        execute_block(ctx.enter_body)
+        
+        if var_name:
+            state.strings[var_name] = ctx_name
+        
+        error_occurred = False
+        try:
+            execute_block(body)
+        except Exception as e:
+            error_occurred = True
+            state.add_error(f"Error in context block: {e}")
+        finally:
+            # Always execute exit block
+            execute_block(ctx.exit_body)
+            
+            # Cleanup parameter variables
+            for param in ctx.params:
+                if param in state.variables:
+                    del state.variables[param]
+                if param in state.strings:
+                    del state.strings[param]
+            
+            if var_name and var_name in state.strings:
+                del state.strings[var_name]
         
         return consumed
 

@@ -1337,8 +1337,188 @@ Expression parsed and evaluated at call time.
 
 ---
 
+### 2025-01-XX: Decorators, Context Managers, and Async/Await
+
+**Status:** ✅ Completed
+
+### Summary
+Added Python-like decorators, context managers with automatic cleanup, and async/await for concurrent programming.
+
+### Motivation
+These are essential Python features needed for real-world applications:
+- Decorators: Cross-cutting concerns like logging, timing, authentication
+- Context Managers: Resource management with guaranteed cleanup
+- Async/Await: Non-blocking I/O and parallel task execution
+
+### Implementation Details
+
+#### Feature 4: Decorators
+
+**Commands:**
+- `decorator <name> <mode> do ... end` - Define a decorator (mode: before/after/both)
+- `decorate <func> <decorator>` - Apply decorator to function
+
+**Files Created:**
+- `techlang/decorator_ops.py` (~200 lines)
+  - `DecoratorDefinition` dataclass: name, params, before_body, after_body
+  - `handle_decorator_def()`: Parse and store decorator definitions
+  - `handle_decorate()`: Apply decorator to existing function
+  - `apply_decorator_to_function()`: Wrap function with decorator bodies
+
+**Example:**
+```techlang
+decorator logger before after do
+    print "[LOG] Entering function"
+    print "[LOG] Exiting function"
+end
+
+def greet name do
+    print "Hello,"
+    print name
+end
+
+decorate greet logger
+call greet "World"
+```
+
+#### Feature 5: Context Managers
+
+**Commands:**
+- `context <name> enter exit do ... end` - Define custom context manager
+- `with <context_type> [args...] do ... end` - Use context manager
+
+**Built-in Contexts:**
+- `timer` - Measures block execution time
+- `suppress` - Suppresses errors in block
+- `file <path>` - Auto-manages file handles
+- `transaction` - Database transaction with rollback
+- `lock <mutex>` - Auto lock/unlock mutex
+
+**Files Created:**
+- `techlang/context_ops.py` (~250 lines)
+  - `ContextManager` dataclass: name, params, enter_body, exit_body
+  - `handle_context_def()`: Define custom context managers
+  - `handle_with()`: Execute code within context with cleanup
+
+**Example:**
+```techlang
+with timer do
+    loop 1000 do
+        add x 1
+    end
+end
+# Output: [Timer] Block completed in X.XXXs
+
+with suppress do
+    crash "Error suppressed"
+end
+print "Continues safely"
+```
+
+#### Feature 6: Async/Await
+
+**Commands:**
+- `async def <name> [params...] do ... end` - Define async function (coroutine)
+- `await <coroutine> [args...] -> result` - Await coroutine result
+- `await sleep <ms>` - Async sleep
+- `spawn <coroutine> [args...] -> task_id` - Start background task
+- `gather <task1> <task2> ... -> results` - Wait for multiple tasks
+- `task_status <task_id> -> status` - Check task state
+- `task_cancel <task_id>` - Cancel running task
+
+**Files Created:**
+- `techlang/async_ops.py` (~500 lines)
+  - `TaskState` enum: PENDING, RUNNING, COMPLETED, FAILED, CANCELLED
+  - `AsyncTask` dataclass: task_id, name, body, state, result
+  - `AsyncCoroutine` dataclass: name, params, body
+  - `EventLoop` class: Task scheduling and management
+  - Handlers for all async commands
+
+**Example:**
+```techlang
+async def fetch url do
+    await sleep 100
+    set result 42
+    return result
+end
+
+await fetch "http://api.example.com" -> data
+print data  # 42
+
+# Parallel execution
+spawn fetch "url1" -> t1
+spawn fetch "url2" -> t2
+gather t1 t2 -> results
+```
+
+### Files Modified
+
+- **techlang/core.py**: Added state fields
+  - `decorators: Dict[str, object]`
+  - `context_managers: Dict[str, object]`
+  - `async_coroutines: Dict[str, object]`
+
+- **techlang/basic_commands.py**: Added to KNOWN_COMMANDS:
+  - `decorator`, `decorate`
+  - `context`, `with`
+  - `async`, `await`, `spawn`, `gather`, `task_status`, `task_cancel`
+
+- **techlang/executor.py**: Routing for all new commands
+
+- **techlang/control_flow.py**: Enhanced `with` to support lock and custom contexts
+
+- **techlang/help_ops.py**: Help text for all new commands
+
+### Files Created
+
+- `techlang/decorator_ops.py` - Decorator system implementation
+- `techlang/context_ops.py` - Context manager implementation
+- `techlang/async_ops.py` - Async/await implementation
+- `tests/test_decorators_context_async.py` - 20 comprehensive tests
+- `examples/decorators_context_async_demo.tl` - Full feature demonstration
+- `docs/decorators.md` - Decorator documentation
+- `docs/context-managers.md` - Context manager documentation
+- `docs/async-await.md` - Async/await documentation
+
+### Validation
+- ✅ All 20 new tests passing
+- ✅ Full test suite: 776 passed, 4 skipped
+- ✅ No regressions
+- ✅ Documentation and examples created
+
+### Technical Notes
+
+**Decorator Wrapping:**
+Decorators modify the function's body by prepending before_body and appending after_body tokens.
+
+**Context Manager Cleanup:**
+Exit blocks execute even when errors occur, ensuring resource cleanup.
+
+**Async Implementation:**
+Uses Python's `concurrent.futures.ThreadPoolExecutor` for background task execution. Coroutines execute synchronously when awaited, tasks run in thread pool when spawned.
+
+**Event Loop:**
+Global event loop manages task lifecycle with states: PENDING → RUNNING → COMPLETED/FAILED/CANCELLED.
+
+### Known Limitations
+- Decorators don't support decorator arguments (like `@decorator(arg)`)
+- Context managers can't return values to the `with` block
+- Async doesn't support true parallelism (GIL limitations)
+- No async generators or async iteration
+- Task cancellation is cooperative, not preemptive
+
+### Future Enhancements
+- Decorator arguments: `decorator logger level do ... end`
+- Context manager `as` binding: `with file "x.txt" as f do ... end`
+- Async comprehensions
+- Async generators with `yield`
+- Proper task scheduling with priorities
+- Async exception propagation
+
+---
+
 **Last Updated:** 2025-01-XX  
-**Total Features Added:** 12  
-**Total Tests:** 756+ (756 passing, 4 skipped)
+**Total Features Added:** 15  
+**Total Tests:** 776+ (776 passing, 4 skipped)
 **REPL Version:** 1.1 - Enhanced Edition
 

@@ -90,7 +90,13 @@ class BasicCommandHandler:
         "fn", "fn_ref", "fn_call", "partial", "compose",
         "map_fn", "filter_fn", "reduce_fn",
         # Exception handling
-        "throw", "raise"
+        "throw", "raise",
+        # Decorators
+        "decorator", "decorate",
+        # Context managers
+        "context", "with",
+        # Async/Await
+        "async", "await", "spawn", "gather", "task_status", "task_cancel"
 
         ,
         # GUI (tkinter/customtkinter)

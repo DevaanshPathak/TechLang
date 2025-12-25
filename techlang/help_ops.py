@@ -184,6 +184,19 @@ HELP_TEXT: Dict[str, str] = {
     # Exception handling
     "throw": "throw <message> [type] — throw an exception (can be caught by try/catch)",
     "raise": "raise <message> [type] — alias for throw",
+    # Decorators
+    "decorator": "decorator <name> func [params...] do ... end — define a decorator",
+    "decorate": "decorate <fn> with <decorator> [args...] as <new_name> — apply decorator to function",
+    # Context managers
+    "context": "context <name> [params...] do enter do ... end exit do ... end end — define custom context manager",
+    "with": "with <type> [args] as <var> do ... end — context manager (file, timer, suppress, transaction, lock, or custom)",
+    # Async/Await
+    "async": "async def <name> [params...] do ... end — define an async coroutine",
+    "await": "await <coroutine|task_id|sleep> [args...] [-> result] — wait for async operation",
+    "spawn": "spawn <coroutine> [args...] [-> task_id] — start coroutine as background task",
+    "gather": "gather <task1> <task2> ... [-> results_array] — wait for multiple tasks",
+    "task_status": "task_status <task_id> [-> status] — get task status (pending/running/completed/failed)",
+    "task_cancel": "task_cancel <task_id> — cancel a pending task",
     "struct": "struct <Type> <fields...> end / struct new|set|get|dump — manage records",
     "file_read": "file_read \"path\" <var>",
     "file_write": "file_write \"path\" \"text\" [okVar] — write text to file; if okVar provided, store 1/0 and emit no output",
