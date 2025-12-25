@@ -60,6 +60,12 @@ class InterpreterState:
     # Dictionaries that store key-value pairs (like a phone book)
     dictionaries: Dict[str, Dict[str, Union[int, str]]] = None
 
+    # Sets that store unique values (like a bag of unique items)
+    sets: Dict[str, Set[Union[int, str]]] = None
+
+    # Generators - stateful iterators that yield values one at a time
+    generators: Dict[str, Dict[str, object]] = None  # name -> {func, index, values, exhausted}
+
     # Struct type definitions (field name -> type) and instances (instance -> {type, fields})
     struct_defs: Dict[str, Dict[str, str]] = None
     structs: Dict[str, Dict[str, object]] = None
@@ -154,6 +160,10 @@ class InterpreterState:
             self.strings = {}
         if self.dictionaries is None:
             self.dictionaries = {}
+        if self.sets is None:
+            self.sets = {}
+        if self.generators is None:
+            self.generators = {}
         if self.struct_defs is None:
             self.struct_defs = {}
         if self.structs is None:

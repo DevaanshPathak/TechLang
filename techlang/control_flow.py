@@ -327,45 +327,68 @@ class ControlFlowHandler:
     @staticmethod
     def handle_try(state: InterpreterState, tokens: List[str], index: int, execute_block: Callable) -> int:
         """
-        try ... catch ... end
+        try ... catch [error_var] ... else ... finally ... end
         Execute try block; if any error is emitted inside, suppress it and run catch.
+        If no error, run else block (if present).
+        Finally block always runs (if present).
         We detect errors by inspecting output lines appended during try.
         """
         start_index = index + 1
         try_body, end_index = BlockCollector.collect_block(start_index, tokens)
 
-        # Split try_body by top-level 'catch'
+        # Split try_body by top-level 'catch', 'else', 'finally'
         i = 0
         nested_depth = 0
         try_block: List[str] = []
         catch_block: List[str] = []
-        found_catch = False
+        else_block: List[str] = []
+        finally_block: List[str] = []
+        current_section = "try"
         catch_error_var: Optional[str] = None
         catch_stack_var: Optional[str] = None
         from .basic_commands import BasicCommandHandler  # local import to avoid circular dependency
 
-        reserved_tokens = {"case", "catch", "default", "def", "end", "if", "loop", "match", "switch", "try", "while"}
+        reserved_tokens = {"case", "catch", "default", "def", "end", "if", "loop", "match", "switch", "try", "while", "else", "finally"}
         reserved_tokens.update(BasicCommandHandler.KNOWN_COMMANDS)
+        
         while i < len(try_body):
             t = try_body[i]
             if t in {"def", "if", "loop", "while", "switch", "try"}:
                 nested_depth += 1
             elif t == "end" and nested_depth > 0:
                 nested_depth -= 1
-            if t == "catch" and nested_depth == 0 and not found_catch:
-                found_catch = True
-                if i + 1 < len(try_body) and try_body[i + 1] not in reserved_tokens:
-                    catch_error_var = try_body[i + 1]
-                    i += 1
+            
+            # Check for section keywords at top level
+            if nested_depth == 0:
+                if t == "catch" and current_section == "try":
+                    current_section = "catch"
+                    # Check for optional error variable
                     if i + 1 < len(try_body) and try_body[i + 1] not in reserved_tokens:
-                        catch_stack_var = try_body[i + 1]
+                        catch_error_var = try_body[i + 1]
                         i += 1
-                i += 1
-                continue
-            if not found_catch:
+                        if i + 1 < len(try_body) and try_body[i + 1] not in reserved_tokens:
+                            catch_stack_var = try_body[i + 1]
+                            i += 1
+                    i += 1
+                    continue
+                elif t == "else" and current_section in ("try", "catch"):
+                    current_section = "else"
+                    i += 1
+                    continue
+                elif t == "finally" and current_section in ("try", "catch", "else"):
+                    current_section = "finally"
+                    i += 1
+                    continue
+            
+            # Add token to current section
+            if current_section == "try":
                 try_block.append(t)
-            else:
+            elif current_section == "catch":
                 catch_block.append(t)
+            elif current_section == "else":
+                else_block.append(t)
+            elif current_section == "finally":
+                finally_block.append(t)
             i += 1
 
         # Snapshot output length; if an [Error: ...] is added during try, run catch
@@ -374,14 +397,28 @@ class ControlFlowHandler:
         new_lines = state.output[before_len:]
         error_lines = [line for line in new_lines if line.startswith("[Error:")]
         error_emitted = bool(error_lines)
-        if error_emitted and catch_block:
-            if catch_error_var:
-                message = ControlFlowHandler._extract_error_message(error_lines[0])
-                state.set_variable(catch_error_var, message)
-            if catch_stack_var:
-                state.set_variable(catch_stack_var, str(state.stack))
-            execute_block(catch_block)
+        
+        if error_emitted:
+            # Error occurred - run catch block
+            if catch_block:
+                if catch_error_var:
+                    message = ControlFlowHandler._extract_error_message(error_lines[0])
+                    state.set_variable(catch_error_var, message)
+                if catch_stack_var:
+                    state.set_variable(catch_stack_var, str(state.stack))
+                execute_block(catch_block)
+        else:
+            # No error - run else block
+            if else_block:
+                execute_block(else_block)
+        
+        # Finally always runs
+        if finally_block:
+            execute_block(finally_block)
+        
         return end_index - index
+    
+    @staticmethod
     def handle_def(state: InterpreterState, tokens: List[str], index: int) -> int:
         if index + 1 >= len(tokens):
             state.add_error("Invalid 'def' command. Use: def <function_name> [params...] ... end")
@@ -721,3 +758,150 @@ class ControlFlowHandler:
             return var_value <= compare_val
 
         return False  # Unknown operator
+
+    @staticmethod
+    def handle_with(state: InterpreterState, tokens: List[str], index: int, execute_block: Callable) -> int:
+        """
+        with <resource_type> <name> [args...] do ... end
+        Context manager that ensures cleanup happens even if errors occur.
+        
+        Supported resource types:
+        - file: with file "path" "mode" as f do ... end
+        - timer: with timer as t do ... end (stores elapsed time in t)
+        - suppress: with suppress do ... end (suppresses all errors in block)
+        - transaction: with transaction do ... end (auto-commits or rolls back DB)
+        """
+        import time
+        
+        if index + 2 >= len(tokens):
+            state.add_error("with requires resource type and body. Use: with <type> [args] do ... end")
+            return 0
+        
+        resource_type = tokens[index + 1]
+        
+        # Find 'do' keyword to determine args and start of body
+        do_index = -1
+        for i in range(index + 2, len(tokens)):
+            if tokens[i] == "do":
+                do_index = i
+                break
+        
+        if do_index == -1:
+            state.add_error("with block requires 'do' keyword. Use: with <type> [args] do ... end")
+            return 0
+        
+        # Collect args between resource_type and 'do'
+        args = tokens[index + 2:do_index]
+        
+        # Collect block body
+        body_start = do_index + 1
+        body_block, end_index = BlockCollector.collect_block(body_start, tokens)
+        
+        # Handle different resource types
+        if resource_type == "file":
+            return ControlFlowHandler._with_file(state, args, body_block, execute_block, end_index - index)
+        elif resource_type == "timer":
+            return ControlFlowHandler._with_timer(state, args, body_block, execute_block, end_index - index)
+        elif resource_type == "suppress":
+            return ControlFlowHandler._with_suppress(state, args, body_block, execute_block, end_index - index)
+        elif resource_type == "transaction":
+            return ControlFlowHandler._with_transaction(state, args, body_block, execute_block, end_index - index)
+        else:
+            state.add_error(f"Unknown resource type '{resource_type}'. Supported: file, timer, suppress, transaction")
+            return end_index - index
+
+    @staticmethod
+    def _with_file(state: InterpreterState, args: List[str], body: List[str], execute_block: Callable, consumed: int) -> int:
+        """Handle with file ... do ... end - auto-closes file after block."""
+        import os
+        from pathlib import Path
+        
+        if len(args) < 2:
+            state.add_error("with file requires path and variable. Use: with file \"path\" as <var> do ... end")
+            return consumed
+        
+        path_token = args[0]
+        # Find 'as' keyword
+        if len(args) >= 3 and args[1] == "as":
+            var_name = args[2]
+        else:
+            var_name = args[1]  # Fallback if no 'as'
+        
+        # Remove quotes from path
+        if path_token.startswith('"') and path_token.endswith('"'):
+            path_token = path_token[1:-1]
+        
+        # Resolve path relative to base_dir
+        base_dir = getattr(state, 'base_dir', '.')
+        full_path = str(Path(base_dir) / path_token)
+        
+        # Store path in a string variable for the block to use
+        state.strings[var_name] = full_path
+        
+        # Execute body (file operations will use the path)
+        execute_block(body)
+        
+        # Cleanup: remove the variable (simulates file close)
+        if var_name in state.strings:
+            del state.strings[var_name]
+        
+        return consumed
+
+    @staticmethod
+    def _with_timer(state: InterpreterState, args: List[str], body: List[str], execute_block: Callable, consumed: int) -> int:
+        """Handle with timer as <var> do ... end - stores elapsed time."""
+        import time
+        
+        var_name = None
+        if len(args) >= 2 and args[0] == "as":
+            var_name = args[1]
+        elif len(args) >= 1:
+            var_name = args[0]
+        
+        start_time = time.time()
+        execute_block(body)
+        elapsed = time.time() - start_time
+        
+        if var_name:
+            # Store elapsed time in milliseconds
+            state.set_variable(var_name, int(elapsed * 1000))
+        
+        return consumed
+
+    @staticmethod
+    def _with_suppress(state: InterpreterState, args: List[str], body: List[str], execute_block: Callable, consumed: int) -> int:
+        """Handle with suppress do ... end - suppresses all errors in block."""
+        before_len = len(state.output)
+        execute_block(body)
+        
+        # Remove any error lines that were added
+        new_output = []
+        for i, line in enumerate(state.output):
+            if i < before_len or not line.startswith("[Error:"):
+                new_output.append(line)
+        state.output[:] = new_output
+        
+        return consumed
+
+    @staticmethod
+    def _with_transaction(state: InterpreterState, args: List[str], body: List[str], execute_block: Callable, consumed: int) -> int:
+        """Handle with transaction do ... end - auto-commits or rolls back database."""
+        from .database import DatabaseHandler
+        
+        # Begin transaction
+        DatabaseHandler.handle_begin(state, ["db_begin"], 0)
+        
+        before_len = len(state.output)
+        execute_block(body)
+        new_lines = state.output[before_len:]
+        error_lines = [line for line in new_lines if line.startswith("[Error:")]
+        
+        if error_lines:
+            # Rollback on error
+            DatabaseHandler.handle_rollback(state, ["db_rollback"], 0)
+        else:
+            # Commit on success
+            DatabaseHandler.handle_commit(state, ["db_commit"], 0)
+        
+        return consumed
+

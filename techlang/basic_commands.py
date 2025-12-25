@@ -16,19 +16,35 @@ class BasicCommandHandler:
         "boot", "ping", "crash", "reboot", "print", "upload",
     "download", "debug", "hack", "lag", "sleep", "yield", "fork", "set", "add",
     "mul", "sub", "div", "loop", "while", "switch", "match", "try", "catch", "default", "case", "end", "if", "def", "call", "input", "alias", "import", "package", "struct", "macro", "inline", "do",
+    "else", "finally", "with",  # Extended try/catch and context managers
         "db_create", "db_insert", "db_select", "db_update", "db_delete", "db_execute", "db_close",
         # Advanced DB
         "db_begin", "db_commit", "db_rollback", "db_tables", "db_schema", "db_indexes", "db_connect", "db_disconnect",
     # Array commands - for working with lists
     "array_create", "array_set", "array_get", "array_push", "array_pop",
     "array_map", "array_filter", "array_sort", "array_reverse", "array_find", "array_unique", "array_join",
+    "array_slice", "array_comprehend", "range", "enumerate", "array_zip", "array_apply",
+    "any", "all", "array_min", "array_max", "array_sorted",
+    # Lambda/anonymous functions
+    "lambda", "lambda_call",
         # String commands - for working with text
     "str_create", "str_concat", "str_length", "str_substring", "string_interpolate", "string_match",
     "str_split", "str_replace", "str_trim", "str_upper", "str_lower", "str_contains", "str_reverse",
+    "str_format", "str_startswith", "str_endswith", "str_count", "str_find", "str_rfind",
+    "str_isdigit", "str_isalpha", "str_isalnum",
         # Dictionary commands - for working with key-value pairs
         "dict_create", "dict_set", "dict_get", "dict_keys",
+        "dict_values", "dict_items", "dict_update", "dict_pop", "dict_get_default",
+        "dict_has_key", "dict_clear", "dict_len",
+        # Set commands - for working with unique collections
+        "set_create", "set_add", "set_remove", "set_contains", "set_len", "set_clear",
+        "set_union", "set_intersection", "set_difference", "set_symmetric_difference",
+        "set_issubset", "set_issuperset", "set_to_array", "array_to_set",
         # Type checking commands - for runtime introspection
-        "type_of", "is_number", "is_string", "is_array", "is_dict", "is_struct",
+        "type_of", "is_number", "is_string", "is_array", "is_dict", "is_struct", "is_set", "is_generator",
+        # Generator commands - for lazy iteration
+        "generator_create", "generator_next", "generator_reset", "generator_to_array",
+        "generator_from_range", "generator_take",
         # Regex commands - for pattern matching
         "regex_match", "regex_find", "regex_replace", "regex_split",
         # Crypto/encoding commands

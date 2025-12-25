@@ -286,6 +286,24 @@ class CommandExecutor:
                 consumed = DataTypesHandler.handle_is_dict(self.state, tokens, i)
             elif token == "is_struct":
                 consumed = DataTypesHandler.handle_is_struct(self.state, tokens, i)
+            elif token == "is_set":
+                consumed = DataTypesHandler.handle_is_set(self.state, tokens, i)
+            elif token == "is_generator":
+                consumed = DataTypesHandler.handle_is_generator(self.state, tokens, i)
+            
+            # Generator operations - lazy iteration
+            elif token == "generator_create":
+                consumed = DataTypesHandler.handle_generator_create(self.state, tokens, i)
+            elif token == "generator_next":
+                consumed = DataTypesHandler.handle_generator_next(self.state, tokens, i)
+            elif token == "generator_reset":
+                consumed = DataTypesHandler.handle_generator_reset(self.state, tokens, i)
+            elif token == "generator_to_array":
+                consumed = DataTypesHandler.handle_generator_to_array(self.state, tokens, i)
+            elif token == "generator_from_range":
+                consumed = DataTypesHandler.handle_generator_from_range(self.state, tokens, i)
+            elif token == "generator_take":
+                consumed = DataTypesHandler.handle_generator_take(self.state, tokens, i)
             
             # Regex operations - pattern matching
             elif token == "regex_match":
@@ -318,6 +336,106 @@ class CommandExecutor:
             # Assert command
             elif token == "assert":
                 consumed = DataTypesHandler.handle_assert(self.state, tokens, i)
+            
+            # Python-like array operations
+            elif token == "array_slice":
+                consumed = DataTypesHandler.handle_array_slice(self.state, tokens, i)
+            elif token == "range":
+                consumed = DataTypesHandler.handle_range(self.state, tokens, i)
+            elif token == "array_comprehend":
+                consumed = DataTypesHandler.handle_array_comprehend(self.state, tokens, i)
+            elif token == "enumerate":
+                consumed = DataTypesHandler.handle_enumerate(self.state, tokens, i)
+            elif token == "array_zip":
+                consumed = DataTypesHandler.handle_array_zip(self.state, tokens, i)
+            
+            # Lambda/anonymous functions
+            elif token == "lambda":
+                consumed = DataTypesHandler.handle_lambda(self.state, tokens, i)
+            elif token == "array_apply":
+                consumed = DataTypesHandler.handle_array_apply(self.state, tokens, i)
+            elif token == "lambda_call":
+                consumed = DataTypesHandler.handle_lambda_call(self.state, tokens, i)
+            
+            # Any/All and Min/Max
+            elif token == "any":
+                consumed = DataTypesHandler.handle_any(self.state, tokens, i)
+            elif token == "all":
+                consumed = DataTypesHandler.handle_all(self.state, tokens, i)
+            elif token == "array_min":
+                consumed = DataTypesHandler.handle_array_min(self.state, tokens, i)
+            elif token == "array_max":
+                consumed = DataTypesHandler.handle_array_max(self.state, tokens, i)
+            elif token == "array_sorted":
+                consumed = DataTypesHandler.handle_array_sorted(self.state, tokens, i)
+            
+            # String formatting and methods
+            elif token == "str_format":
+                consumed = DataTypesHandler.handle_str_format(self.state, tokens, i)
+            elif token == "str_startswith":
+                consumed = DataTypesHandler.handle_str_startswith(self.state, tokens, i)
+            elif token == "str_endswith":
+                consumed = DataTypesHandler.handle_str_endswith(self.state, tokens, i)
+            elif token == "str_count":
+                consumed = DataTypesHandler.handle_str_count(self.state, tokens, i)
+            elif token == "str_find":
+                consumed = DataTypesHandler.handle_str_find(self.state, tokens, i)
+            elif token == "str_rfind":
+                consumed = DataTypesHandler.handle_str_rfind(self.state, tokens, i)
+            elif token == "str_isdigit":
+                consumed = DataTypesHandler.handle_str_isdigit(self.state, tokens, i)
+            elif token == "str_isalpha":
+                consumed = DataTypesHandler.handle_str_isalpha(self.state, tokens, i)
+            elif token == "str_isalnum":
+                consumed = DataTypesHandler.handle_str_isalnum(self.state, tokens, i)
+            
+            # Dict methods
+            elif token == "dict_values":
+                consumed = DataTypesHandler.handle_dict_values(self.state, tokens, i)
+            elif token == "dict_items":
+                consumed = DataTypesHandler.handle_dict_items(self.state, tokens, i)
+            elif token == "dict_update":
+                consumed = DataTypesHandler.handle_dict_update(self.state, tokens, i)
+            elif token == "dict_pop":
+                consumed = DataTypesHandler.handle_dict_pop(self.state, tokens, i)
+            elif token == "dict_get_default":
+                consumed = DataTypesHandler.handle_dict_get_default(self.state, tokens, i)
+            elif token == "dict_has_key":
+                consumed = DataTypesHandler.handle_dict_has_key(self.state, tokens, i)
+            elif token == "dict_clear":
+                consumed = DataTypesHandler.handle_dict_clear(self.state, tokens, i)
+            elif token == "dict_len":
+                consumed = DataTypesHandler.handle_dict_len(self.state, tokens, i)
+            
+            # Set operations
+            elif token == "set_create":
+                consumed = DataTypesHandler.handle_set_create(self.state, tokens, i)
+            elif token == "set_add":
+                consumed = DataTypesHandler.handle_set_add(self.state, tokens, i)
+            elif token == "set_remove":
+                consumed = DataTypesHandler.handle_set_remove(self.state, tokens, i)
+            elif token == "set_contains":
+                consumed = DataTypesHandler.handle_set_contains(self.state, tokens, i)
+            elif token == "set_len":
+                consumed = DataTypesHandler.handle_set_len(self.state, tokens, i)
+            elif token == "set_clear":
+                consumed = DataTypesHandler.handle_set_clear(self.state, tokens, i)
+            elif token == "set_union":
+                consumed = DataTypesHandler.handle_set_union(self.state, tokens, i)
+            elif token == "set_intersection":
+                consumed = DataTypesHandler.handle_set_intersection(self.state, tokens, i)
+            elif token == "set_difference":
+                consumed = DataTypesHandler.handle_set_difference(self.state, tokens, i)
+            elif token == "set_symmetric_difference":
+                consumed = DataTypesHandler.handle_set_symmetric_difference(self.state, tokens, i)
+            elif token == "set_issubset":
+                consumed = DataTypesHandler.handle_set_issubset(self.state, tokens, i)
+            elif token == "set_issuperset":
+                consumed = DataTypesHandler.handle_set_issuperset(self.state, tokens, i)
+            elif token == "set_to_array":
+                consumed = DataTypesHandler.handle_set_to_array(self.state, tokens, i)
+            elif token == "array_to_set":
+                consumed = DataTypesHandler.handle_array_to_set(self.state, tokens, i)
             
             # Bitwise operations
             elif token == "bit_and":
@@ -595,9 +713,13 @@ class CommandExecutor:
             elif token == "proc_status":
                 consumed = ProcessOpsHandler.handle_proc_status(self.state, tokens, i)
 
-            # Try/Catch
+            # Try/Catch/Else/Finally
             elif token == "try":
                 consumed = ControlFlowHandler.handle_try(self.state, tokens, i, self.execute_block)
+
+            # Context managers (with statement)
+            elif token == "with":
+                consumed = ControlFlowHandler.handle_with(self.state, tokens, i, self.execute_block)
 
             # End of block - marks the end of loops, functions, etc.
             elif token == "end":
