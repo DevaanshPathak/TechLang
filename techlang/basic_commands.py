@@ -21,12 +21,22 @@ class BasicCommandHandler:
         "db_begin", "db_commit", "db_rollback", "db_tables", "db_schema", "db_indexes", "db_connect", "db_disconnect",
     # Array commands - for working with lists
     "array_create", "array_set", "array_get", "array_push", "array_pop",
-    "array_map", "array_filter",
+    "array_map", "array_filter", "array_sort", "array_reverse", "array_find", "array_unique", "array_join",
         # String commands - for working with text
     "str_create", "str_concat", "str_length", "str_substring", "string_interpolate", "string_match",
     "str_split", "str_replace", "str_trim", "str_upper", "str_lower", "str_contains", "str_reverse",
         # Dictionary commands - for working with key-value pairs
         "dict_create", "dict_set", "dict_get", "dict_keys",
+        # Type checking commands - for runtime introspection
+        "type_of", "is_number", "is_string", "is_array", "is_dict", "is_struct",
+        # Regex commands - for pattern matching
+        "regex_match", "regex_find", "regex_replace", "regex_split",
+        # Crypto/encoding commands
+        "base64_encode", "base64_decode", "md5", "sha256", "sha512", "uuid", "hex_encode", "hex_decode",
+        # Assert command - for testing/validation
+        "assert",
+        # Bitwise operations
+        "bit_and", "bit_or", "bit_xor", "bit_not", "bit_shift_left", "bit_shift_right",
         # JSON commands - for parsing and stringifying JSON data
         "json_parse", "json_stringify", "json_read", "json_write",
         # File I/O commands

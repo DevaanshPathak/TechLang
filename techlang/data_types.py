@@ -474,6 +474,160 @@ class DataTypesHandler:
             f"Filtered array '{source_name}' into '{target_name}' with predicate {descriptor} (kept {len(result)}/{len(source_values)})"
         )
         return consumed
+
+    # ========== Array Sort/Reverse/Find/Unique Commands ==========
+
+    @staticmethod
+    def handle_array_sort(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Sort an array in place.
+        Example: array_sort nums — sorts ascending
+        Example: array_sort nums asc — sorts ascending
+        Example: array_sort nums desc — sorts descending
+        """
+        if index + 1 >= len(tokens):
+            state.add_error("array_sort requires array name. Use: array_sort <name> [asc|desc]")
+            return 0
+        
+        array_name = DataTypesHandler._resolve_existing_name(state, tokens[index + 1])
+        
+        if array_name not in state.arrays:
+            state.add_error(f"Array '{array_name}' does not exist")
+            return 0
+        
+        # Check for optional direction
+        direction = "asc"
+        consumed = 1
+        if index + 2 < len(tokens) and tokens[index + 2] in ("asc", "desc"):
+            direction = tokens[index + 2]
+            consumed = 2
+        
+        arr = state.arrays[array_name]
+        
+        # Check if array contains mixed types
+        has_numbers = any(isinstance(x, (int, float)) for x in arr)
+        has_strings = any(isinstance(x, str) for x in arr)
+        
+        if has_numbers and has_strings:
+            state.add_error(f"Cannot sort array '{array_name}' with mixed types (numbers and strings)")
+            return 0
+        
+        try:
+            reverse = (direction == "desc")
+            state.arrays[array_name] = sorted(arr, reverse=reverse)
+            state.add_output(f"Sorted array '{array_name}' ({direction}ending, {len(arr)} items)")
+        except TypeError as e:
+            state.add_error(f"Cannot sort array '{array_name}': {str(e)}")
+            return 0
+        
+        return consumed
+
+    @staticmethod
+    def handle_array_reverse(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Reverse an array in place.
+        Example: array_reverse nums
+        """
+        if index + 1 >= len(tokens):
+            state.add_error("array_reverse requires array name. Use: array_reverse <name>")
+            return 0
+        
+        array_name = DataTypesHandler._resolve_existing_name(state, tokens[index + 1])
+        
+        if array_name not in state.arrays:
+            state.add_error(f"Array '{array_name}' does not exist")
+            return 0
+        
+        state.arrays[array_name] = list(reversed(state.arrays[array_name]))
+        state.add_output(f"Reversed array '{array_name}' ({len(state.arrays[array_name])} items)")
+        return 1
+
+    @staticmethod
+    def handle_array_find(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Find the index of a value in an array.
+        Example: array_find nums 42 result — stores index in result (-1 if not found)
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("array_find requires array name, value, and target. Use: array_find <name> <value> <target>")
+            return 0
+        
+        array_name = DataTypesHandler._resolve_existing_name(state, tokens[index + 1])
+        search_value = DataTypesHandler._resolve_value_token(state, tokens[index + 2])
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if array_name not in state.arrays:
+            state.add_error(f"Array '{array_name}' does not exist")
+            return 0
+        
+        arr = state.arrays[array_name]
+        try:
+            idx = arr.index(search_value)
+        except ValueError:
+            idx = -1
+        
+        state.set_variable(target, idx)
+        return 3
+
+    @staticmethod
+    def handle_array_unique(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Remove duplicate elements from an array in place, preserving order.
+        Example: array_unique nums
+        """
+        if index + 1 >= len(tokens):
+            state.add_error("array_unique requires array name. Use: array_unique <name>")
+            return 0
+        
+        array_name = DataTypesHandler._resolve_existing_name(state, tokens[index + 1])
+        
+        if array_name not in state.arrays:
+            state.add_error(f"Array '{array_name}' does not exist")
+            return 0
+        
+        arr = state.arrays[array_name]
+        original_len = len(arr)
+        
+        # Preserve order while removing duplicates
+        seen = set()
+        unique = []
+        for item in arr:
+            # Handle unhashable types by converting to string for comparison
+            key = item if isinstance(item, (int, float, str)) else str(item)
+            if key not in seen:
+                seen.add(key)
+                unique.append(item)
+        
+        state.arrays[array_name] = unique
+        removed = original_len - len(unique)
+        state.add_output(f"Removed {removed} duplicate(s) from array '{array_name}' ({len(unique)} items remaining)")
+        return 1
+
+    @staticmethod
+    def handle_array_join(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Join array elements into a string with a delimiter.
+        Example: array_join nums "," result — joins with comma into string 'result'
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("array_join requires array name, delimiter, and target. Use: array_join <name> <delimiter> <target>")
+            return 0
+        
+        array_name = DataTypesHandler._resolve_existing_name(state, tokens[index + 1])
+        delimiter = DataTypesHandler._resolve_string_token(state, tokens[index + 2], "delimiter")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if array_name not in state.arrays:
+            state.add_error(f"Array '{array_name}' does not exist")
+            return 0
+        
+        if delimiter is None:
+            return 0
+        
+        arr = state.arrays[array_name]
+        result = delimiter.join(str(item) for item in arr)
+        state.strings[target] = result
+        return 3
     
     @staticmethod
     def handle_str_create(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -1112,3 +1266,657 @@ class DataTypesHandler:
         except Exception as e:
             state.add_error(f"Error writing file: {str(e)}")
             return 0
+    # ========== Type Checking Commands ==========
+
+    @staticmethod
+    def handle_type_of(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Get the type of a variable/data structure.
+        Example: type_of myvar result — stores "number", "string", "array", "dict", or "struct" in result
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("type_of requires name and target. Use: type_of <name> <target>")
+            return 0
+        
+        name = tokens[index + 1]
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        # Check each type in order of specificity
+        type_name = "undefined"
+        
+        # Check structs first (more specific)
+        if name in state.structs:
+            # Get the struct type name if available
+            struct_instance = state.structs[name]
+            if isinstance(struct_instance, dict) and 'type' in struct_instance:
+                type_name = f"struct:{struct_instance['type']}"
+            else:
+                type_name = "struct"
+        elif name in state.dictionaries:
+            type_name = "dict"
+        elif name in state.arrays:
+            type_name = "array"
+        elif name in state.strings:
+            type_name = "string"
+        elif state.has_variable(name):
+            val = state.get_variable(name)
+            if isinstance(val, bool):
+                type_name = "bool"
+            elif isinstance(val, int):
+                type_name = "number"
+            elif isinstance(val, float):
+                type_name = "float"
+            elif isinstance(val, str):
+                type_name = "string"
+            else:
+                type_name = "unknown"
+        
+        # Store result in target string
+        state.strings[target] = type_name
+        return 2
+
+    @staticmethod
+    def handle_is_number(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Check if a name refers to a numeric variable.
+        Example: is_number myvar result — stores 1 or 0 in result
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("is_number requires name and target. Use: is_number <name> <target>")
+            return 0
+        
+        name = tokens[index + 1]
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        result = 0
+        if state.has_variable(name):
+            val = state.get_variable(name)
+            if isinstance(val, (int, float)) and not isinstance(val, bool):
+                result = 1
+        
+        state.set_variable(target, result)
+        return 2
+
+    @staticmethod
+    def handle_is_string(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Check if a name refers to a string.
+        Example: is_string myvar result — stores 1 or 0 in result
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("is_string requires name and target. Use: is_string <name> <target>")
+            return 0
+        
+        name = tokens[index + 1]
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        result = 1 if name in state.strings else 0
+        
+        state.set_variable(target, result)
+        return 2
+
+    @staticmethod
+    def handle_is_array(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Check if a name refers to an array.
+        Example: is_array myvar result — stores 1 or 0 in result
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("is_array requires name and target. Use: is_array <name> <target>")
+            return 0
+        
+        name = tokens[index + 1]
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        result = 1 if name in state.arrays else 0
+        
+        state.set_variable(target, result)
+        return 2
+
+    @staticmethod
+    def handle_is_dict(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Check if a name refers to a dictionary.
+        Example: is_dict myvar result — stores 1 or 0 in result
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("is_dict requires name and target. Use: is_dict <name> <target>")
+            return 0
+        
+        name = tokens[index + 1]
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        result = 1 if name in state.dictionaries else 0
+        
+        state.set_variable(target, result)
+        return 2
+
+    @staticmethod
+    def handle_is_struct(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Check if a name refers to a struct instance.
+        Example: is_struct myvar result — stores 1 or 0 in result
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("is_struct requires name and target. Use: is_struct <name> <target>")
+            return 0
+        
+        name = tokens[index + 1]
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        result = 1 if name in state.structs else 0
+        
+        state.set_variable(target, result)
+        return 2
+
+    # ========== Regex Commands ==========
+
+    @staticmethod
+    def handle_regex_match(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Test if a regex pattern matches a string.
+        Example: regex_match "\\d+" text result — stores 1 if matches, 0 otherwise
+        """
+        import re
+        
+        if index + 3 >= len(tokens):
+            state.add_error("regex_match requires pattern, subject, and target. Use: regex_match <pattern> <subject> <target>")
+            return 0
+        
+        pattern = DataTypesHandler._resolve_string_token(state, tokens[index + 1], "pattern")
+        subject = DataTypesHandler._resolve_string_token(state, tokens[index + 2], "subject")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if pattern is None or subject is None:
+            return 0
+        
+        try:
+            match = re.search(pattern, subject)
+            state.set_variable(target, 1 if match else 0)
+        except re.error as e:
+            state.add_error(f"Invalid regex pattern: {str(e)}")
+            return 0
+        
+        return 3
+
+    @staticmethod
+    def handle_regex_find(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Find all matches of a regex pattern and store in an array.
+        Example: regex_find "\\d+" text matches — stores all matches in array 'matches'
+        """
+        import re
+        
+        if index + 3 >= len(tokens):
+            state.add_error("regex_find requires pattern, subject, and target array. Use: regex_find <pattern> <subject> <array>")
+            return 0
+        
+        pattern = DataTypesHandler._resolve_string_token(state, tokens[index + 1], "pattern")
+        subject = DataTypesHandler._resolve_string_token(state, tokens[index + 2], "subject")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if pattern is None or subject is None:
+            return 0
+        
+        try:
+            matches = re.findall(pattern, subject)
+            state.arrays[target] = list(matches)
+            state.add_output(f"Found {len(matches)} match(es)")
+        except re.error as e:
+            state.add_error(f"Invalid regex pattern: {str(e)}")
+            return 0
+        
+        return 3
+
+    @staticmethod
+    def handle_regex_replace(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Replace all matches of a regex pattern with a replacement string.
+        Example: regex_replace "\\d+" text "X" result — replaces all digits with X
+        """
+        import re
+        
+        if index + 4 >= len(tokens):
+            state.add_error("regex_replace requires pattern, subject, replacement, and target. Use: regex_replace <pattern> <subject> <replacement> <target>")
+            return 0
+        
+        pattern = DataTypesHandler._resolve_string_token(state, tokens[index + 1], "pattern")
+        subject = DataTypesHandler._resolve_string_token(state, tokens[index + 2], "subject")
+        replacement = DataTypesHandler._resolve_string_token(state, tokens[index + 3], "replacement")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 4])
+        
+        if pattern is None or subject is None or replacement is None:
+            return 0
+        
+        try:
+            result = re.sub(pattern, replacement, subject)
+            state.strings[target] = result
+        except re.error as e:
+            state.add_error(f"Invalid regex pattern: {str(e)}")
+            return 0
+        
+        return 4
+
+    @staticmethod
+    def handle_regex_split(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Split a string by a regex pattern into an array.
+        Example: regex_split "\\s+" text parts — splits by whitespace
+        """
+        import re
+        
+        if index + 3 >= len(tokens):
+            state.add_error("regex_split requires pattern, subject, and target array. Use: regex_split <pattern> <subject> <array>")
+            return 0
+        
+        pattern = DataTypesHandler._resolve_string_token(state, tokens[index + 1], "pattern")
+        subject = DataTypesHandler._resolve_string_token(state, tokens[index + 2], "subject")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if pattern is None or subject is None:
+            return 0
+        
+        try:
+            parts = re.split(pattern, subject)
+            state.arrays[target] = parts
+            state.add_output(f"Split into {len(parts)} part(s)")
+        except re.error as e:
+            state.add_error(f"Invalid regex pattern: {str(e)}")
+            return 0
+        
+        return 3
+
+    # ========== Crypto/Encoding Commands ==========
+
+    @staticmethod
+    def handle_base64_encode(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Encode a string to base64.
+        Example: base64_encode text result
+        """
+        import base64
+        
+        if index + 2 >= len(tokens):
+            state.add_error("base64_encode requires source and target. Use: base64_encode <source> <target>")
+            return 0
+        
+        source = DataTypesHandler._resolve_string_token(state, tokens[index + 1], "source")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        if source is None:
+            return 0
+        
+        encoded = base64.b64encode(source.encode('utf-8')).decode('utf-8')
+        state.strings[target] = encoded
+        return 2
+
+    @staticmethod
+    def handle_base64_decode(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Decode a base64 string.
+        Example: base64_decode encoded result
+        """
+        import base64
+        
+        if index + 2 >= len(tokens):
+            state.add_error("base64_decode requires source and target. Use: base64_decode <source> <target>")
+            return 0
+        
+        source = DataTypesHandler._resolve_string_token(state, tokens[index + 1], "source")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        if source is None:
+            return 0
+        
+        try:
+            decoded = base64.b64decode(source.encode('utf-8')).decode('utf-8')
+            state.strings[target] = decoded
+        except Exception as e:
+            state.add_error(f"Invalid base64 string: {str(e)}")
+            return 0
+        
+        return 2
+
+    @staticmethod
+    def handle_md5(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Compute MD5 hash of a string.
+        Example: md5 text result
+        """
+        import hashlib
+        
+        if index + 2 >= len(tokens):
+            state.add_error("md5 requires source and target. Use: md5 <source> <target>")
+            return 0
+        
+        source = DataTypesHandler._resolve_string_token(state, tokens[index + 1], "source")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        if source is None:
+            return 0
+        
+        hash_result = hashlib.md5(source.encode('utf-8')).hexdigest()
+        state.strings[target] = hash_result
+        return 2
+
+    @staticmethod
+    def handle_sha256(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Compute SHA256 hash of a string.
+        Example: sha256 text result
+        """
+        import hashlib
+        
+        if index + 2 >= len(tokens):
+            state.add_error("sha256 requires source and target. Use: sha256 <source> <target>")
+            return 0
+        
+        source = DataTypesHandler._resolve_string_token(state, tokens[index + 1], "source")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        if source is None:
+            return 0
+        
+        hash_result = hashlib.sha256(source.encode('utf-8')).hexdigest()
+        state.strings[target] = hash_result
+        return 2
+
+    @staticmethod
+    def handle_sha512(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Compute SHA512 hash of a string.
+        Example: sha512 text result
+        """
+        import hashlib
+        
+        if index + 2 >= len(tokens):
+            state.add_error("sha512 requires source and target. Use: sha512 <source> <target>")
+            return 0
+        
+        source = DataTypesHandler._resolve_string_token(state, tokens[index + 1], "source")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        if source is None:
+            return 0
+        
+        hash_result = hashlib.sha512(source.encode('utf-8')).hexdigest()
+        state.strings[target] = hash_result
+        return 2
+
+    @staticmethod
+    def handle_uuid(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Generate a random UUID.
+        Example: uuid result — generates a UUID like "550e8400-e29b-41d4-a716-446655440000"
+        """
+        import uuid as uuid_module
+        
+        if index + 1 >= len(tokens):
+            state.add_error("uuid requires target. Use: uuid <target>")
+            return 0
+        
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 1])
+        state.strings[target] = str(uuid_module.uuid4())
+        return 1
+
+    @staticmethod
+    def handle_hex_encode(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Encode a string to hexadecimal.
+        Example: hex_encode text result
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("hex_encode requires source and target. Use: hex_encode <source> <target>")
+            return 0
+        
+        source = DataTypesHandler._resolve_string_token(state, tokens[index + 1], "source")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        if source is None:
+            return 0
+        
+        encoded = source.encode('utf-8').hex()
+        state.strings[target] = encoded
+        return 2
+
+    @staticmethod
+    def handle_hex_decode(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Decode a hexadecimal string.
+        Example: hex_decode encoded result
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("hex_decode requires source and target. Use: hex_decode <source> <target>")
+            return 0
+        
+        source = DataTypesHandler._resolve_string_token(state, tokens[index + 1], "source")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        if source is None:
+            return 0
+        
+        try:
+            decoded = bytes.fromhex(source).decode('utf-8')
+            state.strings[target] = decoded
+        except Exception as e:
+            state.add_error(f"Invalid hex string: {str(e)}")
+            return 0
+        
+        return 2
+
+    # ========== Assert Command ==========
+
+    @staticmethod
+    def handle_assert(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Assert that a condition is true, otherwise fail with an error message.
+        Example: assert x > 5 "x must be greater than 5"
+        Supported operators: ==, !=, <, <=, >, >=, eq, ne, lt, le, gt, ge
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("assert requires variable, operator, value, and optional message. Use: assert <var> <op> <value> [message]")
+            return 0
+        
+        var_name = tokens[index + 1]
+        operator = tokens[index + 2]
+        compare_token = tokens[index + 3]
+        
+        # Check for optional message
+        message = "Assertion failed"
+        consumed = 3
+        if index + 4 < len(tokens):
+            msg_token = tokens[index + 4]
+            if msg_token.startswith('"') and msg_token.endswith('"'):
+                message = msg_token[1:-1]
+                consumed = 4
+            elif msg_token in state.strings:
+                message = state.strings[msg_token]
+                consumed = 4
+        
+        # Get the variable value
+        var_value = None
+        if state.has_variable(var_name):
+            var_value = state.get_variable(var_name)
+        elif var_name in state.strings:
+            var_value = state.strings[var_name]
+        else:
+            state.add_error(f"assert: variable '{var_name}' is not defined")
+            return 0
+        
+        # Get the comparison value
+        compare_value = None
+        if compare_token.startswith('"') and compare_token.endswith('"'):
+            compare_value = compare_token[1:-1]
+        elif state.has_variable(compare_token):
+            compare_value = state.get_variable(compare_token)
+        elif compare_token in state.strings:
+            compare_value = state.strings[compare_token]
+        else:
+            try:
+                compare_value = int(compare_token)
+            except ValueError:
+                try:
+                    compare_value = float(compare_token)
+                except ValueError:
+                    compare_value = compare_token
+        
+        # Normalize operator
+        op_map = {"eq": "==", "ne": "!=", "lt": "<", "le": "<=", "gt": ">", "ge": ">="}
+        operator = op_map.get(operator, operator)
+        
+        # Perform comparison
+        result = False
+        try:
+            if operator == "==":
+                result = var_value == compare_value
+            elif operator == "!=":
+                result = var_value != compare_value
+            elif operator == "<":
+                result = var_value < compare_value
+            elif operator == "<=":
+                result = var_value <= compare_value
+            elif operator == ">":
+                result = var_value > compare_value
+            elif operator == ">=":
+                result = var_value >= compare_value
+            else:
+                state.add_error(f"assert: unknown operator '{operator}'. Use ==, !=, <, <=, >, >=")
+                return 0
+        except TypeError as e:
+            state.add_error(f"assert: cannot compare {type(var_value).__name__} with {type(compare_value).__name__}")
+            return 0
+        
+        if not result:
+            state.add_error(f"[AssertionError] {message}: {var_name} ({var_value}) {operator} {compare_value}")
+            return 0
+        
+        return consumed
+
+    # ========== Bitwise Operations ==========
+
+    @staticmethod
+    def handle_bit_and(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Bitwise AND of two values.
+        Example: bit_and a b result — stores a & b in result
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("bit_and requires two operands and target. Use: bit_and <a> <b> <target>")
+            return 0
+        
+        a = DataTypesHandler._resolve_int_token(state, tokens[index + 1], "first operand")
+        b = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "second operand")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if a is None or b is None:
+            return 0
+        
+        state.set_variable(target, a & b)
+        return 3
+
+    @staticmethod
+    def handle_bit_or(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Bitwise OR of two values.
+        Example: bit_or a b result — stores a | b in result
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("bit_or requires two operands and target. Use: bit_or <a> <b> <target>")
+            return 0
+        
+        a = DataTypesHandler._resolve_int_token(state, tokens[index + 1], "first operand")
+        b = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "second operand")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if a is None or b is None:
+            return 0
+        
+        state.set_variable(target, a | b)
+        return 3
+
+    @staticmethod
+    def handle_bit_xor(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Bitwise XOR of two values.
+        Example: bit_xor a b result — stores a ^ b in result
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("bit_xor requires two operands and target. Use: bit_xor <a> <b> <target>")
+            return 0
+        
+        a = DataTypesHandler._resolve_int_token(state, tokens[index + 1], "first operand")
+        b = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "second operand")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if a is None or b is None:
+            return 0
+        
+        state.set_variable(target, a ^ b)
+        return 3
+
+    @staticmethod
+    def handle_bit_not(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Bitwise NOT of a value.
+        Example: bit_not a result — stores ~a in result
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("bit_not requires operand and target. Use: bit_not <a> <target>")
+            return 0
+        
+        a = DataTypesHandler._resolve_int_token(state, tokens[index + 1], "operand")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        if a is None:
+            return 0
+        
+        state.set_variable(target, ~a)
+        return 2
+
+    @staticmethod
+    def handle_bit_shift_left(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Bitwise left shift.
+        Example: bit_shift_left val n result — stores val << n in result
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("bit_shift_left requires value, shift amount, and target. Use: bit_shift_left <val> <n> <target>")
+            return 0
+        
+        val = DataTypesHandler._resolve_int_token(state, tokens[index + 1], "value")
+        n = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "shift amount")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if val is None or n is None:
+            return 0
+        
+        if n < 0:
+            state.add_error("bit_shift_left: shift amount must be non-negative")
+            return 0
+        
+        state.set_variable(target, val << n)
+        return 3
+
+    @staticmethod
+    def handle_bit_shift_right(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Bitwise right shift.
+        Example: bit_shift_right val n result — stores val >> n in result
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("bit_shift_right requires value, shift amount, and target. Use: bit_shift_right <val> <n> <target>")
+            return 0
+        
+        val = DataTypesHandler._resolve_int_token(state, tokens[index + 1], "value")
+        n = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "shift amount")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if val is None or n is None:
+            return 0
+        
+        if n < 0:
+            state.add_error("bit_shift_right: shift amount must be non-negative")
+            return 0
+        
+        state.set_variable(target, val >> n)
+        return 3

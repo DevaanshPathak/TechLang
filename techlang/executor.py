@@ -224,6 +224,16 @@ class CommandExecutor:
                 consumed = DataTypesHandler.handle_array_map(self.state, tokens, i)
             elif token == "array_filter":
                 consumed = DataTypesHandler.handle_array_filter(self.state, tokens, i)
+            elif token == "array_sort":
+                consumed = DataTypesHandler.handle_array_sort(self.state, tokens, i)
+            elif token == "array_reverse":
+                consumed = DataTypesHandler.handle_array_reverse(self.state, tokens, i)
+            elif token == "array_find":
+                consumed = DataTypesHandler.handle_array_find(self.state, tokens, i)
+            elif token == "array_unique":
+                consumed = DataTypesHandler.handle_array_unique(self.state, tokens, i)
+            elif token == "array_join":
+                consumed = DataTypesHandler.handle_array_join(self.state, tokens, i)
             
             # String operations - working with text
             elif token == "str_create":
@@ -262,6 +272,66 @@ class CommandExecutor:
                 consumed = DataTypesHandler.handle_dict_get(self.state, tokens, i)
             elif token == "dict_keys":
                 consumed = DataTypesHandler.handle_dict_keys(self.state, tokens, i)
+            
+            # Type checking operations - runtime introspection
+            elif token == "type_of":
+                consumed = DataTypesHandler.handle_type_of(self.state, tokens, i)
+            elif token == "is_number":
+                consumed = DataTypesHandler.handle_is_number(self.state, tokens, i)
+            elif token == "is_string":
+                consumed = DataTypesHandler.handle_is_string(self.state, tokens, i)
+            elif token == "is_array":
+                consumed = DataTypesHandler.handle_is_array(self.state, tokens, i)
+            elif token == "is_dict":
+                consumed = DataTypesHandler.handle_is_dict(self.state, tokens, i)
+            elif token == "is_struct":
+                consumed = DataTypesHandler.handle_is_struct(self.state, tokens, i)
+            
+            # Regex operations - pattern matching
+            elif token == "regex_match":
+                consumed = DataTypesHandler.handle_regex_match(self.state, tokens, i)
+            elif token == "regex_find":
+                consumed = DataTypesHandler.handle_regex_find(self.state, tokens, i)
+            elif token == "regex_replace":
+                consumed = DataTypesHandler.handle_regex_replace(self.state, tokens, i)
+            elif token == "regex_split":
+                consumed = DataTypesHandler.handle_regex_split(self.state, tokens, i)
+            
+            # Crypto/encoding operations
+            elif token == "base64_encode":
+                consumed = DataTypesHandler.handle_base64_encode(self.state, tokens, i)
+            elif token == "base64_decode":
+                consumed = DataTypesHandler.handle_base64_decode(self.state, tokens, i)
+            elif token == "md5":
+                consumed = DataTypesHandler.handle_md5(self.state, tokens, i)
+            elif token == "sha256":
+                consumed = DataTypesHandler.handle_sha256(self.state, tokens, i)
+            elif token == "sha512":
+                consumed = DataTypesHandler.handle_sha512(self.state, tokens, i)
+            elif token == "uuid":
+                consumed = DataTypesHandler.handle_uuid(self.state, tokens, i)
+            elif token == "hex_encode":
+                consumed = DataTypesHandler.handle_hex_encode(self.state, tokens, i)
+            elif token == "hex_decode":
+                consumed = DataTypesHandler.handle_hex_decode(self.state, tokens, i)
+            
+            # Assert command
+            elif token == "assert":
+                consumed = DataTypesHandler.handle_assert(self.state, tokens, i)
+            
+            # Bitwise operations
+            elif token == "bit_and":
+                consumed = DataTypesHandler.handle_bit_and(self.state, tokens, i)
+            elif token == "bit_or":
+                consumed = DataTypesHandler.handle_bit_or(self.state, tokens, i)
+            elif token == "bit_xor":
+                consumed = DataTypesHandler.handle_bit_xor(self.state, tokens, i)
+            elif token == "bit_not":
+                consumed = DataTypesHandler.handle_bit_not(self.state, tokens, i)
+            elif token == "bit_shift_left":
+                consumed = DataTypesHandler.handle_bit_shift_left(self.state, tokens, i)
+            elif token == "bit_shift_right":
+                consumed = DataTypesHandler.handle_bit_shift_right(self.state, tokens, i)
             
             # JSON operations - parsing and stringifying JSON
             elif token == "json_parse":

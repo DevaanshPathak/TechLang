@@ -349,8 +349,8 @@ call stl.validation.require_all temp2 age_valid all_valid
 print ""
 if all_valid eq 1
     print "Registration: SUCCESS"
-    
-    # Format welcome message with title case
+
+# Format welcome message with title case
     str_create welcome "welcome, "
     call stl.strings.capitalize username cap_username
     str_concat welcome cap_username
@@ -363,4 +363,3 @@ end
 
 print ""
 print "=== Demo Complete ==="
-
