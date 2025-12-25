@@ -1197,8 +1197,148 @@ Improved core runtime semantics to support the existing `stl/*` modules and stab
 
 ---
 
-**Last Updated:** 2025-12-14  
-**Total Features Added:** 9  
-**Total Tests:** 331 collected (324 passing, 7 skipped)
+### 2025-01-XX: Object-Oriented Programming & First-Class Functions
+
+**Status:** ✅ Completed
+
+### Summary
+Added comprehensive OOP support with classes, inheritance, methods, and static methods. Also added first-class functions with closures, partial application, function composition, and higher-order functions (map, filter, reduce). Added throw/raise for exception handling.
+
+### Motivation
+TechLang needed Python-like OOP and functional programming capabilities to be practical for real-world applications. These are essential features for building maintainable, modular code.
+
+### Implementation Details
+
+#### Object-Oriented Programming
+- **Class Definitions**: `class Name ... end` with fields, methods, constructors
+- **Fields**: `field name type default` for instance data
+- **Constructors**: `init params ... end` called on `new`
+- **Instance Methods**: `method name params ... end` with `self` reference
+- **Static Methods**: `static name params ... end` (no instance needed)
+- **Inheritance**: `class Child extends Parent` with method overriding
+- **Field Access**: `get_field instance field var`, `set_field instance field val`
+- **Type Checking**: `instanceof obj ClassName var` for runtime checks
+
+#### First-Class Functions & Closures
+- **Function Values**: `fn name params do ... end` creates callable values
+- **Closures**: Functions capture outer scope (variables, strings, arrays, dicts)
+- **Function References**: `fn_ref funcName var` gets reference to existing function
+- **Lambda Expressions**: `lambda name param "expr"` for simple transforms
+- **Higher-Order Functions**:
+  - `map_fn array func result` - transform each element
+  - `filter_fn array predicate result` - keep matching elements
+  - `reduce_fn array binaryFunc initial result` - fold to single value
+- **Partial Application**: `partial func newFunc arg=val` binds arguments
+- **Function Composition**: `compose f g composed` creates `f(g(x))` pipeline
+
+#### Exception Handling
+- **throw/raise**: `throw "message" [ErrorType]` to raise exceptions
+- **Exception Type**: Optional type stored in `state.exception_type`
+
+### Files Created
+- `techlang/class_ops.py` - OOP handler (~350 lines)
+  - `ClassDefinition` dataclass (name, fields, methods, constructor, parent, static_methods)
+  - `ClassInstance` dataclass (class_name, fields)
+  - Handlers: handle_class, handle_new, handle_method_call, handle_get_field, handle_set_field, handle_instanceof
+  
+- `techlang/function_ops.py` - First-class functions handler (~400 lines)
+  - `FunctionValue` dataclass (name, params, body, captured_scope)
+  - `PartialFunction` dataclass (base_func, bound_args)
+  - Handlers: handle_fn, handle_fn_ref, handle_fn_call, handle_partial, handle_compose, handle_map_fn, handle_filter_fn, handle_reduce_fn, handle_lambda
+  
+- `tests/test_oop.py` - 25 comprehensive tests
+- `examples/oop_demo.tl` - Full demonstration (~200 lines)
+- `docs/oop.md` - OOP documentation (~300 lines)
+- `docs/functions.md` - Functions documentation (~350 lines)
+
+### Files Modified
+- `techlang/core.py` - Added 6 state fields:
+  - `class_defs: Dict[str, ClassDefinition]`
+  - `instances: Dict[str, ClassInstance]`
+  - `fn_values: Dict[str, FunctionValue]`
+  - `lambdas: Dict[str, dict]`
+  - `current_exception: Optional[str]`
+  - `exception_type: Optional[str]`
+
+- `techlang/basic_commands.py` - Added 20 commands to KNOWN_COMMANDS:
+  - OOP: class, new, extends, method, static, init, field, get_field, set_field, instanceof, super
+  - Functions: fn, fn_ref, fn_call, partial, compose, map_fn, filter_fn, reduce_fn, lambda
+  - Exceptions: throw, raise
+  - Added `handle_throw()` method
+
+- `techlang/executor.py` - Added imports and routing for all new commands
+
+- `techlang/control_flow.py` - Modified `handle_call()` to check for:
+  1. Instance methods (`instance.method`) before module calls
+  2. Static methods (`ClassName.method`) before module calls
+
+- `techlang/help_ops.py` - Added help text for all 20+ new commands
+
+- `README.md` - Added OOP and Functions sections to features
+
+### Validation
+- ✅ All 25 OOP tests passing
+- ✅ Full test suite: 756 passed, 4 skipped
+- ✅ No regressions in existing functionality
+- ✅ Documentation complete
+- ✅ Example file created and working
+
+### Technical Notes
+
+**Class Definition Storage:**
+Classes stored in `state.class_defs` as `ClassDefinition` objects containing:
+- `name`: Class name
+- `fields`: Dict of field definitions (name → {type, default})
+- `methods`: Dict of method definitions (name → {params, body})
+- `constructor`: Optional init block {params, body}
+- `parent`: Optional parent class name for inheritance
+- `static_methods`: Dict of static method definitions
+
+**Instance Storage:**
+Instances stored in `state.instances` as `ClassInstance` objects:
+- `class_name`: Reference to class definition
+- `fields`: Dict of actual field values
+
+**Closure Capture:**
+When creating function values with `fn`, captures:
+- `state.vars` (numeric variables)
+- `state.strings` (string variables)
+- `state.arrays` (by reference)
+- `state.dicts` (by reference)
+
+**Method Call Resolution:**
+In `control_flow.py handle_call()`, added priority order:
+1. Check if `instance.method` matches an instance in `state.instances`
+2. Check if `ClassName.method` matches a class in `state.class_defs` (static methods)
+3. Then check for module calls (existing behavior)
+
+**Lambda Evaluation:**
+Lambdas support simple expressions with operators: `+`, `-`, `*`, `/`, `%`, `>`, `<`, `==`, `!=`, `>=`, `<=`
+Expression parsed and evaluated at call time.
+
+### Known Limitations
+- No multiple inheritance (single parent only)
+- No abstract classes/interfaces
+- No private/protected visibility (all fields/methods public)
+- No property decorators (getters/setters)
+- Lambda expressions limited to single arithmetic/comparison expression
+- No method chaining syntax
+- `super()` not fully implemented for calling parent methods
+
+### Future Enhancements
+- Multiple inheritance or mixins
+- Abstract methods and interfaces
+- Private/protected visibility modifiers
+- Property decorators for field access
+- Method chaining (`obj.method1().method2()`)
+- Async methods
+- Metaclasses
+- Decorators for methods
+
+---
+
+**Last Updated:** 2025-01-XX  
+**Total Features Added:** 12  
+**Total Tests:** 756+ (756 passing, 4 skipped)
 **REPL Version:** 1.1 - Enhanced Edition
 

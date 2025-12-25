@@ -18,6 +18,8 @@ from .system_ops import SystemOpsHandler, ProcessOpsHandler
 from .math_ops import MathOpsHandler
 from .debugger import DebuggerHandler
 from .gui_ops import GuiOpsHandler
+from .class_ops import ClassOpsHandler
+from .function_ops import FunctionOpsHandler
 
 
 class CommandExecutor:
@@ -720,6 +722,40 @@ class CommandExecutor:
             # Context managers (with statement)
             elif token == "with":
                 consumed = ControlFlowHandler.handle_with(self.state, tokens, i, self.execute_block)
+
+            # OOP - Classes and Objects
+            elif token == "class":
+                consumed = ClassOpsHandler.handle_class(self.state, tokens, i)
+            elif token == "new":
+                consumed = ClassOpsHandler.handle_new(self.state, tokens, i, self.execute_block)
+            elif token == "get_field":
+                consumed = ClassOpsHandler.handle_get_field(self.state, tokens, i)
+            elif token == "set_field":
+                consumed = ClassOpsHandler.handle_set_field(self.state, tokens, i)
+            elif token == "instanceof":
+                consumed = ClassOpsHandler.handle_instanceof(self.state, tokens, i)
+
+            # First-class functions and closures
+            elif token == "fn":
+                consumed = FunctionOpsHandler.handle_fn(self.state, tokens, i)
+            elif token == "fn_ref":
+                consumed = FunctionOpsHandler.handle_fn_ref(self.state, tokens, i)
+            elif token == "fn_call":
+                consumed = FunctionOpsHandler.handle_fn_call(self.state, tokens, i, self.execute_block)
+            elif token == "partial":
+                consumed = FunctionOpsHandler.handle_partial(self.state, tokens, i)
+            elif token == "compose":
+                consumed = FunctionOpsHandler.handle_compose(self.state, tokens, i)
+            elif token == "map_fn":
+                consumed = FunctionOpsHandler.handle_map_fn(self.state, tokens, i, self.execute_block)
+            elif token == "filter_fn":
+                consumed = FunctionOpsHandler.handle_filter_fn(self.state, tokens, i, self.execute_block)
+            elif token == "reduce_fn":
+                consumed = FunctionOpsHandler.handle_reduce_fn(self.state, tokens, i, self.execute_block)
+
+            # Exception handling - throw/raise
+            elif token in ("throw", "raise"):
+                consumed = BasicCommandHandler.handle_throw(self.state, tokens, i)
 
             # End of block - marks the end of loops, functions, etc.
             elif token == "end":

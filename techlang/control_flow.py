@@ -465,6 +465,25 @@ class ControlFlowHandler:
         
         func_name = tokens[index + 1]
 
+        # Check for instance method call first (instance.method)
+        if "." in func_name or "::" in func_name:
+            parts = func_name.replace("::", ".").split(".", 1)
+            potential_instance = parts[0]
+            
+            # Check if it's an instance method call
+            if potential_instance in state.instances:
+                from .class_ops import ClassOpsHandler
+                consumed = ClassOpsHandler.handle_method_call(state, tokens, index, execute_block)
+                if consumed >= 0:
+                    return consumed
+            
+            # Check if it's a class static method call
+            if potential_instance in state.class_defs:
+                from .class_ops import ClassOpsHandler
+                consumed = ClassOpsHandler.handle_method_call(state, tokens, index, execute_block)
+                if consumed >= 0:
+                    return consumed
+
         module_call = ControlFlowHandler._split_module_call(func_name)
         if module_call is not None:
             module_name, inner_name = module_call

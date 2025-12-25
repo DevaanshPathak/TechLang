@@ -82,7 +82,15 @@ class BasicCommandHandler:
     "mutex_create", "mutex_lock", "mutex_unlock", "queue_push", "queue_pop",
         # System & Processes
         "sys_exec", "sys_env", "sys_time", "sys_date", "sys_sleep", "sys_cwd", "sys_exit",
-        "proc_spawn", "proc_kill", "proc_wait", "proc_status"
+        "proc_spawn", "proc_kill", "proc_wait", "proc_status",
+        # OOP - Classes and Objects
+        "class", "new", "extends", "method", "static", "init", "field",
+        "get_field", "set_field", "instanceof", "super",
+        # First-class functions and closures
+        "fn", "fn_ref", "fn_call", "partial", "compose",
+        "map_fn", "filter_fn", "reduce_fn",
+        # Exception handling
+        "throw", "raise"
 
         ,
         # GUI (tkinter/customtkinter)
@@ -315,4 +323,46 @@ class BasicCommandHandler:
         
         # Mark as exported (don't check if function exists yet - it may be defined later)
         state.exported_functions.add(func_name)
+        return 1
+
+    @staticmethod
+    def handle_throw(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Throw/raise an exception.
+        Syntax: throw <message> [type]
+        OR: raise <message> [type]
+        
+        The exception can be caught by a try/catch block.
+        If no catch block handles it, the error is added to output.
+        """
+        if index + 1 >= len(tokens):
+            state.add_error("throw requires a message")
+            return 0
+        
+        message_token = tokens[index + 1]
+        
+        # Resolve message
+        if message_token.startswith('"') and message_token.endswith('"'):
+            message = message_token[1:-1]
+        elif message_token in state.strings:
+            message = state.strings[message_token]
+        else:
+            message = message_token
+        
+        # Optional exception type
+        exc_type = "Error"
+        if index + 2 < len(tokens):
+            type_token = tokens[index + 2]
+            if type_token not in BasicCommandHandler.KNOWN_COMMANDS:
+                exc_type = type_token
+                state.current_exception = message
+                state.exception_type = exc_type
+                state.add_error(f"{exc_type}: {message}")
+                return 2
+        
+        # Set exception state
+        state.current_exception = message
+        state.exception_type = exc_type
+        state.add_error(f"{exc_type}: {message}")
+        
         return 1

@@ -70,6 +70,18 @@ class InterpreterState:
     struct_defs: Dict[str, Dict[str, str]] = None
     structs: Dict[str, Dict[str, object]] = None
 
+    # Class definitions and instances (OOP)
+    class_defs: Dict[str, object] = None  # class_name -> ClassDefinition
+    instances: Dict[str, object] = None  # instance_name -> ClassInstance
+
+    # First-class function values and closures
+    fn_values: Dict[str, object] = None  # name -> FunctionValue or PartialFunction
+    lambdas: Dict[str, Dict[str, object]] = None  # name -> {param, expr}
+
+    # Exception handling
+    current_exception: Optional[str] = None  # Current exception message
+    exception_type: Optional[str] = None  # Current exception type
+
     # Simple memory model
     memory: Dict[int, int] = None
     next_address: int = 1
@@ -168,6 +180,14 @@ class InterpreterState:
             self.struct_defs = {}
         if self.structs is None:
             self.structs = {}
+        if self.class_defs is None:
+            self.class_defs = {}
+        if self.instances is None:
+            self.instances = {}
+        if self.fn_values is None:
+            self.fn_values = {}
+        if self.lambdas is None:
+            self.lambdas = {}
         if self.memory is None:
             self.memory = {}
         if self.threads is None:

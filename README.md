@@ -39,6 +39,8 @@ TechLang/
 │   ├── thread_ops.py    # Threading and concurrency
 │   ├── system_ops.py    # System and process operations
 │   ├── debugger.py      # Debugger with breakpoints
+│   ├── class_ops.py     # OOP: classes, inheritance, methods
+│   ├── function_ops.py  # First-class functions, closures
 │   ├── help_ops.py      # Help system
 │   ├── imports.py       # Module imports
 │   ├── aliases.py       # Command aliases
@@ -48,7 +50,7 @@ TechLang/
 │   ├── linter.py        # Code linter
 │   └── __init__.py
 │
-├── tests/               # Pytest-based unit tests (331 collected; 324 passing, 7 skipped)
+├── tests/               # Pytest-based unit tests (756+ tests)
 │   ├── test_interpreter.py
 │   ├── test_database.py
 │   ├── test_database_advanced.py
@@ -283,6 +285,30 @@ Processes: `proc_spawn`, `proc_wait`, `proc_kill`
 ### Debugger
 `breakpoint`, `step`, `continue`, `inspect`, `watch`, `unwatch`, `clear_breakpoints`
 
+### Object-Oriented Programming ✨ NEW
+- **Classes**: `class Name ... end` with fields, methods, and constructors
+- **Inheritance**: `class Child extends Parent` with method overriding
+- **Instance Methods**: `method name params ... end` with `self` reference
+- **Static Methods**: `static name params ... end` (no instance needed)
+- **Field Access**: `get_field`, `set_field` for instance data
+- **Type Checking**: `instanceof` for runtime type checks
+- See [OOP Guide](docs/oop.md) for complete reference
+
+### First-Class Functions & Closures ✨ NEW
+- **Function Values**: `fn name params do ... end` creates callable values
+- **Closures**: Functions capture outer scope variables
+- **Function References**: `fn_ref funcName var` gets reference to existing function
+- **Higher-Order Functions**: `map_fn`, `filter_fn`, `reduce_fn` for functional programming
+- **Partial Application**: `partial func newFunc arg=val` binds arguments
+- **Function Composition**: `compose f g composed` creates pipelines
+- **Lambda Expressions**: `lambda name param "expr"` for simple transforms
+- See [Functions Guide](docs/functions.md) for complete reference
+
+### Exception Handling
+- **throw/raise**: `throw "message" [ErrorType]` to raise exceptions
+- **try/catch**: Catch and handle thrown exceptions
+- Exception type available for conditional handling
+
 ### Help
 `help` or `help <command>` to see built-in docs.
 
@@ -326,6 +352,9 @@ python cli.py examples/threads.tl
 # Debugging & Recipes
 python cli.py examples/debugger_demo.tl
 python cli.py examples/cookbook_multifeature.tl
+
+# OOP & Functional Programming
+python cli.py examples/oop_demo.tl
 ```
 
 Or try them in the web playground.
