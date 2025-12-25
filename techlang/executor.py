@@ -442,6 +442,48 @@ class CommandExecutor:
             elif token == "array_to_set":
                 consumed = DataTypesHandler.handle_array_to_set(self.state, tokens, i)
             
+            # Feature 7: Advanced Comprehensions
+            elif token == "dict_comprehend":
+                consumed = DataTypesHandler.handle_dict_comprehend(self.state, tokens, i)
+            elif token == "set_comprehend":
+                consumed = DataTypesHandler.handle_set_comprehend(self.state, tokens, i)
+            elif token == "generator_expr":
+                consumed = DataTypesHandler.handle_generator_expr(self.state, tokens, i)
+            elif token == "comprehend_if":
+                consumed = DataTypesHandler.handle_comprehend_if(self.state, tokens, i)
+            
+            # Feature 8: Slice Assignment & Advanced Slicing
+            elif token == "array_slice_step":
+                consumed = DataTypesHandler.handle_array_slice_step(self.state, tokens, i)
+            elif token == "array_set_slice":
+                consumed = DataTypesHandler.handle_array_set_slice(self.state, tokens, i)
+            elif token == "str_slice":
+                consumed = DataTypesHandler.handle_str_slice(self.state, tokens, i)
+            elif token == "str_slice_step":
+                consumed = DataTypesHandler.handle_str_slice_step(self.state, tokens, i)
+            
+            # Feature 9: Unpacking & Destructuring
+            elif token == "unpack":
+                consumed = DataTypesHandler.handle_unpack(self.state, tokens, i)
+            elif token == "unpack_rest":
+                consumed = DataTypesHandler.handle_unpack_rest(self.state, tokens, i)
+            elif token == "dict_unpack":
+                consumed = DataTypesHandler.handle_dict_unpack(self.state, tokens, i)
+            elif token == "swap":
+                consumed = DataTypesHandler.handle_swap(self.state, tokens, i)
+            
+            # Feature 10: F-Strings / Format Specifiers
+            elif token == "fstring":
+                consumed = DataTypesHandler.handle_fstring(self.state, tokens, i)
+            elif token == "format_num":
+                consumed = DataTypesHandler.handle_format_num(self.state, tokens, i)
+            elif token == "format_align":
+                consumed = DataTypesHandler.handle_format_align(self.state, tokens, i)
+            elif token == "str_pad_left":
+                consumed = DataTypesHandler.handle_str_pad_left(self.state, tokens, i)
+            elif token == "str_pad_right":
+                consumed = DataTypesHandler.handle_str_pad_right(self.state, tokens, i)
+            
             # Bitwise operations
             elif token == "bit_and":
                 consumed = DataTypesHandler.handle_bit_and(self.state, tokens, i)
@@ -465,6 +507,80 @@ class CommandExecutor:
                 consumed = DataTypesHandler.handle_json_read(self.state, tokens, i, self.base_dir)
             elif token == "json_write":
                 consumed = DataTypesHandler.handle_json_write(self.state, tokens, i, self.base_dir)
+
+            # Feature 11: Itertools/Functools Equivalents
+            elif token == "chain":
+                consumed = DataTypesHandler.handle_chain(self.state, tokens, i)
+            elif token == "cycle":
+                consumed = DataTypesHandler.handle_cycle(self.state, tokens, i)
+            elif token == "repeat":
+                consumed = DataTypesHandler.handle_repeat(self.state, tokens, i)
+            elif token == "takewhile":
+                consumed = DataTypesHandler.handle_takewhile(self.state, tokens, i)
+            elif token == "dropwhile":
+                consumed = DataTypesHandler.handle_dropwhile(self.state, tokens, i)
+            elif token == "groupby":
+                consumed = DataTypesHandler.handle_groupby(self.state, tokens, i)
+            elif token == "accumulate":
+                consumed = DataTypesHandler.handle_accumulate(self.state, tokens, i)
+            elif token == "pairwise":
+                consumed = DataTypesHandler.handle_pairwise(self.state, tokens, i)
+            elif token == "product":
+                consumed = DataTypesHandler.handle_product(self.state, tokens, i)
+            elif token == "permutations":
+                consumed = DataTypesHandler.handle_permutations(self.state, tokens, i)
+            elif token == "combinations":
+                consumed = DataTypesHandler.handle_combinations(self.state, tokens, i)
+            elif token == "reduce":
+                consumed = DataTypesHandler.handle_reduce(self.state, tokens, i)
+            elif token == "partial_array":
+                consumed = DataTypesHandler.handle_partial_array(self.state, tokens, i)
+            elif token == "apply_partial":
+                consumed = DataTypesHandler.handle_apply_partial(self.state, tokens, i)
+
+            # Feature 12: Date/Time Full Support
+            elif token == "datetime_now":
+                consumed = DataTypesHandler.handle_datetime_now(self.state, tokens, i)
+            elif token == "datetime_utc":
+                consumed = DataTypesHandler.handle_datetime_utc(self.state, tokens, i)
+            elif token == "datetime_parse":
+                consumed = DataTypesHandler.handle_datetime_parse(self.state, tokens, i)
+            elif token == "datetime_format":
+                consumed = DataTypesHandler.handle_datetime_format(self.state, tokens, i)
+            elif token == "datetime_add":
+                consumed = DataTypesHandler.handle_datetime_add(self.state, tokens, i)
+            elif token == "datetime_diff":
+                consumed = DataTypesHandler.handle_datetime_diff(self.state, tokens, i)
+            elif token == "datetime_weekday":
+                consumed = DataTypesHandler.handle_datetime_weekday(self.state, tokens, i)
+            elif token == "datetime_timestamp":
+                consumed = DataTypesHandler.handle_datetime_timestamp(self.state, tokens, i)
+            elif token == "datetime_from_timestamp":
+                consumed = DataTypesHandler.handle_datetime_from_timestamp(self.state, tokens, i)
+
+            # Feature 13: Logging System
+            elif token == "log_init":
+                consumed = DataTypesHandler.handle_log_init(self.state, tokens, i)
+            elif token == "log_debug":
+                consumed = DataTypesHandler.handle_log_debug(self.state, tokens, i)
+            elif token == "log_info":
+                consumed = DataTypesHandler.handle_log_info(self.state, tokens, i)
+            elif token == "log_warning":
+                consumed = DataTypesHandler.handle_log_warning(self.state, tokens, i)
+            elif token == "log_error":
+                consumed = DataTypesHandler.handle_log_error(self.state, tokens, i)
+            elif token == "log_critical":
+                consumed = DataTypesHandler.handle_log_critical(self.state, tokens, i)
+            elif token == "log_level":
+                consumed = DataTypesHandler.handle_log_level(self.state, tokens, i)
+            elif token == "log_file":
+                consumed = DataTypesHandler.handle_log_file(self.state, tokens, i)
+            elif token == "log_clear":
+                consumed = DataTypesHandler.handle_log_clear(self.state, tokens, i)
+            elif token == "log_count":
+                consumed = DataTypesHandler.handle_log_count(self.state, tokens, i)
+            elif token == "log_get":
+                consumed = DataTypesHandler.handle_log_get(self.state, tokens, i)
 
             # Struct definitions and instances
             elif token == "struct":

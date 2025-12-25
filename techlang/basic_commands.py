@@ -40,6 +40,14 @@ class BasicCommandHandler:
         "set_create", "set_add", "set_remove", "set_contains", "set_len", "set_clear",
         "set_union", "set_intersection", "set_difference", "set_symmetric_difference",
         "set_issubset", "set_issuperset", "set_to_array", "array_to_set",
+        # Advanced comprehensions (Feature 7)
+        "dict_comprehend", "set_comprehend", "generator_expr", "comprehend_if",
+        # Slice assignment & advanced slicing (Feature 8)
+        "array_slice_step", "array_set_slice", "str_slice", "str_slice_step",
+        # Unpacking & destructuring (Feature 9)
+        "unpack", "unpack_rest", "dict_unpack", "swap",
+        # F-strings / format specifiers (Feature 10)
+        "fstring", "format_num", "format_align", "str_pad_left", "str_pad_right",
         # Type checking commands - for runtime introspection
         "type_of", "is_number", "is_string", "is_array", "is_dict", "is_struct", "is_set", "is_generator",
         # Generator commands - for lazy iteration
@@ -96,7 +104,18 @@ class BasicCommandHandler:
         # Context managers
         "context", "with",
         # Async/Await
-        "async", "await", "spawn", "gather", "task_status", "task_cancel"
+        "async", "await", "spawn", "gather", "task_status", "task_cancel",
+        # Feature 11: Itertools/Functools
+        "chain", "cycle", "repeat", "takewhile", "dropwhile", "groupby",
+        "accumulate", "pairwise", "product", "permutations", "combinations",
+        "reduce", "partial_array", "apply_partial",
+        # Feature 12: Date/Time Full Support
+        "datetime_now", "datetime_utc", "datetime_parse", "datetime_format",
+        "datetime_add", "datetime_diff", "datetime_weekday", "datetime_timestamp",
+        "datetime_from_timestamp",
+        # Feature 13: Logging System
+        "log_init", "log_debug", "log_info", "log_warning", "log_error", "log_critical",
+        "log_level", "log_file", "log_clear", "log_count", "log_get"
 
         ,
         # GUI (tkinter/customtkinter)

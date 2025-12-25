@@ -24,17 +24,22 @@ class DataTypesHandler:
                     try:
                         return int(value)
                     except ValueError:
-                        state.add_error(f"{description} must be numeric; variable '{token}' is not numeric")
+                        if description:
+                            state.add_error(f"{description} must be numeric; variable '{token}' is not numeric")
                         return None
-                state.add_error(f"{description} must be numeric; variable '{token}' is not numeric")
+                if description:
+                    state.add_error(f"{description} must be numeric; variable '{token}' is not numeric")
                 return None
             if token in state.strings:
                 try:
                     return int(state.strings[token])
                 except ValueError:
-                    state.add_error(f"{description} must be numeric; string '{token}' is not numeric")
+                    if description:
+                        state.add_error(f"{description} must be numeric; string '{token}' is not numeric")
                     return None
-            state.add_error(f"{description} must be numeric; got '{token}'")
+            if description:
+                state.add_error(f"{description} must be numeric; got '{token}'")
+            return None
             return None
 
     @staticmethod
@@ -1009,11 +1014,23 @@ class DataTypesHandler:
         if key.startswith('"') and key.endswith('"'):
             key = key[1:-1]
         
-        if key not in state.dictionaries[dict_name]:
-            state.add_error(f"Key '{key}' not found in dictionary '{dict_name}'")
-            return 0
+        # Try to find key - check both string and int forms
+        d = state.dictionaries[dict_name]
+        actual_key = key
+        if key not in d:
+            # Try converting key to int if dict has integer keys
+            try:
+                int_key = int(key)
+                if int_key in d:
+                    actual_key = int_key
+                else:
+                    state.add_error(f"Key '{key}' not found in dictionary '{dict_name}'")
+                    return 0
+            except ValueError:
+                state.add_error(f"Key '{key}' not found in dictionary '{dict_name}'")
+                return 0
         
-        value = state.dictionaries[dict_name][key]
+        value = d[actual_key]
         state.add_output(str(value))
         return 2  # Consume dictionary name and key
     
@@ -1034,11 +1051,11 @@ class DataTypesHandler:
             state.add_error(f"Dictionary '{dict_name}' does not exist")
             return 0
         
-        keys = sorted(state.dictionaries[dict_name].keys())
+        keys = sorted(state.dictionaries[dict_name].keys(), key=str)
         if not keys:
             state.add_output("Keys[0]: (empty)")
         else:
-            state.add_output(f"Keys[{len(keys)}]: {', '.join(keys)}")
+            state.add_output(f"Keys[{len(keys)}]: {', '.join(str(k) for k in keys)}")
         return 1  # Consume dictionary name
     
     @staticmethod
@@ -2320,6 +2337,7 @@ class DataTypesHandler:
         """
         Evaluate a simple comprehension expression for a value x.
         Supports: x * n, x + n, x - n, x / n, x // n, x % n, x ** n
+        Also: x * x, x + x, x - x, x / x, x // x, x % x, x ** x (both sides are x)
         Also: -x, abs(x), str(x), int(x), float(x), x (identity)
         """
         expr = expr.strip()
@@ -2342,6 +2360,22 @@ class DataTypesHandler:
         if expr == "float(x)":
             return float(x)
         
+        # Self-operations: x op x
+        if expr == "x * x":
+            return x * x
+        if expr == "x + x":
+            return x + x
+        if expr == "x - x":
+            return x - x
+        if expr == "x / x":
+            return x / x if x != 0 else None
+        if expr == "x // x":
+            return x // x if x != 0 else None
+        if expr == "x % x":
+            return x % x if x != 0 else None
+        if expr == "x ** x":
+            return x ** x
+        
         # Binary operations: x op n
         import re
         
@@ -2360,6 +2394,9 @@ class DataTypesHandler:
             match = re.match(pattern, expr)
             if match:
                 n_str = match.group(1).strip()
+                # Skip if operand is 'x' (already handled above)
+                if n_str == 'x':
+                    continue
                 try:
                     # Try to parse as int first, then float
                     try:
@@ -3624,3 +3661,1967 @@ class DataTypesHandler:
         # Convert array elements to set (handles mixed types)
         state.sets[result_name] = set(state.arrays[array_name])
         return 2
+
+    # ========== Feature 7: Advanced Comprehensions ==========
+
+    @staticmethod
+    def handle_dict_comprehend(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Dict comprehension from array, like Python's {k: v for x in arr}.
+        Syntax: dict_comprehend <source_array> <target_dict> "key_expr" "value_expr"
+        Example: dict_comprehend nums results "x" "x * 2"  # {1: 2, 2: 4, 3: 6}
+        """
+        if index + 4 >= len(tokens):
+            state.add_error("dict_comprehend requires source, target, key_expr, value_expr. Use: dict_comprehend <array> <dict> \"key\" \"value\"")
+            return 0
+        
+        source_name = tokens[index + 1]
+        target_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        key_expr = tokens[index + 3].strip('"')
+        value_expr = tokens[index + 4].strip('"')
+        
+        if source_name not in state.arrays:
+            state.add_error(f"Array '{source_name}' does not exist")
+            return 0
+        
+        result = {}
+        for x in state.arrays[source_name]:
+            key = DataTypesHandler._evaluate_comprehension_expr(x, key_expr, state)
+            value = DataTypesHandler._evaluate_comprehension_expr(x, value_expr, state)
+            if key is None or value is None:
+                return 0
+            result[key] = value
+        
+        state.dictionaries[target_name] = result
+        return 4
+
+    @staticmethod
+    def handle_set_comprehend(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Set comprehension from array, like Python's {expr for x in arr}.
+        Syntax: set_comprehend <source_array> <target_set> "expr"
+        Example: set_comprehend nums unique_squares "x * x"
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("set_comprehend requires source, target, and expr. Use: set_comprehend <array> <set> \"expr\"")
+            return 0
+        
+        source_name = tokens[index + 1]
+        target_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        expr = tokens[index + 3].strip('"')
+        
+        if source_name not in state.arrays:
+            state.add_error(f"Array '{source_name}' does not exist")
+            return 0
+        
+        result = set()
+        for x in state.arrays[source_name]:
+            value = DataTypesHandler._evaluate_comprehension_expr(x, expr, state)
+            if value is None:
+                return 0
+            result.add(value)
+        
+        state.sets[target_name] = result
+        return 3
+
+    @staticmethod
+    def handle_generator_expr(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Create a generator expression (lazy evaluation), like Python's (expr for x in iterable).
+        Syntax: generator_expr <source_array> <target_gen> "expr"
+        The generator can then be iterated with generator_next.
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("generator_expr requires source, target, and expr. Use: generator_expr <array> <gen> \"expr\"")
+            return 0
+        
+        source_name = tokens[index + 1]
+        target_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        expr = tokens[index + 3].strip('"')
+        
+        if source_name not in state.arrays:
+            state.add_error(f"Array '{source_name}' does not exist")
+            return 0
+        
+        # Pre-compute all values with expression applied (lazy evaluation simulation)
+        values = []
+        for x in state.arrays[source_name]:
+            value = DataTypesHandler._evaluate_comprehension_expr(x, expr, state)
+            if value is not None:
+                values.append(value)
+        
+        # Store generator in format compatible with generator_next
+        if not hasattr(state, 'generators') or state.generators is None:
+            state.generators = {}
+        
+        state.generators[target_name] = {
+            'values': values,
+            'index': 0,
+            'exhausted': False
+        }
+        return 3
+
+    @staticmethod
+    def handle_comprehend_if(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Array comprehension with conditional, like Python's [expr for x in arr if cond].
+        Syntax: comprehend_if <source> <target> "expr" "condition"
+        Example: comprehend_if nums evens "x" "x % 2 == 0"
+        """
+        if index + 4 >= len(tokens):
+            state.add_error("comprehend_if requires source, target, expr, condition. Use: comprehend_if <array> <target> \"expr\" \"cond\"")
+            return 0
+        
+        source_name = tokens[index + 1]
+        target_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        expr = tokens[index + 3].strip('"')
+        condition = tokens[index + 4].strip('"')
+        
+        if source_name not in state.arrays:
+            state.add_error(f"Array '{source_name}' does not exist")
+            return 0
+        
+        result = []
+        for x in state.arrays[source_name]:
+            # Evaluate condition
+            cond_result = DataTypesHandler._evaluate_condition_expr(x, condition, state)
+            if cond_result:
+                value = DataTypesHandler._evaluate_comprehension_expr(x, expr, state)
+                if value is None:
+                    return 0
+                result.append(value)
+        
+        state.arrays[target_name] = result
+        return 4
+
+    @staticmethod
+    def _evaluate_condition_expr(x, cond: str, state: InterpreterState) -> bool:
+        """Evaluate a condition expression for comprehensions."""
+        import re
+        cond = cond.strip()
+        
+        # Simple comparisons
+        patterns = [
+            (r'^x\s*==\s*(.+)$', lambda x, n: x == n),
+            (r'^x\s*!=\s*(.+)$', lambda x, n: x != n),
+            (r'^x\s*>=\s*(.+)$', lambda x, n: x >= n),
+            (r'^x\s*<=\s*(.+)$', lambda x, n: x <= n),
+            (r'^x\s*>\s*(.+)$', lambda x, n: x > n),
+            (r'^x\s*<\s*(.+)$', lambda x, n: x < n),
+            (r'^x\s*%\s*(\d+)\s*==\s*(\d+)$', lambda x, n, m: x % n == m),
+        ]
+        
+        for pattern, func in patterns:
+            match = re.match(pattern, cond)
+            if match:
+                groups = match.groups()
+                try:
+                    if len(groups) == 1:
+                        n = float(groups[0]) if '.' in groups[0] else int(groups[0])
+                        return func(x, n)
+                    elif len(groups) == 2:
+                        n = int(groups[0])
+                        m = int(groups[1])
+                        return func(x, n, m)
+                except (ValueError, TypeError):
+                    return False
+        
+        return False
+
+    # ========== Feature 8: Slice Assignment & Advanced Slicing ==========
+
+    @staticmethod
+    def handle_array_slice_step(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Slice array with step, like Python's list[start:end:step].
+        Syntax: array_slice_step <array> <start> <end> <step> <target>
+        Example: array_slice_step nums 0 10 2 evens  # Every 2nd element
+        """
+        if index + 5 >= len(tokens):
+            state.add_error("array_slice_step requires array, start, end, step, target. Use: array_slice_step <arr> <start> <end> <step> <target>")
+            return 0
+        
+        array_name = tokens[index + 1]
+        start = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "start")
+        end = DataTypesHandler._resolve_int_token(state, tokens[index + 3], "end")
+        step = DataTypesHandler._resolve_int_token(state, tokens[index + 4], "step")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 5])
+        
+        if array_name not in state.arrays:
+            state.add_error(f"Array '{array_name}' does not exist")
+            return 0
+        
+        if start is None or end is None or step is None:
+            return 0
+        
+        if step == 0:
+            state.add_error("slice step cannot be zero")
+            return 0
+        
+        arr = state.arrays[array_name]
+        length = len(arr)
+        
+        # Handle None-like values (use full range)
+        actual_start = start if start != -999 else (0 if step > 0 else length - 1)
+        actual_end = end if end != 999 else (length if step > 0 else -length - 1)
+        
+        # Handle negative indices
+        if actual_start < 0:
+            actual_start = max(0, length + actual_start)
+        if actual_end < 0:
+            actual_end = max(0, length + actual_end)
+        
+        state.arrays[target] = list(arr[actual_start:actual_end:step])
+        return 5
+
+    @staticmethod
+    def handle_array_set_slice(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Assign to a slice of an array, like Python's list[start:end] = values.
+        Syntax: array_set_slice <array> <start> <end> <source_array>
+        Example: array_set_slice nums 1 3 replacements
+        """
+        if index + 4 >= len(tokens):
+            state.add_error("array_set_slice requires array, start, end, source. Use: array_set_slice <arr> <start> <end> <source>")
+            return 0
+        
+        array_name = tokens[index + 1]
+        start = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "start")
+        end = DataTypesHandler._resolve_int_token(state, tokens[index + 3], "end")
+        source_name = tokens[index + 4]
+        
+        if array_name not in state.arrays:
+            state.add_error(f"Array '{array_name}' does not exist")
+            return 0
+        
+        if source_name not in state.arrays:
+            state.add_error(f"Source array '{source_name}' does not exist")
+            return 0
+        
+        if start is None or end is None:
+            return 0
+        
+        arr = state.arrays[array_name]
+        source = state.arrays[source_name]
+        length = len(arr)
+        
+        # Handle negative indices
+        if start < 0:
+            start = max(0, length + start)
+        if end < 0:
+            end = max(0, length + end)
+        
+        # Perform slice assignment
+        arr[start:end] = source
+        return 4
+
+    @staticmethod
+    def handle_str_slice(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Slice a string, like Python's str[start:end].
+        Syntax: str_slice <string> <start> <end> <target>
+        Example: str_slice msg 0 5 prefix
+        """
+        if index + 4 >= len(tokens):
+            state.add_error("str_slice requires string, start, end, target. Use: str_slice <str> <start> <end> <target>")
+            return 0
+        
+        str_name = tokens[index + 1]
+        start = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "start")
+        end = DataTypesHandler._resolve_int_token(state, tokens[index + 3], "end")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 4])
+        
+        # Get string value
+        if str_name in state.strings:
+            s = state.strings[str_name]
+        elif str_name.startswith('"') and str_name.endswith('"'):
+            s = str_name[1:-1]
+        else:
+            state.add_error(f"String '{str_name}' does not exist")
+            return 0
+        
+        if start is None or end is None:
+            return 0
+        
+        length = len(s)
+        
+        # Handle negative indices
+        if start < 0:
+            start = max(0, length + start)
+        if end < 0:
+            end = max(0, length + end)
+        
+        state.strings[target] = s[start:end]
+        return 4
+
+    @staticmethod
+    def handle_str_slice_step(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Slice string with step, like Python's str[start:end:step].
+        Syntax: str_slice_step <string> <start> <end> <step> <target>
+        Example: str_slice_step msg 0 10 2 alt  # Every 2nd char
+        """
+        if index + 5 >= len(tokens):
+            state.add_error("str_slice_step requires string, start, end, step, target")
+            return 0
+        
+        str_name = tokens[index + 1]
+        start = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "start")
+        end = DataTypesHandler._resolve_int_token(state, tokens[index + 3], "end")
+        step = DataTypesHandler._resolve_int_token(state, tokens[index + 4], "step")
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 5])
+        
+        if str_name in state.strings:
+            s = state.strings[str_name]
+        elif str_name.startswith('"') and str_name.endswith('"'):
+            s = str_name[1:-1]
+        else:
+            state.add_error(f"String '{str_name}' does not exist")
+            return 0
+        
+        if start is None or end is None or step is None:
+            return 0
+        
+        if step == 0:
+            state.add_error("slice step cannot be zero")
+            return 0
+        
+        length = len(s)
+        if start < 0:
+            start = max(0, length + start)
+        if end < 0:
+            end = max(0, length + end)
+        
+        state.strings[target] = s[start:end:step]
+        return 5
+
+    # ========== Feature 9: Unpacking & Destructuring ==========
+
+    @staticmethod
+    def handle_unpack(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Unpack array into multiple variables, like Python's a, b, c = [1, 2, 3].
+        Syntax: unpack <array> var1 var2 var3 ...
+        Example: unpack coords x y z
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("unpack requires array and at least one variable. Use: unpack <array> var1 var2 ...")
+            return 0
+        
+        array_name = tokens[index + 1]
+        
+        if array_name not in state.arrays:
+            state.add_error(f"Array '{array_name}' does not exist")
+            return 0
+        
+        arr = state.arrays[array_name]
+        
+        # Collect variable names until we hit a known command or end
+        var_names = []
+        consumed = 1
+        i = index + 2
+        
+        while i < len(tokens):
+            token = tokens[i]
+            if token in BasicCommandHandler.KNOWN_COMMANDS:
+                break
+            var_names.append(token)
+            consumed += 1
+            i += 1
+        
+        if len(var_names) > len(arr):
+            state.add_error(f"Not enough values to unpack (expected {len(var_names)}, got {len(arr)})")
+            return 0
+        
+        # Assign values
+        for j, var_name in enumerate(var_names):
+            value = arr[j]
+            if isinstance(value, str):
+                state.strings[var_name] = value
+            else:
+                state.set_variable(var_name, value)
+        
+        return consumed
+
+    @staticmethod
+    def handle_unpack_rest(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Unpack with rest (*), like Python's a, *rest, b = [1, 2, 3, 4, 5].
+        Syntax: unpack_rest <array> var1 *rest_var var2
+        Example: unpack_rest nums first *middle last
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("unpack_rest requires array and variables. Use: unpack_rest <array> var1 *rest var2")
+            return 0
+        
+        array_name = tokens[index + 1]
+        
+        if array_name not in state.arrays:
+            state.add_error(f"Array '{array_name}' does not exist")
+            return 0
+        
+        arr = list(state.arrays[array_name])
+        
+        # Collect variable names
+        var_names = []
+        rest_index = -1
+        rest_var = None
+        consumed = 1
+        i = index + 2
+        
+        while i < len(tokens):
+            token = tokens[i]
+            if token in BasicCommandHandler.KNOWN_COMMANDS:
+                break
+            if token.startswith('*'):
+                rest_var = token[1:]
+                rest_index = len(var_names)
+            else:
+                var_names.append(token)
+            consumed += 1
+            i += 1
+        
+        if rest_var is None:
+            state.add_error("unpack_rest requires a *rest variable")
+            return 0
+        
+        # Calculate how many elements go to rest
+        before_rest = rest_index
+        after_rest = len(var_names) - rest_index
+        rest_count = len(arr) - before_rest - after_rest
+        
+        if rest_count < 0:
+            state.add_error(f"Not enough values to unpack")
+            return 0
+        
+        # Assign before rest
+        for j in range(before_rest):
+            value = arr[j]
+            if isinstance(value, str):
+                state.strings[var_names[j]] = value
+            else:
+                state.set_variable(var_names[j], value)
+        
+        # Assign rest
+        state.arrays[rest_var] = arr[before_rest:before_rest + rest_count]
+        
+        # Assign after rest
+        for j in range(after_rest):
+            value = arr[before_rest + rest_count + j]
+            target_var = var_names[rest_index + j]
+            if isinstance(value, str):
+                state.strings[target_var] = value
+            else:
+                state.set_variable(target_var, value)
+        
+        return consumed
+
+    @staticmethod
+    def handle_dict_unpack(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Unpack dict into variables by key, like Python's {**dict}.
+        Syntax: dict_unpack <dict> key1 var1 key2 var2 ...
+        Example: dict_unpack person "name" name "age" age
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("dict_unpack requires dict and key/var pairs. Use: dict_unpack <dict> key1 var1 key2 var2")
+            return 0
+        
+        dict_name = tokens[index + 1]
+        
+        if dict_name not in state.dictionaries:
+            state.add_error(f"Dictionary '{dict_name}' does not exist")
+            return 0
+        
+        d = state.dictionaries[dict_name]
+        
+        # Collect key/var pairs
+        consumed = 1
+        i = index + 2
+        
+        while i + 1 < len(tokens):
+            key_token = tokens[i]
+            var_name = tokens[i + 1]
+            
+            if key_token in BasicCommandHandler.KNOWN_COMMANDS:
+                break
+            if var_name in BasicCommandHandler.KNOWN_COMMANDS:
+                break
+            
+            # Parse key
+            key = key_token.strip('"')
+            
+            if key not in d:
+                state.add_error(f"Key '{key}' not found in dictionary")
+                return 0
+            
+            value = d[key]
+            if isinstance(value, str):
+                state.strings[var_name] = value
+            else:
+                state.set_variable(var_name, value)
+            
+            consumed += 2
+            i += 2
+        
+        return consumed
+
+    @staticmethod
+    def handle_swap(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Swap two variables, like Python's a, b = b, a.
+        Syntax: swap var1 var2
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("swap requires two variables. Use: swap var1 var2")
+            return 0
+        
+        var1 = tokens[index + 1]
+        var2 = tokens[index + 2]
+        
+        # Get values
+        val1 = None
+        val2 = None
+        type1 = None
+        type2 = None
+        
+        if var1 in state.strings:
+            val1 = state.strings[var1]
+            type1 = 'string'
+        elif state.has_variable(var1):
+            val1 = state.get_variable(var1)
+            type1 = 'number'
+        else:
+            state.add_error(f"Variable '{var1}' not found")
+            return 0
+        
+        if var2 in state.strings:
+            val2 = state.strings[var2]
+            type2 = 'string'
+        elif state.has_variable(var2):
+            val2 = state.get_variable(var2)
+            type2 = 'number'
+        else:
+            state.add_error(f"Variable '{var2}' not found")
+            return 0
+        
+        # Swap
+        if type2 == 'string':
+            state.strings[var1] = val2
+            if type1 == 'number' and var1 in state.variables:
+                del state.variables[var1]
+        else:
+            state.set_variable(var1, val2)
+            if type1 == 'string' and var1 in state.strings:
+                del state.strings[var1]
+        
+        if type1 == 'string':
+            state.strings[var2] = val1
+            if type2 == 'number' and var2 in state.variables:
+                del state.variables[var2]
+        else:
+            state.set_variable(var2, val1)
+            if type2 == 'string' and var2 in state.strings:
+                del state.strings[var2]
+        
+        return 2
+
+    # ========== Feature 10: F-Strings / Format Specifiers ==========
+
+    @staticmethod
+    def handle_fstring(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        F-string style formatting with format specifiers, like Python's f-strings.
+        Syntax: fstring <result> "template with {var} and {var:spec}"
+        Format specs: :d (int), :f (float), :.2f (2 decimals), :>10 (right align), :<10 (left align), :^10 (center)
+        Example: fstring msg "Value: {x:.2f}, Name: {name:>10}"
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("fstring requires result and template. Use: fstring <result> \"template\"")
+            return 0
+        
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 1])
+        template = tokens[index + 2]
+        
+        if template.startswith('"') and template.endswith('"'):
+            template = template[1:-1]
+        
+        import re
+        
+        def replace_placeholder(match):
+            content = match.group(1)
+            
+            # Parse var:spec format
+            if ':' in content:
+                var_name, spec = content.split(':', 1)
+            else:
+                var_name = content
+                spec = None
+            
+            var_name = var_name.strip()
+            
+            # Get value
+            if var_name in state.strings:
+                value = state.strings[var_name]
+            elif state.has_variable(var_name):
+                value = state.get_variable(var_name)
+            elif var_name in state.arrays:
+                value = state.arrays[var_name]
+            elif var_name in state.dictionaries:
+                value = state.dictionaries[var_name]
+            else:
+                return f"{{UNDEFINED:{var_name}}}"
+            
+            # Apply format spec
+            if spec:
+                try:
+                    return format(value, spec)
+                except (ValueError, TypeError):
+                    return str(value)
+            else:
+                return str(value)
+        
+        # Replace all {var} and {var:spec} placeholders
+        result = re.sub(r'\{([^}]+)\}', replace_placeholder, template)
+        state.strings[result_name] = result
+        return 2
+
+    @staticmethod
+    def handle_format_num(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Format a number with format specifier.
+        Syntax: format_num <value> <spec> <result>
+        Specs: d (int), f (float), .2f (2 decimals), e (scientific), % (percent), , (thousands)
+        Example: format_num pi ".4f" formatted  # "3.1416"
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("format_num requires value, spec, result. Use: format_num <val> <spec> <result>")
+            return 0
+        
+        value_token = tokens[index + 1]
+        spec = tokens[index + 2].strip('"')
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        # Get numeric value
+        if state.has_variable(value_token):
+            value = state.get_variable(value_token)
+        else:
+            try:
+                value = float(value_token) if '.' in value_token else int(value_token)
+            except ValueError:
+                state.add_error(f"'{value_token}' is not a number")
+                return 0
+        
+        try:
+            state.strings[result_name] = format(value, spec)
+        except ValueError as e:
+            state.add_error(f"Invalid format spec '{spec}': {e}")
+            return 0
+        
+        return 3
+
+    @staticmethod
+    def handle_format_align(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Align and pad a string.
+        Syntax: format_align <value> <width> <align> <fill> <result>
+        Align: left, right, center
+        Example: format_align name 20 center "*" padded
+        """
+        if index + 5 >= len(tokens):
+            state.add_error("format_align requires value, width, align, fill, result")
+            return 0
+        
+        value_token = tokens[index + 1]
+        width = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "width")
+        align = tokens[index + 3].strip('"')
+        fill = tokens[index + 4].strip('"')
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 5])
+        
+        if width is None:
+            return 0
+        
+        # Get string value
+        if value_token in state.strings:
+            value = state.strings[value_token]
+        elif state.has_variable(value_token):
+            value = str(state.get_variable(value_token))
+        elif value_token.startswith('"') and value_token.endswith('"'):
+            value = value_token[1:-1]
+        else:
+            value = value_token
+        
+        # Apply alignment
+        if len(fill) != 1:
+            fill = ' '
+        
+        if align == 'left':
+            result = value.ljust(width, fill)
+        elif align == 'right':
+            result = value.rjust(width, fill)
+        elif align == 'center':
+            result = value.center(width, fill)
+        else:
+            state.add_error(f"Unknown alignment '{align}'. Use: left, right, center")
+            return 0
+        
+        state.strings[result_name] = result
+        return 5
+
+    @staticmethod
+    def handle_str_pad_left(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Pad string on left (right-align).
+        Syntax: str_pad_left <string> <width> <fill> <result>
+        Example: str_pad_left num 5 "0" padded  # "00042"
+        """
+        if index + 4 >= len(tokens):
+            state.add_error("str_pad_left requires string, width, fill, result")
+            return 0
+        
+        str_name = tokens[index + 1]
+        width = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "width")
+        fill = tokens[index + 3].strip('"')
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 4])
+        
+        if width is None:
+            return 0
+        
+        if str_name in state.strings:
+            value = state.strings[str_name]
+        elif state.has_variable(str_name):
+            value = str(state.get_variable(str_name))
+        else:
+            value = str_name.strip('"')
+        
+        state.strings[result_name] = value.rjust(width, fill[0] if fill else ' ')
+        return 4
+
+    @staticmethod
+    def handle_str_pad_right(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Pad string on right (left-align).
+        Syntax: str_pad_right <string> <width> <fill> <result>
+        """
+        if index + 4 >= len(tokens):
+            state.add_error("str_pad_right requires string, width, fill, result")
+            return 0
+        
+        str_name = tokens[index + 1]
+        width = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "width")
+        fill = tokens[index + 3].strip('"')
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 4])
+        
+        if width is None:
+            return 0
+        
+        if str_name in state.strings:
+            value = state.strings[str_name]
+        elif state.has_variable(str_name):
+            value = str(state.get_variable(str_name))
+        else:
+            value = str_name.strip('"')
+        
+        state.strings[result_name] = value.ljust(width, fill[0] if fill else ' ')
+        return 4
+
+    # ========== Feature 11: Itertools/Functools ==========
+
+    @staticmethod
+    def handle_chain(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Chain multiple arrays into one (like itertools.chain).
+        Syntax: chain <arr1> <arr2> [arr3...] <result>
+        Example: chain list1 list2 list3 combined
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("chain requires at least 2 arrays and a result. Use: chain <arr1> <arr2> <result>")
+            return 0
+        
+        # Find all array arguments until we hit a non-array name (the result)
+        arrays = []
+        i = index + 1
+        while i < len(tokens):
+            name = tokens[i]
+            if name in state.arrays:
+                arrays.append(state.arrays[name])
+                i += 1
+            else:
+                break
+        
+        if len(arrays) < 2:
+            state.add_error("chain requires at least 2 arrays")
+            return 0
+        
+        if i >= len(tokens):
+            state.add_error("chain requires a result array name")
+            return 0
+        
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[i])
+        
+        # Chain all arrays together
+        combined = []
+        for arr in arrays:
+            combined.extend(arr)
+        
+        state.arrays[result_name] = combined
+        return i - index
+
+    @staticmethod
+    def handle_cycle(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Create a cycled version of array with n repetitions (like itertools.cycle but finite).
+        Syntax: cycle <array> <n> <result>
+        Example: cycle pattern 3 repeated
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("cycle requires array, count, and result. Use: cycle <array> <n> <result>")
+            return 0
+        
+        arr_name = tokens[index + 1]
+        n = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "count")
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if arr_name not in state.arrays:
+            state.add_error(f"Array '{arr_name}' does not exist")
+            return 0
+        
+        if n is None or n < 0:
+            state.add_error("cycle count must be a non-negative integer")
+            return 0
+        
+        state.arrays[result_name] = state.arrays[arr_name] * n
+        return 3
+
+    @staticmethod
+    def handle_repeat(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Create an array with a value repeated n times (like itertools.repeat).
+        Syntax: repeat <value> <n> <result>
+        Example: repeat 0 10 zeros
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("repeat requires value, count, and result. Use: repeat <value> <n> <result>")
+            return 0
+        
+        value_token = tokens[index + 1]
+        n = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "count")
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if n is None or n < 0:
+            state.add_error("repeat count must be a non-negative integer")
+            return 0
+        
+        # Resolve value - check if it's a string variable name
+        if value_token in state.strings:
+            value = state.strings[value_token]
+        elif value_token in state.variables:
+            value = state.variables[value_token]
+        elif value_token in state.arrays:
+            value = state.arrays[value_token]
+        else:
+            # Try literal value
+            value = DataTypesHandler._resolve_value_token(state, value_token)
+        
+        state.arrays[result_name] = [value] * n
+        return 3
+
+    @staticmethod
+    def handle_takewhile(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Take elements while condition is true (like itertools.takewhile).
+        Syntax: takewhile <array> <predicate_func> <result>
+        Example: takewhile nums less_than_5 result
+        
+        The predicate function should return 1 (truthy) or 0 (falsy).
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("takewhile requires array, predicate, and result. Use: takewhile <array> <predicate> <result>")
+            return 0
+        
+        arr_name = tokens[index + 1]
+        predicate = tokens[index + 2]
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if arr_name not in state.arrays:
+            state.add_error(f"Array '{arr_name}' does not exist")
+            return 0
+        
+        # Check if predicate is a function
+        if predicate not in state.functions:
+            state.add_error(f"Predicate function '{predicate}' does not exist")
+            return 0
+        
+        result = []
+        for x in state.arrays[arr_name]:
+            # Call the predicate function with the element
+            func_info = state.functions[predicate]
+            params = func_info.get('params', [])
+            body = func_info.get('body', [])
+            
+            # Save state
+            old_vars = state.variables.copy()
+            old_should_return = getattr(state, 'should_return', False)
+            
+            # Bind parameter
+            if params:
+                state.variables[params[0]] = x
+            
+            # Execute function body
+            from techlang.executor import CommandExecutor
+            executor = CommandExecutor(state, getattr(state, 'base_dir', None))
+            executor.execute_block(body)
+            
+            # Get return value (stored in state.return_value)
+            ret_val = (state.return_values[0] if state.return_values else 0)
+            state.return_values.clear()
+            state.should_return = old_should_return  # Reset after function call
+            
+            # Restore state
+            state.variables = old_vars
+            
+            if ret_val and ret_val != 0:
+                result.append(x)
+            else:
+                break
+        
+        state.arrays[result_name] = result
+        return 3
+
+    @staticmethod
+    def handle_dropwhile(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Drop elements while condition is true (like itertools.dropwhile).
+        Syntax: dropwhile <array> <predicate_func> <result>
+        Example: dropwhile nums less_than_5 result
+        
+        The predicate function should return 1 (truthy) or 0 (falsy).
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("dropwhile requires array, predicate, and result. Use: dropwhile <array> <predicate> <result>")
+            return 0
+        
+        arr_name = tokens[index + 1]
+        predicate = tokens[index + 2]
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if arr_name not in state.arrays:
+            state.add_error(f"Array '{arr_name}' does not exist")
+            return 0
+        
+        # Check if predicate is a function
+        if predicate not in state.functions:
+            state.add_error(f"Predicate function '{predicate}' does not exist")
+            return 0
+        
+        result = []
+        dropping = True
+        for x in state.arrays[arr_name]:
+            if dropping:
+                # Call the predicate function with the element
+                func_info = state.functions[predicate]
+                params = func_info.get('params', [])
+                body = func_info.get('body', [])
+                
+                # Save state
+                old_vars = state.variables.copy()
+                old_should_return = getattr(state, 'should_return', False)
+                
+                # Bind parameter
+                if params:
+                    state.variables[params[0]] = x
+                
+                # Execute function body
+                from techlang.executor import CommandExecutor
+                executor = CommandExecutor(state, getattr(state, 'base_dir', None))
+                executor.execute_block(body)
+                
+                # Get return value (stored in state.return_value)
+                ret_val = (state.return_values[0] if state.return_values else 0)
+                state.return_values.clear()
+                state.should_return = old_should_return  # Reset after function call
+                
+                # Restore state
+                state.variables = old_vars
+                
+                if ret_val and ret_val != 0:
+                    continue  # Keep dropping
+                dropping = False
+            
+            result.append(x)
+        
+        state.arrays[result_name] = result
+        return 3
+
+    @staticmethod
+    def handle_groupby(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Group consecutive equal elements (like itertools.groupby).
+        Syntax: groupby <array> <keys_result> <groups_result>
+        Example: groupby nums keys groups
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("groupby requires array, keys_result, groups_result. Use: groupby <array> <keys> <groups>")
+            return 0
+        
+        arr_name = tokens[index + 1]
+        keys_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        groups_name = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if arr_name not in state.arrays:
+            state.add_error(f"Array '{arr_name}' does not exist")
+            return 0
+        
+        arr = state.arrays[arr_name]
+        keys = []
+        groups = []
+        
+        if arr:
+            current_key = arr[0]
+            current_group = [arr[0]]
+            
+            for item in arr[1:]:
+                if item == current_key:
+                    current_group.append(item)
+                else:
+                    keys.append(current_key)
+                    groups.append(current_group)
+                    current_key = item
+                    current_group = [item]
+            
+            keys.append(current_key)
+            groups.append(current_group)
+        
+        state.arrays[keys_name] = keys
+        # Store groups as nested structure in a special format
+        state.arrays[groups_name] = [len(g) for g in groups]  # Store group sizes
+        return 3
+
+    @staticmethod
+    def handle_accumulate(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Running accumulation (like itertools.accumulate).
+        Syntax: accumulate <array> <result> [op]
+        Example: accumulate nums running_sum    (default: +)
+        Example: accumulate nums running_prod * 
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("accumulate requires array and result. Use: accumulate <array> <result> [op]")
+            return 0
+        
+        arr_name = tokens[index + 1]
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        # Check for optional operator
+        consumed = 2
+        op = "+"  # default
+        if index + 3 < len(tokens):
+            potential_op = tokens[index + 3].strip('"')
+            if potential_op in ["+", "*", "-", "max", "min"]:
+                op = potential_op
+                consumed = 3
+        
+        if arr_name not in state.arrays:
+            state.add_error(f"Array '{arr_name}' does not exist")
+            return 0
+        
+        arr = state.arrays[arr_name]
+        if not arr:
+            state.arrays[result_name] = []
+            return consumed
+        
+        result = [arr[0]]
+        for i in range(1, len(arr)):
+            prev = result[-1]
+            curr = arr[i]
+            if op == "+":
+                result.append(prev + curr)
+            elif op == "*":
+                result.append(prev * curr)
+            elif op == "-":
+                result.append(prev - curr)
+            elif op == "max":
+                result.append(max(prev, curr))
+            elif op == "min":
+                result.append(min(prev, curr))
+            else:
+                state.add_error(f"Unknown accumulate operation: '{op}'. Use: +, *, -, max, min")
+                return 0
+        
+        state.arrays[result_name] = result
+        return consumed
+
+    @staticmethod
+    def handle_pairwise(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Create pairs of consecutive elements (like itertools.pairwise).
+        Syntax: pairwise <array> <firsts> <seconds>
+        Example: pairwise nums first_elems second_elems
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("pairwise requires array, firsts, seconds. Use: pairwise <array> <firsts> <seconds>")
+            return 0
+        
+        arr_name = tokens[index + 1]
+        firsts_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        seconds_name = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if arr_name not in state.arrays:
+            state.add_error(f"Array '{arr_name}' does not exist")
+            return 0
+        
+        arr = state.arrays[arr_name]
+        firsts = []
+        seconds = []
+        
+        for i in range(len(arr) - 1):
+            firsts.append(arr[i])
+            seconds.append(arr[i + 1])
+        
+        state.arrays[firsts_name] = firsts
+        state.arrays[seconds_name] = seconds
+        return 3
+
+    @staticmethod
+    def handle_product(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Cartesian product of two arrays (like itertools.product).
+        Syntax: product <arr1> <arr2> <result1> <result2>
+        Example: product colors sizes color_list size_list
+        """
+        if index + 4 >= len(tokens):
+            state.add_error("product requires arr1, arr2, result1, result2. Use: product <arr1> <arr2> <res1> <res2>")
+            return 0
+        
+        arr1_name = tokens[index + 1]
+        arr2_name = tokens[index + 2]
+        res1_name = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        res2_name = DataTypesHandler._resolve_target_name(state, tokens[index + 4])
+        
+        if arr1_name not in state.arrays:
+            state.add_error(f"Array '{arr1_name}' does not exist")
+            return 0
+        if arr2_name not in state.arrays:
+            state.add_error(f"Array '{arr2_name}' does not exist")
+            return 0
+        
+        arr1 = state.arrays[arr1_name]
+        arr2 = state.arrays[arr2_name]
+        
+        res1 = []
+        res2 = []
+        for a in arr1:
+            for b in arr2:
+                res1.append(a)
+                res2.append(b)
+        
+        state.arrays[res1_name] = res1
+        state.arrays[res2_name] = res2
+        return 4
+
+    @staticmethod
+    def handle_permutations(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Generate permutations of array (like itertools.permutations).
+        Syntax: permutations <array> <result>
+        Example: permutations items all_orders
+        Note: Result is flattened; each permutation is n consecutive elements
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("permutations requires array and result. Use: permutations <array> <result>")
+            return 0
+        
+        arr_name = tokens[index + 1]
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        if arr_name not in state.arrays:
+            state.add_error(f"Array '{arr_name}' does not exist")
+            return 0
+        
+        from itertools import permutations as itertools_permutations
+        arr = state.arrays[arr_name]
+        
+        # Limit to prevent memory issues
+        if len(arr) > 8:
+            state.add_error("permutations limited to arrays of size 8 or less")
+            return 0
+        
+        result = []
+        for perm in itertools_permutations(arr):
+            result.extend(perm)
+        
+        state.arrays[result_name] = result
+        return 2
+
+    @staticmethod
+    def handle_combinations(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Generate combinations of array (like itertools.combinations).
+        Syntax: combinations <array> <r> <result>
+        Example: combinations items 2 pairs
+        Note: Result is flattened; each combination is r consecutive elements
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("combinations requires array, r, and result. Use: combinations <array> <r> <result>")
+            return 0
+        
+        arr_name = tokens[index + 1]
+        r = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "r")
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if arr_name not in state.arrays:
+            state.add_error(f"Array '{arr_name}' does not exist")
+            return 0
+        
+        if r is None or r < 0:
+            state.add_error("combinations r must be a non-negative integer")
+            return 0
+        
+        from itertools import combinations as itertools_combinations
+        arr = state.arrays[arr_name]
+        
+        result = []
+        for comb in itertools_combinations(arr, r):
+            result.extend(comb)
+        
+        state.arrays[result_name] = result
+        return 3
+
+    # Functools-like operations
+
+    @staticmethod
+    def handle_reduce(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Reduce array to single value (like functools.reduce).
+        Syntax: reduce <array> <binary_func> <result> [initial]
+        Example: reduce nums add_two total
+        Example: reduce nums add_two total 100
+        
+        The binary function takes two args and returns a single value.
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("reduce requires array, func, result. Use: reduce <array> <func> <result> [initial]")
+            return 0
+        
+        arr_name = tokens[index + 1]
+        func_name = tokens[index + 2]
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        # Check for optional initial value
+        consumed = 3
+        initial = None
+        if index + 4 < len(tokens):
+            try:
+                initial = int(tokens[index + 4])
+                consumed = 4
+            except ValueError:
+                pass  # Not an initial value
+        
+        if arr_name not in state.arrays:
+            state.add_error(f"Array '{arr_name}' does not exist")
+            return 0
+        
+        if func_name not in state.functions:
+            state.add_error(f"Function '{func_name}' does not exist")
+            return 0
+        
+        arr = state.arrays[arr_name]
+        if not arr and initial is None:
+            state.add_error("reduce of empty array with no initial value")
+            return 0
+        
+        # Start with initial or first element
+        if initial is not None:
+            acc = initial
+            start_idx = 0
+        else:
+            acc = arr[0]
+            start_idx = 1
+        
+        func_info = state.functions[func_name]
+        params = func_info.get('params', [])
+        body = func_info.get('body', [])
+        
+        for i in range(start_idx, len(arr)):
+            item = arr[i]
+            
+            # Save state
+            old_vars = state.variables.copy()
+            old_should_return = getattr(state, 'should_return', False)
+            
+            # Bind parameters
+            if len(params) >= 2:
+                state.variables[params[0]] = acc
+                state.variables[params[1]] = item
+            
+            # Execute function body
+            from techlang.executor import CommandExecutor
+            executor = CommandExecutor(state, getattr(state, 'base_dir', None))
+            executor.execute_block(body)
+            
+            # Get return value
+            ret_val = (state.return_values[0] if state.return_values else 0)
+            state.return_values.clear()
+            state.should_return = old_should_return  # Reset after function call
+            
+            # Restore state
+            state.variables = old_vars
+            
+            acc = ret_val if ret_val is not None else 0
+        
+        state.set_variable(result_name, acc)
+        return consumed
+
+    @staticmethod
+    def handle_partial_array(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Create a partial application of a function with bound arguments.
+        Syntax: partial_array <func> <partial_name> <bound_args_array>
+        Example: partial_array add_three my_partial bound_args
+        
+        The bound_args array contains the arguments to pre-bind.
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("partial_array requires func, partial_name, bound_args. Use: partial_array <func> <name> <args_array>")
+            return 0
+        
+        func_name = tokens[index + 1]
+        partial_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        args_name = tokens[index + 3]
+        
+        if func_name not in state.functions:
+            state.add_error(f"Function '{func_name}' does not exist")
+            return 0
+        
+        if args_name not in state.arrays:
+            state.add_error(f"Array '{args_name}' does not exist")
+            return 0
+        
+        # Store as a partial with function reference and bound args
+        if not hasattr(state, 'partials'):
+            state.partials = {}
+        
+        state.partials[partial_name] = {
+            'func': func_name,
+            'bound_args': list(state.arrays[args_name])
+        }
+        return 3
+
+    @staticmethod
+    def handle_apply_partial(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Apply a partial function with remaining arguments.
+        Syntax: apply_partial <partial_name> <result> <remaining_args...>
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("apply_partial requires partial_name, result, and remaining args")
+            return 0
+        
+        partial_name = tokens[index + 1]
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        if not hasattr(state, 'partials') or partial_name not in state.partials:
+            state.add_error(f"Partial '{partial_name}' does not exist")
+            return 0
+        
+        partial = state.partials[partial_name]
+        func_name = partial['func']
+        bound_args = partial['bound_args']
+        
+        if func_name not in state.functions:
+            state.add_error(f"Function '{func_name}' does not exist")
+            return 0
+        
+        # Gather remaining arguments
+        remaining_args = []
+        consumed = 2
+        for j in range(index + 3, len(tokens)):
+            tok = tokens[j]
+            # Check for end of command (next command keyword or special token)
+            if tok in ['end', 'do', 'print', 'set', 'add', 'if', 'loop', 'while', 'def', 'call']:
+                break
+            # Resolve value
+            val = DataTypesHandler._resolve_int_token(state, tok, f"arg{j}")
+            if val is not None:
+                remaining_args.append(val)
+                consumed += 1
+            else:
+                break
+        
+        # Combine bound args + remaining args
+        all_args = bound_args + remaining_args
+        
+        func_info = state.functions[func_name]
+        params = func_info.get('params', [])
+        body = func_info.get('body', [])
+        
+        # Save state
+        old_vars = state.variables.copy()
+        old_should_return = getattr(state, 'should_return', False)
+        
+        # Bind parameters
+        for i, param in enumerate(params):
+            if i < len(all_args):
+                state.variables[param] = all_args[i]
+        
+        # Execute function body
+        from techlang.executor import CommandExecutor
+        executor = CommandExecutor(state, getattr(state, 'base_dir', None))
+        executor.execute_block(body)
+        
+        # Get return value
+        ret_val = (state.return_values[0] if state.return_values else 0)
+        state.return_values.clear()
+        state.should_return = old_should_return  # Reset after function call
+        
+        # Restore state
+        state.variables = old_vars
+        
+        state.set_variable(result_name, ret_val if ret_val is not None else 0)
+        return consumed
+
+    # ========== Feature 12: Date/Time Full Support ==========
+
+    @staticmethod
+    def handle_datetime_now(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Get current datetime as ISO string.
+        Syntax: datetime_now <result>
+        """
+        if index + 1 >= len(tokens):
+            state.add_error("datetime_now requires result name. Use: datetime_now <result>")
+            return 0
+        
+        from datetime import datetime
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 1])
+        state.strings[result_name] = datetime.now().isoformat()
+        return 1
+
+    @staticmethod
+    def handle_datetime_utc(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Get current UTC datetime as ISO string.
+        Syntax: datetime_utc <result>
+        """
+        if index + 1 >= len(tokens):
+            state.add_error("datetime_utc requires result name. Use: datetime_utc <result>")
+            return 0
+        
+        from datetime import datetime, timezone
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 1])
+        state.strings[result_name] = datetime.now(timezone.utc).isoformat()
+        return 1
+
+    @staticmethod
+    def handle_datetime_parse(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Parse datetime string into datetime object.
+        Syntax: datetime_parse <datetime_str> <format> <target>
+        Example: datetime_parse datestr "%Y-%m-%d %H:%M:%S" dt
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("datetime_parse requires datetime_str, format, target. Use: datetime_parse <str> <format> <target>")
+            return 0
+        
+        dt_name = tokens[index + 1]
+        fmt = tokens[index + 2].strip('"')
+        target = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        # Get datetime string
+        if dt_name in state.strings:
+            dt_str = state.strings[dt_name]
+        else:
+            dt_str = dt_name.strip('"')
+        
+        from datetime import datetime
+        try:
+            dt = datetime.strptime(dt_str, fmt)
+            # Store as ISO string for portability
+            state.strings[target] = dt.isoformat()
+        except ValueError as e:
+            state.add_error(f"Failed to parse datetime: {e}")
+            return 0
+        
+        return 3
+
+    @staticmethod
+    def handle_datetime_format(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Format datetime to string.
+        Syntax: datetime_format <datetime_str> <format> <result>
+        Example: datetime_format dt "%B %d, %Y" formatted
+        """
+        if index + 3 >= len(tokens):
+            state.add_error("datetime_format requires datetime, format, result")
+            return 0
+        
+        dt_name = tokens[index + 1]
+        fmt = tokens[index + 2].strip('"')
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 3])
+        
+        if dt_name in state.strings:
+            dt_str = state.strings[dt_name]
+        else:
+            dt_str = dt_name.strip('"')
+        
+        from datetime import datetime
+        
+        def parse_dt(dt_str):
+            try:
+                return datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+            except ValueError:
+                try:
+                    return datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    return datetime.strptime(dt_str, "%Y-%m-%d")
+        
+        try:
+            dt = parse_dt(dt_str)
+            state.strings[result_name] = dt.strftime(fmt)
+        except ValueError as e:
+            state.add_error(f"Failed to format datetime: {e}")
+            return 0
+        
+        return 3
+
+    @staticmethod
+    def handle_datetime_add(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Add time delta to datetime.
+        Syntax: datetime_add <datetime_str> <amount> <unit> <result>
+        Units: days, hours, minutes, seconds, weeks
+        Example: datetime_add dt 7 days next_week
+        """
+        if index + 4 >= len(tokens):
+            state.add_error("datetime_add requires datetime, amount, unit, result")
+            return 0
+        
+        dt_name = tokens[index + 1]
+        amount = DataTypesHandler._resolve_int_token(state, tokens[index + 2], "amount")
+        unit = tokens[index + 3].strip('"')
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 4])
+        
+        if amount is None:
+            return 0
+        
+        if dt_name in state.strings:
+            dt_str = state.strings[dt_name]
+        else:
+            dt_str = dt_name.strip('"')
+        
+        from datetime import datetime, timedelta
+        
+        def parse_dt(dt_str):
+            try:
+                return datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+            except ValueError:
+                try:
+                    return datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    return datetime.strptime(dt_str, "%Y-%m-%d")
+        
+        try:
+            dt = parse_dt(dt_str)
+            
+            if unit in ("day", "days"):
+                delta = timedelta(days=amount)
+            elif unit in ("hour", "hours"):
+                delta = timedelta(hours=amount)
+            elif unit in ("minute", "minutes"):
+                delta = timedelta(minutes=amount)
+            elif unit in ("second", "seconds"):
+                delta = timedelta(seconds=amount)
+            elif unit in ("week", "weeks"):
+                delta = timedelta(weeks=amount)
+            else:
+                state.add_error(f"Unknown time unit: {unit}. Use: days, hours, minutes, seconds, weeks")
+                return 0
+            
+            result_dt = dt + delta
+            state.strings[result_name] = result_dt.isoformat()
+        except ValueError as e:
+            state.add_error(f"Failed to add to datetime: {e}")
+            return 0
+        
+        return 4
+
+    @staticmethod
+    def handle_datetime_diff(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Get difference between two datetimes (dt1 - dt2).
+        Syntax: datetime_diff <dt1> <dt2> <unit> <result>
+        Example: datetime_diff end start days diff_days
+        """
+        if index + 4 >= len(tokens):
+            state.add_error("datetime_diff requires dt1, dt2, unit, result")
+            return 0
+        
+        dt1_name = tokens[index + 1]
+        dt2_name = tokens[index + 2]
+        unit = tokens[index + 3].strip('"')
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 4])
+        
+        # Get datetime strings
+        dt1_str = state.strings.get(dt1_name, dt1_name.strip('"'))
+        dt2_str = state.strings.get(dt2_name, dt2_name.strip('"'))
+        
+        from datetime import datetime
+        
+        def parse_dt(dt_str):
+            try:
+                return datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+            except ValueError:
+                try:
+                    return datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    return datetime.strptime(dt_str, "%Y-%m-%d")
+        
+        try:
+            dt1 = parse_dt(dt1_str)
+            dt2 = parse_dt(dt2_str)
+            
+            # dt1 - dt2
+            delta = dt1 - dt2
+            
+            if unit in ("day", "days"):
+                result = delta.days
+            elif unit in ("hour", "hours"):
+                result = int(delta.total_seconds() / 3600)
+            elif unit in ("minute", "minutes"):
+                result = int(delta.total_seconds() / 60)
+            elif unit in ("second", "seconds"):
+                result = int(delta.total_seconds())
+            else:
+                state.add_error(f"Unknown time unit: {unit}")
+                return 0
+            
+            state.set_variable(result_name, result)
+        except ValueError as e:
+            state.add_error(f"Failed to compute datetime diff: {e}")
+            return 0
+        
+        return 4
+
+    @staticmethod
+    def handle_datetime_weekday(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Get weekday name of datetime.
+        Syntax: datetime_weekday <datetime_str> <result>
+        Returns: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("datetime_weekday requires datetime and result")
+            return 0
+        
+        dt_name = tokens[index + 1]
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        dt_str = state.strings.get(dt_name, dt_name.strip('"'))
+        
+        from datetime import datetime
+        weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        try:
+            try:
+                dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+            except ValueError:
+                # Try parsing other formats
+                try:
+                    dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    dt = datetime.strptime(dt_str, "%Y-%m-%d")
+            state.strings[result_name] = weekdays[dt.weekday()]
+        except ValueError as e:
+            state.add_error(f"Failed to get weekday: {e}")
+            return 0
+        
+        return 2
+
+    @staticmethod
+    def handle_datetime_timestamp(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Convert datetime to Unix timestamp.
+        Syntax: datetime_timestamp <datetime_str> <result>
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("datetime_timestamp requires datetime and result")
+            return 0
+        
+        dt_name = tokens[index + 1]
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        dt_str = state.strings.get(dt_name, dt_name.strip('"'))
+        
+        from datetime import datetime
+        
+        def parse_dt(dt_str):
+            try:
+                return datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+            except ValueError:
+                try:
+                    return datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    return datetime.strptime(dt_str, "%Y-%m-%d")
+        
+        try:
+            dt = parse_dt(dt_str)
+            state.set_variable(result_name, int(dt.timestamp()))
+        except ValueError as e:
+            state.add_error(f"Failed to get timestamp: {e}")
+            return 0
+        
+        return 2
+
+    @staticmethod
+    def handle_datetime_from_timestamp(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Create datetime from Unix timestamp.
+        Syntax: datetime_from_timestamp <timestamp> <result>
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("datetime_from_timestamp requires timestamp and result")
+            return 0
+        
+        ts = DataTypesHandler._resolve_int_token(state, tokens[index + 1], "timestamp")
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 2])
+        
+        if ts is None:
+            return 0
+        
+        from datetime import datetime
+        try:
+            dt = datetime.fromtimestamp(ts)
+            state.strings[result_name] = dt.isoformat()
+        except (ValueError, OSError) as e:
+            state.add_error(f"Invalid timestamp: {e}")
+            return 0
+        
+        return 2
+
+    # ========== Feature 13: Logging System ==========
+
+    @staticmethod
+    def handle_log_init(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Initialize logging system.
+        Syntax: log_init [level] [file]
+        Levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+        Example: log_init INFO "app.log"
+        """
+        if not hasattr(state, 'log_config'):
+            state.log_config = {
+                'level': 'INFO',
+                'file': None,
+                'entries': []
+            }
+        
+        if index + 1 < len(tokens):
+            level = tokens[index + 1].upper()
+            if level in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'):
+                state.log_config['level'] = level
+                consumed = 1
+                
+                if index + 2 < len(tokens):
+                    file_token = tokens[index + 2]
+                    if file_token.startswith('"'):
+                        state.log_config['file'] = file_token.strip('"')
+                        consumed = 2
+                
+                return consumed
+        
+        return 0
+
+    @staticmethod
+    def _log_level_value(level: str) -> int:
+        """Get numeric value for log level."""
+        levels = {'DEBUG': 10, 'INFO': 20, 'WARNING': 30, 'ERROR': 40, 'CRITICAL': 50}
+        return levels.get(level.upper(), 20)
+
+    @staticmethod
+    def _should_log(state: InterpreterState, level: str) -> bool:
+        """Check if message at level should be logged."""
+        if not hasattr(state, 'log_config'):
+            state.log_config = {'level': 'INFO', 'file': None, 'entries': []}
+        
+        current_level = DataTypesHandler._log_level_value(state.log_config['level'])
+        msg_level = DataTypesHandler._log_level_value(level)
+        return msg_level >= current_level
+
+    @staticmethod
+    def _log_message(state: InterpreterState, level: str, message: str):
+        """Log a message at the given level."""
+        if not DataTypesHandler._should_log(state, level):
+            return
+        
+        from datetime import datetime
+        timestamp = datetime.now().isoformat()
+        entry = f"[{timestamp}] [{level}] {message}"
+        
+        if not hasattr(state, 'log_config'):
+            state.log_config = {'level': 'INFO', 'file': None, 'entries': []}
+        
+        state.log_config['entries'].append(entry)
+        
+        # Output to state
+        state.add_output(entry)
+        
+        # Write to file if configured
+        if state.log_config.get('file'):
+            try:
+                with open(state.log_config['file'], 'a') as f:
+                    f.write(entry + '\n')
+            except IOError:
+                pass
+
+    @staticmethod
+    def handle_log_debug(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """Log debug message. Syntax: log_debug <message>"""
+        if index + 1 >= len(tokens):
+            state.add_error("log_debug requires a message")
+            return 0
+        
+        msg = tokens[index + 1]
+        if msg.startswith('"') and msg.endswith('"'):
+            msg = msg[1:-1]
+        elif msg in state.strings:
+            msg = state.strings[msg]
+        
+        DataTypesHandler._log_message(state, 'DEBUG', msg)
+        return 1
+
+    @staticmethod
+    def handle_log_info(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """Log info message. Syntax: log_info <message>"""
+        if index + 1 >= len(tokens):
+            state.add_error("log_info requires a message")
+            return 0
+        
+        msg = tokens[index + 1]
+        if msg.startswith('"') and msg.endswith('"'):
+            msg = msg[1:-1]
+        elif msg in state.strings:
+            msg = state.strings[msg]
+        
+        DataTypesHandler._log_message(state, 'INFO', msg)
+        return 1
+
+    @staticmethod
+    def handle_log_warning(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """Log warning message. Syntax: log_warning <message>"""
+        if index + 1 >= len(tokens):
+            state.add_error("log_warning requires a message")
+            return 0
+        
+        msg = tokens[index + 1]
+        if msg.startswith('"') and msg.endswith('"'):
+            msg = msg[1:-1]
+        elif msg in state.strings:
+            msg = state.strings[msg]
+        
+        DataTypesHandler._log_message(state, 'WARNING', msg)
+        return 1
+
+    @staticmethod
+    def handle_log_error(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """Log error message. Syntax: log_error <message>"""
+        if index + 1 >= len(tokens):
+            state.add_error("log_error requires a message")
+            return 0
+        
+        msg = tokens[index + 1]
+        if msg.startswith('"') and msg.endswith('"'):
+            msg = msg[1:-1]
+        elif msg in state.strings:
+            msg = state.strings[msg]
+        
+        DataTypesHandler._log_message(state, 'ERROR', msg)
+        return 1
+
+    @staticmethod
+    def handle_log_critical(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """Log critical message. Syntax: log_critical <message>"""
+        if index + 1 >= len(tokens):
+            state.add_error("log_critical requires a message")
+            return 0
+        
+        msg = tokens[index + 1]
+        if msg.startswith('"') and msg.endswith('"'):
+            msg = msg[1:-1]
+        elif msg in state.strings:
+            msg = state.strings[msg]
+        
+        DataTypesHandler._log_message(state, 'CRITICAL', msg)
+        return 1
+
+    @staticmethod
+    def handle_log_level(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """Set log level. Syntax: log_level <level>"""
+        if index + 1 >= len(tokens):
+            state.add_error("log_level requires level (DEBUG, INFO, WARNING, ERROR, CRITICAL)")
+            return 0
+        
+        level = tokens[index + 1].upper()
+        if level not in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'):
+            state.add_error(f"Invalid log level: {level}")
+            return 0
+        
+        if not hasattr(state, 'log_config'):
+            state.log_config = {'level': 'INFO', 'file': None, 'entries': []}
+        
+        state.log_config['level'] = level
+        return 1
+
+    @staticmethod
+    def handle_log_file(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """Set log file. Syntax: log_file <path>"""
+        if index + 1 >= len(tokens):
+            state.add_error("log_file requires file path")
+            return 0
+        
+        filepath = tokens[index + 1].strip('"')
+        
+        if not hasattr(state, 'log_config'):
+            state.log_config = {'level': 'INFO', 'file': None, 'entries': []}
+        
+        state.log_config['file'] = filepath
+        return 1
+
+    @staticmethod
+    def handle_log_clear(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """Clear log entries. Syntax: log_clear"""
+        if hasattr(state, 'log_config'):
+            state.log_config['entries'] = []
+        return 0
+
+    @staticmethod
+    def handle_log_count(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """Get count of log entries. Syntax: log_count <result>"""
+        if index + 1 >= len(tokens):
+            state.add_error("log_count requires result variable")
+            return 0
+        
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 1])
+        
+        if hasattr(state, 'log_config'):
+            count = len(state.log_config.get('entries', []))
+        else:
+            count = 0
+        
+        state.set_variable(result_name, count)
+        return 1
+
+    @staticmethod
+    def handle_log_get(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """Get all log entries as array. Syntax: log_get <result_array>"""
+        if index + 1 >= len(tokens):
+            state.add_error("log_get requires result array name")
+            return 0
+        
+        result_name = DataTypesHandler._resolve_target_name(state, tokens[index + 1])
+        
+        if hasattr(state, 'log_config'):
+            entries = state.log_config.get('entries', [])
+        else:
+            entries = []
+        
+        state.arrays[result_name] = list(entries)
+        return 1

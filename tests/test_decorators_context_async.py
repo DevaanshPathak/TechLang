@@ -255,8 +255,8 @@ async def multiply a b do
     return result
 end
 
-await multiply 6 7 -> product
-print product
+await multiply 6 7 -> prod
+print prod
 '''
         output = run(code).strip()
         assert "42" in output

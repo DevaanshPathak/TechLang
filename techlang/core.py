@@ -145,6 +145,15 @@ class InterpreterState:
     gui_ctk_appearance: str = ""  # light|dark|system
     gui_ctk_theme: str = ""  # built-in name or path
     gui_ctk_scaling: float = 0.0  # percent (e.g., 100, 125)
+
+    # Feature 11: Partial function applications
+    partials: Dict[str, Dict[str, object]] = None  # name -> {func, bound_args}
+
+    # Feature 12: DateTime storage
+    datetimes: Dict[str, object] = None  # name -> datetime object
+
+    # Feature 13: Logging system configuration
+    log_config: Dict[str, object] = None  # {level, file, entries}
     
     def __post_init__(self):
         """
@@ -249,6 +258,22 @@ class InterpreterState:
             self.gui_ctk_theme = ""
         if not hasattr(self, "gui_ctk_scaling") or self.gui_ctk_scaling is None:
             self.gui_ctk_scaling = 0.0
+
+        # Feature 11: Partial function applications
+        if self.partials is None:
+            self.partials = {}
+        
+        # Feature 12: DateTime storage
+        if self.datetimes is None:
+            self.datetimes = {}
+        
+        # Feature 13: Logging configuration
+        if self.log_config is None:
+            self.log_config = {
+                "level": "INFO",
+                "file": None,
+                "entries": []
+            }
     
     def reset(self) -> None:
         """
