@@ -23,6 +23,7 @@ from .function_ops import FunctionOpsHandler
 from .decorator_ops import DecoratorOpsHandler
 from .context_ops import ContextOpsHandler
 from .async_ops import AsyncOpsHandler
+from .pythonic_ops import PythonicOpsHandler
 
 
 class CommandExecutor:
@@ -899,6 +900,36 @@ class CommandExecutor:
                 consumed = AsyncOpsHandler.handle_task_status(self.state, tokens, i)
             elif token == "task_cancel":
                 consumed = AsyncOpsHandler.handle_task_cancel(self.state, tokens, i)
+
+            # Pythonic Features: Dataclasses
+            elif token == "dataclass":
+                consumed = PythonicOpsHandler.handle_dataclass(self.state, tokens, i)
+            elif token == "dataclass_new":
+                consumed = PythonicOpsHandler.handle_dataclass_new(self.state, tokens, i)
+            elif token == "dataclass_get":
+                consumed = PythonicOpsHandler.handle_dataclass_get(self.state, tokens, i)
+            elif token == "dataclass_set":
+                consumed = PythonicOpsHandler.handle_dataclass_set(self.state, tokens, i)
+            elif token == "dataclass_eq":
+                consumed = PythonicOpsHandler.handle_dataclass_eq(self.state, tokens, i)
+            elif token == "dataclass_str":
+                consumed = PythonicOpsHandler.handle_dataclass_str(self.state, tokens, i)
+            elif token == "dataclass_to_dict":
+                consumed = PythonicOpsHandler.handle_dataclass_to_dict(self.state, tokens, i)
+
+            # Pythonic Features: in/not_in operators
+            elif token == "in":
+                consumed = PythonicOpsHandler.handle_in(self.state, tokens, i)
+            elif token == "not_in":
+                consumed = PythonicOpsHandler.handle_not_in(self.state, tokens, i)
+            elif token == "contains":
+                consumed = PythonicOpsHandler.handle_contains(self.state, tokens, i)
+
+            # Pythonic Features: Property decorators
+            elif token == "get_property":
+                consumed = PythonicOpsHandler.handle_get_property(self.state, tokens, i, self.execute_block)
+            elif token == "set_property":
+                consumed = PythonicOpsHandler.handle_set_property(self.state, tokens, i, self.execute_block)
 
             # End of block - marks the end of loops, functions, etc.
             elif token == "end":

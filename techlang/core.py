@@ -155,6 +155,10 @@ class InterpreterState:
     # Feature 13: Logging system configuration
     log_config: Dict[str, object] = None  # {level, file, entries}
     
+    # Pythonic Features: Dataclasses
+    dataclass_defs: Dict[str, object] = None  # dataclass_name -> DataclassDefinition
+    dataclass_instances: Dict[str, object] = None  # instance_name -> DataclassInstance
+    
     def __post_init__(self):
         """
         Set up empty containers when the interpreter starts.
@@ -274,6 +278,12 @@ class InterpreterState:
                 "file": None,
                 "entries": []
             }
+        
+        # Pythonic Features: Dataclasses
+        if self.dataclass_defs is None:
+            self.dataclass_defs = {}
+        if self.dataclass_instances is None:
+            self.dataclass_instances = {}
     
     def reset(self) -> None:
         """

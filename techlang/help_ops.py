@@ -398,6 +398,22 @@ HELP_TEXT: Dict[str, str] = {
     "log_clear": "log_clear — clear log entries",
     "log_count": "log_count <target> — get number of log entries",
     "log_get": "log_get <index> <target> — get specific log entry",
+    # Pythonic Features: Dataclasses
+    "dataclass": "dataclass <Name> field <name> <type> [default] ... end — define a dataclass (like Python @dataclass)",
+    "dataclass_new": "dataclass_new <Type> <instance> [field=value ...] — create dataclass instance",
+    "dataclass_get": "dataclass_get <instance> <field> <target> — get field value from dataclass instance",
+    "dataclass_set": "dataclass_set <instance> <field> <value> — set field value in dataclass instance",
+    "dataclass_eq": "dataclass_eq <a> <b> <result> — compare two dataclass instances (1 if equal, 0 otherwise)",
+    "dataclass_str": "dataclass_str <instance> <target> — get string representation of dataclass",
+    "dataclass_to_dict": "dataclass_to_dict <instance> <target> — convert dataclass to dictionary",
+    # Pythonic Features: in/not_in operators
+    "in": "in <value> <container> <result> — check if value exists in array/dict/string/set (1 if found, 0 otherwise)",
+    "not_in": "not_in <value> <container> <result> — check if value does NOT exist in container (1 if not found)",
+    "contains": "contains <container> <value> <result> — alternative syntax: check if container contains value",
+    # Pythonic Features: Property decorators
+    "property": "property <name> get|set [param] do ... end — define property getter/setter (inside class)",
+    "get_property": "get_property <instance> <property> <target> — get property value (calls getter if defined)",
+    "set_property": "set_property <instance> <property> <value> — set property value (calls setter if defined)",
 }
 
 

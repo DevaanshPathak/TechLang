@@ -115,7 +115,13 @@ class BasicCommandHandler:
         "datetime_from_timestamp",
         # Feature 13: Logging System
         "log_init", "log_debug", "log_info", "log_warning", "log_error", "log_critical",
-        "log_level", "log_file", "log_clear", "log_count", "log_get"
+        "log_level", "log_file", "log_clear", "log_count", "log_get",
+        # Pythonic Features: Dataclasses & in/not_in operators
+        "dataclass", "dataclass_new", "dataclass_get", "dataclass_set",
+        "dataclass_eq", "dataclass_str", "dataclass_to_dict",
+        "in", "not_in", "contains",
+        # Pythonic Features: Property decorators
+        "property", "get_property", "set_property"
 
         ,
         # GUI (tkinter/customtkinter)
