@@ -1,5 +1,5 @@
 """
-Tests for Feature 11: Itertools/Functools Equivalents
+Tests for Itertools/Functools Equivalents
 
 These commands provide Python itertools/functools functionality:
 - chain, cycle, repeat, takewhile, dropwhile

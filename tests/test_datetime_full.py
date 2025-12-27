@@ -1,5 +1,5 @@
 """
-Tests for Feature 12: Date/Time Full Support
+Tests for Date/Time Full Support
 
 These commands provide comprehensive datetime functionality:
 - datetime_now, datetime_utc

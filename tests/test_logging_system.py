@@ -1,5 +1,5 @@
 """
-Tests for Feature 13: Logging System
+Tests for Logging System
 
 These commands provide Python-like logging:
 - log_init, log_debug, log_info, log_warning, log_error, log_critical

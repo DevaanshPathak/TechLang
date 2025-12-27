@@ -1,5 +1,5 @@
 """
-Tests for Feature 7: Advanced Comprehensions
+Tests for Advanced Comprehensions
 - dict_comprehend, set_comprehend, generator_expr, comprehend_if
 """
 import pytest

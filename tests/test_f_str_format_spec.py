@@ -1,5 +1,5 @@
 """
-Tests for Feature 10: F-Strings / Format Specifiers
+Tests for F-Strings / Format Specifiers
 - fstring, format_num, format_align, str_pad_left, str_pad_right
 """
 import pytest

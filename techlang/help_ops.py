@@ -54,6 +54,7 @@ HELP_TEXT: Dict[str, str] = {
     "array_filter": "array_filter <source> <target> <predicate> [value] — keep items (even, odd, positive, negative, nonzero, gt, ge, lt, le, eq, ne, contains)",
     "array_sort": "array_sort <name> [asc|desc] — sort array in place (default: ascending)",
     "array_reverse": "array_reverse <name> — reverse array in place",
+    "array_reversed": "array_reversed <source> <result> — create a reversed copy of array (like Python's reversed())",
     "array_find": "array_find <name> <value> <target> — find index of value (-1 if not found)",
     "array_unique": "array_unique <name> — remove duplicates in place, preserving order",
     "array_join": "array_join <name> <delimiter> <target> — join elements into string",
@@ -108,6 +109,42 @@ HELP_TEXT: Dict[str, str] = {
     "dict_has_key": "dict_has_key <dict> <key> <result> — check if key exists (1/0)",
     "dict_clear": "dict_clear <dict> — remove all items",
     "dict_len": "dict_len <dict> <result> — get number of items",
+    # Dict Methods
+    "dict_setdefault": "dict_setdefault <dict> <key> <default> — set key to default if not exists",
+    "dict_copy": "dict_copy <dict> <result> — create shallow copy of dictionary",
+    "dict_fromkeys": "dict_fromkeys <keys_array> <value> <result> — create dict from array keys",
+    "dict_merge": "dict_merge <dict1> <dict2> <result> — merge two dicts into new one",
+    # Global/Nonlocal Keywords
+    "global": "global <var> [var2...] — declare variables as global scope",
+    "nonlocal": "nonlocal <var> [var2...] — declare variables from enclosing scope",
+    # pass Statement
+    "pass": "pass — no-operation placeholder, does nothing",
+    # del Statement
+    "del": "del <name> — delete a variable, array, dict, string, or set",
+    "del_array": "del_array <array> <index> — delete element at index from array",
+    "del_dict": "del_dict <dict> <key> — delete key from dictionary",
+    # is/is_not Identity Check
+    "is": "is <obj1> <obj2> <result> — check if two names refer to the same object (1 if same, 0 if different)",
+    "is_not": "is_not <obj1> <obj2> <result> — check if two names refer to different objects (1 if different, 0 if same)",
+    # __str__/__repr__ Equivalents
+    "obj_str": "obj_str <instance> <result> — get string representation (calls __str__ if defined)",
+    "obj_repr": "obj_repr <instance> <result> — get detailed representation (calls __repr__ if defined)",
+    "obj_display": "obj_display <instance> — print the object using its __str__ method",
+    # Type Hints
+    "typed_def": "typed_def <name> <param:type>... -> <return_type> do ... end — define function with type hints",
+    "typecheck": "typecheck <on|off> — enable or disable runtime type checking",
+    "type_assert": "type_assert <value> <type> — assert that value matches expected type",
+    # Full Pattern Matching
+    "match_full": "match_full <value> ... end — enhanced pattern matching with OR, list, dict patterns",
+    "case_or": "case_or <val1> <val2>... do ... end — match any of the values (OR pattern)",
+    "case_list": "case_list <var1> [*rest] do ... end — destructure array into variables",
+    "case_dict": "case_dict <key:var>... do ... end — destructure dict by extracting keys",
+    # Protocols and Abstract Base Classes
+    "protocol": "protocol <name> ... end — define a protocol with required methods",
+    "abstract_class": "abstract_class <name> ... end — define an abstract class",
+    "abstract_method": "abstract_method <name> [params...] — mark method as abstract (must be implemented)",
+    "implements": "implements <class> <protocol> — declare class implements protocol",
+    "protocol_check": "protocol_check <obj> <protocol> <result> — check if object implements protocol (1/0)",
     # Set commands
     "set_create": "set_create <name> — create empty set",
     "set_add": "set_add <set> <value> — add item to set",
@@ -123,22 +160,22 @@ HELP_TEXT: Dict[str, str] = {
     "set_issuperset": "set_issuperset <set1> <set2> <result> — check if set1 is superset of set2 (1/0)",
     "set_to_array": "set_to_array <set> <result> — convert set to array",
     "array_to_set": "array_to_set <array> <result> — convert array to set (removes duplicates)",
-    # Feature 7: Advanced Comprehensions
+    # Advanced Comprehensions
     "dict_comprehend": "dict_comprehend <array> <dict> \"key_expr\" \"val_expr\" — dict comprehension like {k:v for x in arr}",
     "set_comprehend": "set_comprehend <array> <set> \"expr\" — set comprehension like {expr for x in arr}",
     "generator_expr": "generator_expr <array> <gen> \"expr\" — generator expression (lazy evaluation)",
     "comprehend_if": "comprehend_if <array> <target> \"expr\" \"cond\" — comprehension with conditional filter",
-    # Feature 8: Slice Assignment & Advanced Slicing
+    # Slice Assignment & Advanced Slicing
     "array_slice_step": "array_slice_step <arr> <start> <end> <step> <target> — slice with step like arr[::2]",
     "array_set_slice": "array_set_slice <arr> <start> <end> <source> — assign to slice like arr[1:3] = [x,y]",
     "str_slice": "str_slice <str> <start> <end> <target> — slice string like str[1:5]",
     "str_slice_step": "str_slice_step <str> <start> <end> <step> <target> — slice with step",
-    # Feature 9: Unpacking & Destructuring
+    # Unpacking & Destructuring
     "unpack": "unpack <array> var1 var2 ... — unpack array into variables like a,b,c = [1,2,3]",
     "unpack_rest": "unpack_rest <array> v1 *rest v2 — unpack with *rest like a,*b,c = [1,2,3,4,5]",
     "dict_unpack": "dict_unpack <dict> key1 var1 key2 var2 — extract dict values by key",
     "swap": "swap var1 var2 — swap two variables like a,b = b,a",
-    # Feature 10: F-Strings / Format Specifiers
+    # F-Strings / Format Specifiers
     "fstring": "fstring <result> \"template {var:spec}\" — f-string with format specs (.2f, >10, etc)",
     "format_num": "format_num <val> <spec> <result> — format number with spec (d, .2f, e, %, ,)",
     "format_align": "format_align <val> <width> <align> <fill> <result> — align text (left/right/center)",
@@ -361,7 +398,7 @@ HELP_TEXT: Dict[str, str] = {
     "watch": "watch <var> — add variable to watch list",
     "unwatch": "unwatch <var> — remove variable from watch list",
     "clear_breakpoints": "clear_breakpoints — remove all breakpoints",
-    # Feature 11: Itertools/Functools equivalents
+    # Itertools/Functools equivalents
     "chain": "chain <arr1> <arr2> ... <result> — concatenate arrays (itertools.chain)",
     "cycle": "cycle <array> <n> <result> — repeat array n times (itertools.cycle)",
     "repeat": "repeat <value> <n> <result> — create array with n copies (itertools.repeat)",
@@ -376,7 +413,7 @@ HELP_TEXT: Dict[str, str] = {
     "reduce": "reduce <array> <func> <result> [initial] — fold array with binary function (functools.reduce)",
     "partial_array": "partial_array <func> <name> <args_array> — create partial from array args",
     "apply_partial": "apply_partial <partial_name> <result> [extra_args...] — apply partial function",
-    # Feature 12: Date/Time Full Support
+    # Date/Time Full Support
     "datetime_now": "datetime_now <target> — store current local datetime",
     "datetime_utc": "datetime_utc <target> — store current UTC datetime",
     "datetime_parse": "datetime_parse <string> <format> <target> — parse datetime from string",
@@ -386,7 +423,7 @@ HELP_TEXT: Dict[str, str] = {
     "datetime_weekday": "datetime_weekday <dt> <target> — get weekday name (Monday-Sunday)",
     "datetime_timestamp": "datetime_timestamp <dt> <target> — get Unix timestamp from datetime",
     "datetime_from_timestamp": "datetime_from_timestamp <timestamp> <target> — create datetime from Unix timestamp",
-    # Feature 13: Logging System
+    # Logging System
     "log_init": "log_init [level] — initialize logging (DEBUG/INFO/WARNING/ERROR/CRITICAL)",
     "log_debug": "log_debug <message> — log debug message",
     "log_info": "log_info <message> — log info message",
@@ -398,7 +435,7 @@ HELP_TEXT: Dict[str, str] = {
     "log_clear": "log_clear — clear log entries",
     "log_count": "log_count <target> — get number of log entries",
     "log_get": "log_get <index> <target> — get specific log entry",
-    # Pythonic Features: Dataclasses
+    # Dataclasses
     "dataclass": "dataclass <Name> field <name> <type> [default] ... end — define a dataclass (like Python @dataclass)",
     "dataclass_new": "dataclass_new <Type> <instance> [field=value ...] — create dataclass instance",
     "dataclass_get": "dataclass_get <instance> <field> <target> — get field value from dataclass instance",
@@ -406,14 +443,55 @@ HELP_TEXT: Dict[str, str] = {
     "dataclass_eq": "dataclass_eq <a> <b> <result> — compare two dataclass instances (1 if equal, 0 otherwise)",
     "dataclass_str": "dataclass_str <instance> <target> — get string representation of dataclass",
     "dataclass_to_dict": "dataclass_to_dict <instance> <target> — convert dataclass to dictionary",
-    # Pythonic Features: in/not_in operators
+    # in/not_in operators
     "in": "in <value> <container> <result> — check if value exists in array/dict/string/set (1 if found, 0 otherwise)",
     "not_in": "not_in <value> <container> <result> — check if value does NOT exist in container (1 if not found)",
     "contains": "contains <container> <value> <result> — alternative syntax: check if container contains value",
-    # Pythonic Features: Property decorators
+    # Property decorators
     "property": "property <name> get|set [param] do ... end — define property getter/setter (inside class)",
     "get_property": "get_property <instance> <property> <target> — get property value (calls getter if defined)",
     "set_property": "set_property <instance> <property> <value> — set property value (calls setter if defined)",
+    # Default/Keyword Args, *args/**kwargs, Multiple Returns, Walrus
+    "defn": "defn <name> [param1] [param2=default] ... do ... end — define function with default/keyword arguments",
+    "calln": "calln <name> [args...] [param=value ...] [-> ret1 ret2 ...] — call function with keyword arguments",
+    "defv": "defv <name> [params...] [*args] [**kwargs] do ... end — define variadic function",
+    "callv": "callv <name> [args...] [key=value ...] [-> returns...] — call variadic function",
+    "pack": "pack <array> <val1> [val2] ... — pack multiple values into an array",
+    "return_multi": "return_multi <val1> [val2] ... — return multiple values from function",
+    "if_assign": "if_assign <var> := <expr> <op> <value> do ... end — walrus operator in if condition",
+    "while_assign": "while_assign <var> := <expr> do ... end — walrus operator in while loop",
+    "assign_expr": "assign_expr <var> := <value> — assignment expression (outputs value)",
+    # Chained Comparisons
+    "if_chain": "if_chain <val1> <op1> <val2> <op2> <val3> ... do ... end — chained comparisons (0 < x < 100)",
+    # Loop else
+    "loop_else": "loop_else <count> do ... else ... end — loop with else block if completed without break",
+    "while_else": "while_else <var> <op> <val> do ... else ... end — while loop with else block",
+    "break": "break — exit the innermost loop_else or while_else",
+    "continue": "continue — skip to next iteration of loop_else or while_else",
+    # Additional List Methods
+    "array_insert": "array_insert <array> <index> <value> — insert element at index (like list.insert())",
+    "array_extend": "array_extend <array> <source> — extend array with elements from source array (like list.extend())",
+    "array_clear": "array_clear <array> — remove all elements (like list.clear())",
+    "array_copy": "array_copy <source> <target> — create shallow copy (like list.copy())",
+    "array_count": "array_count <array> <value> <result> — count occurrences of value (like list.count())",
+    "array_remove": "array_remove <array> <value> — remove first occurrence (like list.remove())",
+    "array_len": "array_len <array> <result> — get array length (like len())",
+    "array_index": "array_index <array> <value> <result> — get index of first occurrence, -1 if not found",
+    # Additional String Methods
+    "str_join": "str_join <array> <separator> <result> — join array elements with separator (like separator.join())",
+    "str_zfill": "str_zfill <string> <width> <result> — pad string with zeros on the left",
+    "str_center": "str_center <string> <width> <result> — center string in width with spaces",
+    "str_ljust": "str_ljust <string> <width> <result> — left-justify string (like str.ljust())",
+    "str_rjust": "str_rjust <string> <width> <result> — right-justify string (like str.rjust())",
+    "str_title": "str_title <string> <result> — convert to title case (like str.title())",
+    "str_capitalize": "str_capitalize <string> <result> — capitalize first character (like str.capitalize())",
+    "str_swapcase": "str_swapcase <string> <result> — swap case of all characters (like str.swapcase())",
+    "str_isupper": "str_isupper <string> <result> — check if all chars uppercase (1/0)",
+    "str_islower": "str_islower <string> <result> — check if all chars lowercase (1/0)",
+    "str_isspace": "str_isspace <string> <result> — check if all chars whitespace (1/0)",
+    "str_lstrip": "str_lstrip <string> <result> — strip leading whitespace (like str.lstrip())",
+    "str_rstrip": "str_rstrip <string> <result> — strip trailing whitespace (like str.rstrip())",
+    "str_strip_chars": "str_strip_chars <string> <chars> <result> — strip specific characters from both ends",
 }
 
 

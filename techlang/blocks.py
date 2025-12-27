@@ -14,7 +14,7 @@ class BlockCollector:
             token: str = tokens_list[i]
             
             # Any of these tokens start a nested block
-            if token in {"def", "if", "loop", "while", "switch", "match", "try", "macro"}:
+            if token in {"def", "if", "loop", "while", "switch", "match", "match_full", "try", "macro", "if_chain", "loop_else", "while_else", "protocol", "abstract_class"}:
                 depth += 1
                 block.append(token)
                 i += 1
@@ -27,6 +27,14 @@ class BlockCollector:
                     block.append(tokens_list[i + 1])  # operator
                     block.append(tokens_list[i + 2])  # value (could be 'end' as variable name!)
                     i += 3
+                # For 'if_chain', skip tokens until we reach 'do'
+                elif token == "if_chain":
+                    while i < len(tokens_list) and tokens_list[i] != "do":
+                        block.append(tokens_list[i])
+                        i += 1
+                    if i < len(tokens_list):
+                        block.append(tokens_list[i])  # append 'do'
+                        i += 1
                 continue
                 
             elif token == "struct":

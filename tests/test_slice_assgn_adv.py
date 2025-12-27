@@ -1,5 +1,5 @@
 """
-Tests for Feature 8: Slice Assignment & Advanced Slicing
+Tests for Slice Assignment & Advanced Slicing
 - array_slice_step, array_set_slice, str_slice, str_slice_step
 """
 import pytest

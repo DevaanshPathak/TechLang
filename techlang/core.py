@@ -120,6 +120,11 @@ class InterpreterState:
     command_count: int = 0  # Current command/instruction number
     paused: bool = False  # Whether execution is currently paused
     
+    # Loop control (Loop else)
+    loop_break: bool = False  # True when break is called
+    loop_continue: bool = False  # True when continue is called
+    loop_completed: bool = True  # True if loop completed without break
+    
     # Export/visibility control for library APIs
     exported_functions: Set[str] = None  # Functions marked as public (callable from outside modules)
 
@@ -146,18 +151,29 @@ class InterpreterState:
     gui_ctk_theme: str = ""  # built-in name or path
     gui_ctk_scaling: float = 0.0  # percent (e.g., 100, 125)
 
-    # Feature 11: Partial function applications
+    # Partial function applications
     partials: Dict[str, Dict[str, object]] = None  # name -> {func, bound_args}
 
-    # Feature 12: DateTime storage
+    # DateTime storage
     datetimes: Dict[str, object] = None  # name -> datetime object
 
-    # Feature 13: Logging system configuration
+    # Logging system configuration
     log_config: Dict[str, object] = None  # {level, file, entries}
     
-    # Pythonic Features: Dataclasses
+    # Dataclasses
     dataclass_defs: Dict[str, object] = None  # dataclass_name -> DataclassDefinition
     dataclass_instances: Dict[str, object] = None  # instance_name -> DataclassInstance
+    
+    # Advanced function handling
+    functions_with_defaults: Dict[str, object] = None  # func_name -> FunctionWithDefaults
+    variadic_functions: Dict[str, object] = None  # func_name -> VariadicFunction
+    
+    # Global/Nonlocal scope control
+    global_vars: Set[str] = None  # Variables declared global in current scope
+    nonlocal_vars: Set[str] = None  # Variables declared nonlocal in current scope
+    
+    # Type hints
+    typecheck_enabled: bool = False  # Whether runtime type checking is enabled
     
     def __post_init__(self):
         """
@@ -263,15 +279,15 @@ class InterpreterState:
         if not hasattr(self, "gui_ctk_scaling") or self.gui_ctk_scaling is None:
             self.gui_ctk_scaling = 0.0
 
-        # Feature 11: Partial function applications
+        # Partial function applications
         if self.partials is None:
             self.partials = {}
         
-        # Feature 12: DateTime storage
+        # DateTime storage
         if self.datetimes is None:
             self.datetimes = {}
         
-        # Feature 13: Logging configuration
+        # Logging configuration
         if self.log_config is None:
             self.log_config = {
                 "level": "INFO",
@@ -279,11 +295,17 @@ class InterpreterState:
                 "entries": []
             }
         
-        # Pythonic Features: Dataclasses
+        # Dataclasses
         if self.dataclass_defs is None:
             self.dataclass_defs = {}
         if self.dataclass_instances is None:
             self.dataclass_instances = {}
+        
+        # Global/Nonlocal scope control
+        if self.global_vars is None:
+            self.global_vars = set()
+        if self.nonlocal_vars is None:
+            self.nonlocal_vars = set()
     
     def reset(self) -> None:
         """

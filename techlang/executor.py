@@ -23,7 +23,36 @@ from .function_ops import FunctionOpsHandler
 from .decorator_ops import DecoratorOpsHandler
 from .context_ops import ContextOpsHandler
 from .async_ops import AsyncOpsHandler
-from .pythonic_ops import PythonicOpsHandler
+# Pythonic Features (split into separate modules)
+from .dataclasses import DataclassHandler
+from .property_decorators import PropertyHandler
+from .in_not_in_ops import InNotInHandler
+from .def_keyword_args import DefaultArgsHandler
+from .args_kwargs import ArgsKwargsHandler
+from .multi_ret_vals import MultiReturnHandler
+from .walrus_ops import WalrusHandler
+# Pythonic Features (split into separate modules)
+from .chained_comparisons import ChainedComparisonHandler
+from .loop_else import LoopElseHandler
+from .list_methods import ListMethodsHandler
+from .str_methods import StringMethodsHandler
+from .dict_methods import DictMethodsHandler
+# Global/Nonlocal
+from .scope_ops import ScopeOpsHandler
+# pass Statement
+from .pass_stmt import PassHandler
+# del Statement
+from .del_stmt import DelHandler
+# is/is_not Identity Check
+from .identity_ops import IdentityHandler
+# __str__/__repr__ Equivalents
+from .repr_ops import ReprHandler
+# Type Hints
+from .type_hints import TypeHintsHandler
+# Full Pattern Matching
+from .pattern_match import PatternMatchHandler
+# Protocols and Abstract Base Classes
+from .protocol_ops import ProtocolHandler
 
 
 class CommandExecutor:
@@ -234,6 +263,8 @@ class CommandExecutor:
                 consumed = DataTypesHandler.handle_array_sort(self.state, tokens, i)
             elif token == "array_reverse":
                 consumed = DataTypesHandler.handle_array_reverse(self.state, tokens, i)
+            elif token == "array_reversed":
+                consumed = DataTypesHandler.handle_array_reversed(self.state, tokens, i)
             elif token == "array_find":
                 consumed = DataTypesHandler.handle_array_find(self.state, tokens, i)
             elif token == "array_unique":
@@ -413,6 +444,70 @@ class CommandExecutor:
             elif token == "dict_len":
                 consumed = DataTypesHandler.handle_dict_len(self.state, tokens, i)
             
+            # Dict Methods (Feature 12)
+            elif token == "dict_setdefault":
+                consumed = DictMethodsHandler.handle_dict_setdefault(self.state, tokens, i)
+            elif token == "dict_copy":
+                consumed = DictMethodsHandler.handle_dict_copy(self.state, tokens, i)
+            elif token == "dict_fromkeys":
+                consumed = DictMethodsHandler.handle_dict_fromkeys(self.state, tokens, i)
+            elif token == "dict_merge":
+                consumed = DictMethodsHandler.handle_dict_merge(self.state, tokens, i)
+            
+            # Global/Nonlocal Keywords
+            elif token == "global":
+                consumed = ScopeOpsHandler.handle_global(self.state, tokens, i)
+            elif token == "nonlocal":
+                consumed = ScopeOpsHandler.handle_nonlocal(self.state, tokens, i)
+            
+            # pass Statement
+            elif token == "pass":
+                consumed = PassHandler.handle_pass(self.state, tokens, i)
+            
+            # del Statement
+            elif token == "del":
+                consumed = DelHandler.handle_del(self.state, tokens, i)
+            elif token == "del_array":
+                consumed = DelHandler.handle_del_array(self.state, tokens, i)
+            elif token == "del_dict":
+                consumed = DelHandler.handle_del_dict(self.state, tokens, i)
+            
+            # is/is_not Identity Check
+            elif token == "is":
+                consumed = IdentityHandler.handle_is(self.state, tokens, i)
+            elif token == "is_not":
+                consumed = IdentityHandler.handle_is_not(self.state, tokens, i)
+            
+            # __str__/__repr__ Equivalents
+            elif token == "obj_str":
+                consumed = ReprHandler.handle_obj_str(self.state, tokens, i)
+            elif token == "obj_repr":
+                consumed = ReprHandler.handle_obj_repr(self.state, tokens, i)
+            elif token == "obj_display":
+                consumed = ReprHandler.handle_obj_display(self.state, tokens, i)
+            
+            # Type Hints
+            elif token == "typed_def":
+                consumed = TypeHintsHandler.handle_typed_def(self.state, tokens, i)
+            elif token == "typecheck":
+                consumed = TypeHintsHandler.handle_typecheck(self.state, tokens, i)
+            elif token == "type_assert":
+                consumed = TypeHintsHandler.handle_type_assert(self.state, tokens, i)
+            
+            # Full Pattern Matching
+            elif token == "match_full":
+                consumed = PatternMatchHandler.handle_match_full(self.state, tokens, i, self.execute_block)
+            
+            # Protocols and Abstract Base Classes
+            elif token == "protocol":
+                consumed = ProtocolHandler.handle_protocol(self.state, tokens, i)
+            elif token == "abstract_class":
+                consumed = ProtocolHandler.handle_abstract_class(self.state, tokens, i)
+            elif token == "implements":
+                consumed = ProtocolHandler.handle_implements(self.state, tokens, i)
+            elif token == "protocol_check":
+                consumed = ProtocolHandler.handle_protocol_check(self.state, tokens, i)
+            
             # Set operations
             elif token == "set_create":
                 consumed = DataTypesHandler.handle_set_create(self.state, tokens, i)
@@ -443,7 +538,7 @@ class CommandExecutor:
             elif token == "array_to_set":
                 consumed = DataTypesHandler.handle_array_to_set(self.state, tokens, i)
             
-            # Feature 7: Advanced Comprehensions
+            # Advanced Comprehensions
             elif token == "dict_comprehend":
                 consumed = DataTypesHandler.handle_dict_comprehend(self.state, tokens, i)
             elif token == "set_comprehend":
@@ -453,7 +548,7 @@ class CommandExecutor:
             elif token == "comprehend_if":
                 consumed = DataTypesHandler.handle_comprehend_if(self.state, tokens, i)
             
-            # Feature 8: Slice Assignment & Advanced Slicing
+            # Slice Assignment & Advanced Slicing
             elif token == "array_slice_step":
                 consumed = DataTypesHandler.handle_array_slice_step(self.state, tokens, i)
             elif token == "array_set_slice":
@@ -463,7 +558,7 @@ class CommandExecutor:
             elif token == "str_slice_step":
                 consumed = DataTypesHandler.handle_str_slice_step(self.state, tokens, i)
             
-            # Feature 9: Unpacking & Destructuring
+            # Unpacking & Destructuring
             elif token == "unpack":
                 consumed = DataTypesHandler.handle_unpack(self.state, tokens, i)
             elif token == "unpack_rest":
@@ -473,7 +568,7 @@ class CommandExecutor:
             elif token == "swap":
                 consumed = DataTypesHandler.handle_swap(self.state, tokens, i)
             
-            # Feature 10: F-Strings / Format Specifiers
+            # F-Strings / Format Specifiers
             elif token == "fstring":
                 consumed = DataTypesHandler.handle_fstring(self.state, tokens, i)
             elif token == "format_num":
@@ -509,7 +604,7 @@ class CommandExecutor:
             elif token == "json_write":
                 consumed = DataTypesHandler.handle_json_write(self.state, tokens, i, self.base_dir)
 
-            # Feature 11: Itertools/Functools Equivalents
+            # Itertools/Functools Equivalents
             elif token == "chain":
                 consumed = DataTypesHandler.handle_chain(self.state, tokens, i)
             elif token == "cycle":
@@ -539,7 +634,7 @@ class CommandExecutor:
             elif token == "apply_partial":
                 consumed = DataTypesHandler.handle_apply_partial(self.state, tokens, i)
 
-            # Feature 12: Date/Time Full Support
+            # Date/Time Full Support
             elif token == "datetime_now":
                 consumed = DataTypesHandler.handle_datetime_now(self.state, tokens, i)
             elif token == "datetime_utc":
@@ -559,7 +654,7 @@ class CommandExecutor:
             elif token == "datetime_from_timestamp":
                 consumed = DataTypesHandler.handle_datetime_from_timestamp(self.state, tokens, i)
 
-            # Feature 13: Logging System
+            # Logging System
             elif token == "log_init":
                 consumed = DataTypesHandler.handle_log_init(self.state, tokens, i)
             elif token == "log_debug":
@@ -901,35 +996,121 @@ class CommandExecutor:
             elif token == "task_cancel":
                 consumed = AsyncOpsHandler.handle_task_cancel(self.state, tokens, i)
 
-            # Pythonic Features: Dataclasses
+            # Dataclasses
             elif token == "dataclass":
-                consumed = PythonicOpsHandler.handle_dataclass(self.state, tokens, i)
+                consumed = DataclassHandler.handle_dataclass(self.state, tokens, i)
             elif token == "dataclass_new":
-                consumed = PythonicOpsHandler.handle_dataclass_new(self.state, tokens, i)
+                consumed = DataclassHandler.handle_dataclass_new(self.state, tokens, i)
             elif token == "dataclass_get":
-                consumed = PythonicOpsHandler.handle_dataclass_get(self.state, tokens, i)
+                consumed = DataclassHandler.handle_dataclass_get(self.state, tokens, i)
             elif token == "dataclass_set":
-                consumed = PythonicOpsHandler.handle_dataclass_set(self.state, tokens, i)
+                consumed = DataclassHandler.handle_dataclass_set(self.state, tokens, i)
             elif token == "dataclass_eq":
-                consumed = PythonicOpsHandler.handle_dataclass_eq(self.state, tokens, i)
+                consumed = DataclassHandler.handle_dataclass_eq(self.state, tokens, i)
             elif token == "dataclass_str":
-                consumed = PythonicOpsHandler.handle_dataclass_str(self.state, tokens, i)
+                consumed = DataclassHandler.handle_dataclass_str(self.state, tokens, i)
             elif token == "dataclass_to_dict":
-                consumed = PythonicOpsHandler.handle_dataclass_to_dict(self.state, tokens, i)
+                consumed = DataclassHandler.handle_dataclass_to_dict(self.state, tokens, i)
 
-            # Pythonic Features: in/not_in operators
+            # in/not_in operators
             elif token == "in":
-                consumed = PythonicOpsHandler.handle_in(self.state, tokens, i)
+                consumed = InNotInHandler.handle_in(self.state, tokens, i)
             elif token == "not_in":
-                consumed = PythonicOpsHandler.handle_not_in(self.state, tokens, i)
+                consumed = InNotInHandler.handle_not_in(self.state, tokens, i)
             elif token == "contains":
-                consumed = PythonicOpsHandler.handle_contains(self.state, tokens, i)
+                consumed = InNotInHandler.handle_contains(self.state, tokens, i)
 
-            # Pythonic Features: Property decorators
+            # Property decorators
             elif token == "get_property":
-                consumed = PythonicOpsHandler.handle_get_property(self.state, tokens, i, self.execute_block)
+                consumed = PropertyHandler.handle_get_property(self.state, tokens, i, self.execute_block)
             elif token == "set_property":
-                consumed = PythonicOpsHandler.handle_set_property(self.state, tokens, i, self.execute_block)
+                consumed = PropertyHandler.handle_set_property(self.state, tokens, i, self.execute_block)
+
+            # Default/Keyword Arguments
+            elif token == "defn":
+                consumed = DefaultArgsHandler.handle_defn(self.state, tokens, i)
+            elif token == "calln":
+                consumed = DefaultArgsHandler.handle_calln(self.state, tokens, i, self.execute_block)
+            
+            # *args/**kwargs
+            elif token == "defv":
+                consumed = ArgsKwargsHandler.handle_defv(self.state, tokens, i)
+            elif token == "callv":
+                consumed = ArgsKwargsHandler.handle_callv(self.state, tokens, i, self.execute_block)
+            
+            # Multiple Return Values
+            elif token == "pack":
+                consumed = MultiReturnHandler.handle_pack(self.state, tokens, i)
+            elif token == "return_multi":
+                consumed = MultiReturnHandler.handle_return_multi(self.state, tokens, i)
+            
+            # Walrus Operator
+            elif token == "if_assign":
+                consumed = WalrusHandler.handle_if_assign(self.state, tokens, i, self.execute_block)
+            elif token == "while_assign":
+                consumed = WalrusHandler.handle_while_assign(self.state, tokens, i, self.execute_block)
+            elif token == "assign_expr":
+                consumed = WalrusHandler.handle_assign_expr(self.state, tokens, i, self.execute_block)
+
+            # Chained Comparisons
+            elif token == "if_chain":
+                consumed = ChainedComparisonHandler.handle_if_chain(self.state, tokens, i, self.execute_block)
+            
+            # Loop Else
+            elif token == "break":
+                consumed = LoopElseHandler.handle_break(self.state, tokens, i)
+            elif token == "loop_else":
+                consumed = LoopElseHandler.handle_loop_else(self.state, tokens, i, self.execute_block)
+            elif token == "while_else":
+                consumed = LoopElseHandler.handle_while_else(self.state, tokens, i, self.execute_block)
+            
+            # List Methods
+            elif token == "array_insert":
+                consumed = ListMethodsHandler.handle_array_insert(self.state, tokens, i)
+            elif token == "array_extend":
+                consumed = ListMethodsHandler.handle_array_extend(self.state, tokens, i)
+            elif token == "array_clear":
+                consumed = ListMethodsHandler.handle_array_clear(self.state, tokens, i)
+            elif token == "array_copy":
+                consumed = ListMethodsHandler.handle_array_copy(self.state, tokens, i)
+            elif token == "array_count":
+                consumed = ListMethodsHandler.handle_array_count(self.state, tokens, i)
+            elif token == "array_remove":
+                consumed = ListMethodsHandler.handle_array_remove(self.state, tokens, i)
+            elif token == "array_len":
+                consumed = ListMethodsHandler.handle_array_len(self.state, tokens, i)
+            elif token == "array_index":
+                consumed = ListMethodsHandler.handle_array_index(self.state, tokens, i)
+            
+            # String Methods
+            elif token == "str_join":
+                consumed = StringMethodsHandler.handle_str_join(self.state, tokens, i)
+            elif token == "str_zfill":
+                consumed = StringMethodsHandler.handle_str_zfill(self.state, tokens, i)
+            elif token == "str_center":
+                consumed = StringMethodsHandler.handle_str_center(self.state, tokens, i)
+            elif token == "str_ljust":
+                consumed = StringMethodsHandler.handle_str_ljust(self.state, tokens, i)
+            elif token == "str_rjust":
+                consumed = StringMethodsHandler.handle_str_rjust(self.state, tokens, i)
+            elif token == "str_title":
+                consumed = StringMethodsHandler.handle_str_title(self.state, tokens, i)
+            elif token == "str_capitalize":
+                consumed = StringMethodsHandler.handle_str_capitalize(self.state, tokens, i)
+            elif token == "str_swapcase":
+                consumed = StringMethodsHandler.handle_str_swapcase(self.state, tokens, i)
+            elif token == "str_isupper":
+                consumed = StringMethodsHandler.handle_str_isupper(self.state, tokens, i)
+            elif token == "str_islower":
+                consumed = StringMethodsHandler.handle_str_islower(self.state, tokens, i)
+            elif token == "str_isspace":
+                consumed = StringMethodsHandler.handle_str_isspace(self.state, tokens, i)
+            elif token == "str_lstrip":
+                consumed = StringMethodsHandler.handle_str_lstrip(self.state, tokens, i)
+            elif token == "str_rstrip":
+                consumed = StringMethodsHandler.handle_str_rstrip(self.state, tokens, i)
+            elif token == "str_strip_chars":
+                consumed = StringMethodsHandler.handle_str_strip_chars(self.state, tokens, i)
 
             # End of block - marks the end of loops, functions, etc.
             elif token == "end":
@@ -941,6 +1122,10 @@ class CommandExecutor:
             
             # Check if we should stop execution (early return from function)
             if self.state.should_return:
+                break
+            
+            # Check if break was called (stop block execution)
+            if getattr(self.state, 'loop_break', False) or getattr(self.state, 'loop_continue', False):
                 break
             
             # Move to the next command, skipping any tokens this command used

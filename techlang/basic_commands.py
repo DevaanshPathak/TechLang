@@ -22,7 +22,7 @@ class BasicCommandHandler:
         "db_begin", "db_commit", "db_rollback", "db_tables", "db_schema", "db_indexes", "db_connect", "db_disconnect",
     # Array commands - for working with lists
     "array_create", "array_set", "array_get", "array_push", "array_pop",
-    "array_map", "array_filter", "array_sort", "array_reverse", "array_find", "array_unique", "array_join",
+    "array_map", "array_filter", "array_sort", "array_reverse", "array_reversed", "array_find", "array_unique", "array_join",
     "array_slice", "array_comprehend", "range", "enumerate", "array_zip", "array_apply",
     "any", "all", "array_min", "array_max", "array_sorted",
     # Lambda/anonymous functions
@@ -36,17 +36,19 @@ class BasicCommandHandler:
         "dict_create", "dict_set", "dict_get", "dict_keys",
         "dict_values", "dict_items", "dict_update", "dict_pop", "dict_get_default",
         "dict_has_key", "dict_clear", "dict_len",
+        # Dict Methods
+        "dict_setdefault", "dict_copy", "dict_fromkeys", "dict_merge",
         # Set commands - for working with unique collections
         "set_create", "set_add", "set_remove", "set_contains", "set_len", "set_clear",
         "set_union", "set_intersection", "set_difference", "set_symmetric_difference",
         "set_issubset", "set_issuperset", "set_to_array", "array_to_set",
-        # Advanced comprehensions (Feature 7)
+        # Advanced comprehensions
         "dict_comprehend", "set_comprehend", "generator_expr", "comprehend_if",
-        # Slice assignment & advanced slicing (Feature 8)
+        # Slice assignment & advanced slicing
         "array_slice_step", "array_set_slice", "str_slice", "str_slice_step",
-        # Unpacking & destructuring (Feature 9)
+        # Unpacking & destructuring
         "unpack", "unpack_rest", "dict_unpack", "swap",
-        # F-strings / format specifiers (Feature 10)
+        # F-strings / format specifiers
         "fstring", "format_num", "format_align", "str_pad_left", "str_pad_right",
         # Type checking commands - for runtime introspection
         "type_of", "is_number", "is_string", "is_array", "is_dict", "is_struct", "is_set", "is_generator",
@@ -105,25 +107,50 @@ class BasicCommandHandler:
         "context", "with",
         # Async/Await
         "async", "await", "spawn", "gather", "task_status", "task_cancel",
-        # Feature 11: Itertools/Functools
+        # Itertools/Functools
         "chain", "cycle", "repeat", "takewhile", "dropwhile", "groupby",
         "accumulate", "pairwise", "product", "permutations", "combinations",
         "reduce", "partial_array", "apply_partial",
-        # Feature 12: Date/Time Full Support
+        # Date/Time Full Support
         "datetime_now", "datetime_utc", "datetime_parse", "datetime_format",
         "datetime_add", "datetime_diff", "datetime_weekday", "datetime_timestamp",
         "datetime_from_timestamp",
-        # Feature 13: Logging System
+        # Logging System
         "log_init", "log_debug", "log_info", "log_warning", "log_error", "log_critical",
         "log_level", "log_file", "log_clear", "log_count", "log_get",
-        # Pythonic Features: Dataclasses & in/not_in operators
+        # Dataclasses & in/not_in operators
         "dataclass", "dataclass_new", "dataclass_get", "dataclass_set",
         "dataclass_eq", "dataclass_str", "dataclass_to_dict",
         "in", "not_in", "contains",
-        # Pythonic Features: Property decorators
-        "property", "get_property", "set_property"
-
-        ,
+        # Property decorators
+        "property", "get_property", "set_property",
+        # Default/Keyword args, *args/**kwargs, Multiple returns, Walrus
+        "defn", "calln",  # Default & Keyword Arguments
+        "defv", "callv",  # *args/**kwargs
+        "pack", "return_multi",  # Multiple Return Values (unpack already exists)
+        "if_assign", "while_assign", "assign_expr",  # Walrus Operator
+        # Chained Comparisons, Loop Else, List Methods, String Methods
+        "if_chain",  # Chained Comparisons
+        "break", "loop_else", "while_else",  # else on Loops
+        "array_insert", "array_extend", "array_clear", "array_copy", "array_count", "array_remove", "array_len", "array_index",  # List Methods
+        "str_join", "str_zfill", "str_center", "str_ljust", "str_rjust", "str_title", "str_capitalize", "str_swapcase", "str_isupper", "str_islower", "str_isspace", "str_lstrip", "str_rstrip", "str_strip_chars",  # String Methods
+        # Global/Nonlocal Keywords
+        "global", "nonlocal",
+        # pass Statement
+        "pass",
+        # del Statement
+        "del", "del_array", "del_dict", "ternary",
+        # is/is_not identity check
+        "is", "is_not",
+        # array_reversed enhancement
+        # __str__/__repr__
+        "obj_str", "obj_repr", "obj_display",
+        # Type hints
+        "typed_def", "typecheck", "type_assert",
+        # Pattern matching
+        "match_full", "case_or", "case_list", "case_dict",
+        # Protocols and Abstract Base Classes
+        "protocol", "abstract_class", "abstract_method", "implements", "protocol_check",
         # GUI (tkinter/customtkinter)
         "gui_backend", "gui_window", "gui_label", "gui_button", "gui_entry",
         "gui_entry_get", "gui_entry_set", "gui_destroy", "gui_mainloop",

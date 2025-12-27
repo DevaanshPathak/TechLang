@@ -1517,8 +1517,107 @@ Global event loop manages task lifecycle with states: PENDING → RUNNING → CO
 
 ---
 
+### 2025-01-XX: Pythonic Features 8-11
+
+**Status:** ✅ Completed
+
+### Summary
+Added 4 major Pythonic features: Chained Comparisons (Feature 8), Loop Else (Feature 9), Additional List Methods (Feature 10), and Additional String Methods (Feature 11).
+
+### Motivation
+These features bring TechLang closer to Python's expressiveness:
+- Chained comparisons for range checks (0 < x < 100)
+- Loop else for search patterns (execute code when loop completes without break)
+- Additional list methods for common operations (insert, extend, clear, copy, count, remove)
+- Additional string methods for text manipulation (join, zfill, center, ljust, rjust, title, capitalize, swapcase, isupper, islower, isspace, lstrip, rstrip, strip_chars)
+
+### Implementation Details
+
+#### Feature 8: Chained Comparisons
+- **Command**: `if_chain <val1> <op1> <val2> <op2> <val3> ... do ... end`
+- Evaluates all comparisons left-to-right with AND semantics
+- Supports operators: `<`, `>`, `<=`, `>=`, `==`, `!=`
+- Example: `if_chain 0 < x < 100 do print "in range" end`
+
+#### Feature 9: Loop Else
+- **Commands**: `loop_else`, `while_else`, `break`, `continue`
+- `loop_else <count> do ... else ... end` - else runs if loop completes without break
+- `while_else <var> <op> <val> do ... else ... end` - same for while loops
+- Useful for search patterns where else handles "not found" case
+- Added `loop_break`, `loop_continue`, `loop_completed` state fields
+
+#### Feature 10: Additional List Methods
+- `array_insert <array> <index> <value>` - insert at index (like list.insert())
+- `array_extend <array> <source>` - extend with another array (like list.extend())
+- `array_clear <array>` - remove all elements (like list.clear())
+- `array_copy <source> <target>` - shallow copy (like list.copy())
+- `array_count <array> <value> <result>` - count occurrences (like list.count())
+- `array_remove <array> <value>` - remove first occurrence (like list.remove())
+- `array_len <array> <result>` - get length (like len())
+- `array_index <array> <value> <result>` - find index (-1 if not found)
+
+#### Feature 11: Additional String Methods
+- `str_join <array> <separator> <result>` - join elements (like separator.join())
+- `str_zfill <string> <width> <result>` - zero-pad (like str.zfill())
+- `str_center <string> <width> <result>` - center (like str.center())
+- `str_ljust <string> <width> <result>` - left-justify (like str.ljust())
+- `str_rjust <string> <width> <result>` - right-justify (like str.rjust())
+- `str_title <string> <result>` - title case (like str.title())
+- `str_capitalize <string> <result>` - capitalize first (like str.capitalize())
+- `str_swapcase <string> <result>` - swap case (like str.swapcase())
+- `str_isupper <string> <result>` - check uppercase (1/0)
+- `str_islower <string> <result>` - check lowercase (1/0)
+- `str_isspace <string> <result>` - check whitespace (1/0)
+- `str_lstrip <string> <result>` - strip leading whitespace
+- `str_rstrip <string> <result>` - strip trailing whitespace
+- `str_strip_chars <string> <chars> <result>` - strip specific chars
+
+### Files Created
+- `techlang/pythonic_features_8_11.py` - All handlers for features 8-11 (~1087 lines)
+- `tests/test_pythonic_8_11.py` - 39 comprehensive tests
+- `examples/pythonic_8_11_demo.tl` - Full feature demonstration
+
+### Files Modified
+- `techlang/core.py` - Added `loop_break`, `loop_continue`, `loop_completed` state fields
+- `techlang/basic_commands.py` - Added 27 new commands to KNOWN_COMMANDS
+- `techlang/executor.py` - Added import and routing for all new commands
+- `techlang/blocks.py` - Added `if_chain`, `loop_else`, `while_else` to depth tracking
+- `techlang/help_ops.py` - Added help text for all new commands
+
+### Validation
+- ✅ All 39 feature tests passing
+- ✅ Full test suite: 984 passed, 1 skipped
+- ✅ No regressions
+- ✅ Documentation and examples created
+
+### Technical Notes
+
+**Chained Comparison Evaluation:**
+Parses alternating values and operators until `do`, then evaluates pairs left-to-right with AND semantics.
+
+**Loop Else Implementation:**
+- Uses custom block parsing to separate loop body from else block
+- Tracks break flag in state (`state.loop_break`)
+- Else block executes only if loop completes without break
+- Properly handles nested blocks (if, loop, etc.) within loop body
+
+**Token Consumption:**
+Returns `end_index - index - 1` because executor does `i += 1 + consumed`.
+
+### Known Limitations
+- `break`/`continue` only work with `loop_else`/`while_else`, not standard `loop`/`while`
+- No nested `break` to outer loops (only breaks innermost)
+- String operations that need commas/spaces in separators require `str_create` first
+
+### Future Enhancements
+- Add break/continue support to standard loop/while
+- Add labeled breaks for nested loops
+- Add `break <n>` to break out of n levels
+
+---
+
 **Last Updated:** 2025-01-XX  
-**Total Features Added:** 15  
-**Total Tests:** 776+ (776 passing, 4 skipped)
+**Total Features Added:** 19  
+**Total Tests:** 984+ (984 passing, 1 skipped)
 **REPL Version:** 1.1 - Enhanced Edition
 

@@ -58,3 +58,24 @@ TechLang is a hacker-themed, stack-based programming language with its own inter
   - Block detection: tracks depth across `def`, `if`, `loop`, `while`, `switch`, `try`, `match`, `macro`, `struct` (but not `struct new/set/get/dump`), executes when depth returns to zero
 - **Verbose mode** (`tl -v file.tl`): streams each command before execution—helpful for tracing parser vs executor issues.
 - Use `ProcessOpsHandler.prime_cached_streams(state)` before execution to capture subprocess output correctly.
+
+## Code organization rules
+- **NEVER club multiple features in a single file.** Each feature MUST have:
+  - Its own handler file in `techlang/` (e.g., `feature_name.py`)
+  - Its own test file in `tests/` (e.g., `test_feature_name.py`)
+  - Its own example file in `examples/` (e.g., `feature_name.tl`)
+- **Naming conventions for feature files:**
+  - Handler: `techlang/<feature_name>.py` (e.g., `dict_methods.py`, `loop_else.py`)
+  - Tests: `tests/test_<feature_name>.py` (e.g., `test_dict_methods.py`)
+  - Examples: `examples/<feature_name>.tl` (e.g., `loop_else.tl`, `dict_methods.tl`)
+  - **NEVER prefix files with feature numbers** (e.g., `feature9_loop_else.tl` is wrong, use `loop_else.tl`)
+- **When splitting existing monolithic files**, ensure all tests pass before and after the split.
+
+## Roadmap maintenance
+- **Always update `ROADMAP.md`** when completing a feature:
+  - Change status from `⏳ Planned` to `✅ Complete`
+  - Update the overview table
+  - Add changelog entry with date
+- **Track progress** in the roadmap's overview table with proper status indicators:
+  - ✅ Complete | 🔄 In Progress | ⏳ Planned | ❌ Blocked
+- **Implementation order** should follow the phases defined in ROADMAP.md unless explicitly directed otherwise.

@@ -13,9 +13,9 @@ print ""
 
 # Define a logging decorator
 decorator logger before after do
-    print "[LOG] Entering function"
-    # original function runs here
-    print "[LOG] Exiting function"
+print "[LOG] Entering function"
+# original function runs here
+print "[LOG] Exiting function"
 end
 
 # Define a simple function
@@ -35,7 +35,7 @@ print "Decorator successfully wraps function with before/after logging"
 print ""
 
 # ============================================
-# PART 2: CONTEXT MANAGERS  
+# PART 2: CONTEXT MANAGERS
 # ============================================
 print "--- PART 2: Context Managers ---"
 print ""
@@ -43,11 +43,11 @@ print ""
 # Timer context - measures execution time
 print "Using timer context:"
 with timer do
-    set x 0
-    loop 100 do
-        add x 1
-    end
-    print "Looped 100 times"
+set x 0
+loop 100 do
+    add x 1
+end
+print "Looped 100 times"
 end
 
 print ""
@@ -55,10 +55,10 @@ print ""
 # Suppress context - catches and suppresses errors
 print "Using suppress context:"
 with suppress do
-    print "This prints"
-    # Error inside suppress won't crash program
-    crash "This error is suppressed"
-    print "This won't print"
+print "This prints"
+# Error inside suppress won't crash program
+crash "This error is suppressed"
+print "This won't print"
 end
 print "Execution continues after suppress block"
 
@@ -66,17 +66,17 @@ print ""
 
 # Custom context manager
 context my_resource enter exit do
-    # enter block
-    print "Acquiring resource..."
-    set acquired 1
-    # exit block  
-    print "Releasing resource..."
-    set acquired 0
+# enter block
+print "Acquiring resource..."
+set acquired 1
+# exit block
+print "Releasing resource..."
+set acquired 0
 end
 
 print "Using custom context manager:"
 with my_resource do
-    print "Resource is in use"
+print "Resource is in use"
 end
 print "Resource released"
 
@@ -144,7 +144,7 @@ print ""
 
 # Combining all features
 decorator timed do
-    # Uses timer context internally
+# Uses timer context internally
 end
 
 async def process_item item do

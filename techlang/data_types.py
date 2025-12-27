@@ -548,6 +548,32 @@ class DataTypesHandler:
         return 1
 
     @staticmethod
+    def handle_array_reversed(state: InterpreterState, tokens: List[str], index: int) -> int:
+        """
+        Create a reversed copy of an array (does not modify original).
+        Like Python's reversed() but returns a new array.
+        
+        Syntax: array_reversed <source> <result>
+        
+        Example:
+            array_reversed nums reversed_nums
+        """
+        if index + 2 >= len(tokens):
+            state.add_error("array_reversed requires source and result. Use: array_reversed <source> <result>")
+            return 0
+        
+        source_name = DataTypesHandler._resolve_existing_name(state, tokens[index + 1])
+        result_name = tokens[index + 2]
+        
+        if source_name not in state.arrays:
+            state.add_error(f"Array '{source_name}' does not exist")
+            return 0
+        
+        # Create a reversed copy
+        state.arrays[result_name] = list(reversed(state.arrays[source_name]))
+        return 2
+
+    @staticmethod
     def handle_array_find(state: InterpreterState, tokens: List[str], index: int) -> int:
         """
         Find the index of a value in an array.
@@ -3662,7 +3688,7 @@ class DataTypesHandler:
         state.sets[result_name] = set(state.arrays[array_name])
         return 2
 
-    # ========== Feature 7: Advanced Comprehensions ==========
+    # ========== Advanced Comprehensions ==========
 
     @staticmethod
     def handle_dict_comprehend(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -3828,7 +3854,7 @@ class DataTypesHandler:
         
         return False
 
-    # ========== Feature 8: Slice Assignment & Advanced Slicing ==========
+    # ========== Slice Assignment & Advanced Slicing ==========
 
     @staticmethod
     def handle_array_slice_step(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -3995,7 +4021,7 @@ class DataTypesHandler:
         state.strings[target] = s[start:end:step]
         return 5
 
-    # ========== Feature 9: Unpacking & Destructuring ==========
+    # ========== Unpacking & Destructuring ==========
 
     @staticmethod
     def handle_unpack(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -4226,7 +4252,7 @@ class DataTypesHandler:
         
         return 2
 
-    # ========== Feature 10: F-Strings / Format Specifiers ==========
+    # ========== F-Strings / Format Specifiers ==========
 
     @staticmethod
     def handle_fstring(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -4425,7 +4451,7 @@ class DataTypesHandler:
         state.strings[result_name] = value.ljust(width, fill[0] if fill else ' ')
         return 4
 
-    # ========== Feature 11: Itertools/Functools ==========
+    # ========== Itertools/Functools ==========
 
     @staticmethod
     def handle_chain(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -5080,7 +5106,7 @@ class DataTypesHandler:
         state.set_variable(result_name, ret_val if ret_val is not None else 0)
         return consumed
 
-    # ========== Feature 12: Date/Time Full Support ==========
+    # ========== Date/Time Full Support ==========
 
     @staticmethod
     def handle_datetime_now(state: InterpreterState, tokens: List[str], index: int) -> int:
@@ -5397,7 +5423,7 @@ class DataTypesHandler:
         
         return 2
 
-    # ========== Feature 13: Logging System ==========
+    # ========== Logging System ==========
 
     @staticmethod
     def handle_log_init(state: InterpreterState, tokens: List[str], index: int) -> int:

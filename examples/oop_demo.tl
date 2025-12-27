@@ -11,34 +11,34 @@ print "=== 1. CLASS DEFINITIONS AND OBJECTS ==="
 
 # Define a simple class with fields
 class Point
-    field x int 0
-    field y int 0
-    
-    # Constructor
-    init px py
-        set_field self x px
-        set_field self y py
-    end
-    
-    # Instance method
-    method distance
-        # Calculate distance from origin (simplified: x + y)
-        get_field self x tempX
-        get_field self y tempY
-        set dist tempX
-        add dist tempY
-        return dist
-    end
-    
-    # Method to move the point
-    method move dx dy
-        get_field self x currX
-        get_field self y currY
-        add currX dx
-        add currY dy
-        set_field self x currX
-        set_field self y currY
-    end
+field x int 0
+field y int 0
+
+# Constructor
+init px py
+set_field self x px
+set_field self y py
+end
+
+# Instance method
+method distance
+# Calculate distance from origin (simplified: x + y)
+get_field self x tempX
+get_field self y tempY
+set dist tempX
+add dist tempY
+return dist
+end
+
+# Method to move the point
+method move dx dy
+get_field self x currX
+get_field self y currY
+add currX dx
+add currY dy
+set_field self x currX
+set_field self y currY
+end
 end
 
 # Create a Point object
@@ -63,32 +63,32 @@ print "=== 2. INHERITANCE ==="
 
 # Base class
 class Animal
-    field name string "Unknown"
-    field sound string ""
-    
-    method speak
-        get_field self name n
-        get_field self sound s
-        print n
-        print s
-    end
+field name string "Unknown"
+field sound string ""
+
+method speak
+get_field self name n
+get_field self sound s
+print n
+print s
+end
 end
 
 # Derived class
 class Dog extends Animal
-    field breed string "Mixed"
-    
-    init n b
-        set_field self name n
-        set_field self breed b
-        set_field self sound "Woof!"
-    end
-    
-    method fetch
-        get_field self name n
-        print n
-        print "is fetching!"
-    end
+field breed string "Mixed"
+
+init n b
+set_field self name n
+set_field self breed b
+set_field self sound "Woof!"
+end
+
+method fetch
+get_field self name n
+print n
+print "is fetching!"
+end
 end
 
 # Create a Dog
@@ -117,18 +117,18 @@ print "=== 3. STATIC METHODS ==="
 
 # Class with static method
 class MathUtils
-    static square n
-        set result n
-        mul result n
-        return result
-    end
-    
-    static cube n
-        set result n
-        mul result n
-        mul result n
-        return result
-    end
+static square n
+set result n
+mul result n
+return result
+end
+
+static cube n
+set result n
+mul result n
+mul result n
+return result
+end
 end
 
 # Call static methods (no instance needed)
@@ -146,9 +146,9 @@ print "=== 4. FIRST-CLASS FUNCTIONS ==="
 set multiplier 10
 
 fn multiply_by_ten n do
-    set result n
-    mul result multiplier
-    return result
+set result n
+mul result multiplier
+return result
 end
 
 fn_call multiply_by_ten 7 -> answer
@@ -196,9 +196,9 @@ print b1
 
 # Reduce: sum all elements
 fn add_two a b do
-    set result a
-    add result b
-    return result
+set result a
+add result b
+return result
 end
 
 reduce_fn numbers add_two 0 total
@@ -209,9 +209,9 @@ print ""
 print "=== 6. PARTIAL APPLICATION ==="
 
 fn add a b do
-    set result a
-    add result b
-    return result
+set result a
+add result b
+return result
 end
 
 # Create a partial function with a=100
@@ -240,42 +240,42 @@ try
     print "About to throw..."
     throw "Something went wrong!" CustomError
 catch err
-    print "Caught exception:"
-    print err
-end
+        print "Caught exception:"
+        print err
+    end
 
-print "Execution continues after catch"
+    print "Execution continues after catch"
 
 # Using raise (alias for throw)
-try
-    raise "File not found" IOError
-catch e
-    print "Caught IOError:"
-    print e
-end
+    try
+        raise "File not found" IOError
+    catch e
+            print "Caught IOError:"
+            print e
+        end
 
-print ""
-print "=== 9. FUNCTION REFERENCES ==="
+        print ""
+        print "=== 9. FUNCTION REFERENCES ==="
 
 # Get a reference to an existing function
-def greet name
-    str_create msg "Hello, "
-    str_concat msg name
-    print msg
-end
+        def greet name
+            str_create msg "Hello, "
+            str_concat msg name
+            print msg
+        end
 
-fn_ref greet greeting_fn
-print "Got function reference"
+        fn_ref greet greeting_fn
+        print "Got function reference"
 
-print ""
-print "=== DEMO COMPLETE ==="
-print "TechLang now supports:"
-print "- Classes with fields and methods"
-print "- Inheritance (extends)"
-print "- Static methods"
-print "- First-class functions"
-print "- Closures"
-print "- Higher-order functions (map, filter, reduce)"
-print "- Partial application"
-print "- Function composition"
-print "- throw/raise exceptions"
+        print ""
+        print "=== DEMO COMPLETE ==="
+        print "TechLang now supports:"
+        print "- Classes with fields and methods"
+        print "- Inheritance (extends)"
+        print "- Static methods"
+        print "- First-class functions"
+        print "- Closures"
+        print "- Higher-order functions (map, filter, reduce)"
+        print "- Partial application"
+        print "- Function composition"
+        print "- throw/raise exceptions"
