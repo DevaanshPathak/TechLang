@@ -17,12 +17,75 @@ This document outlines the fundamental syntax rules and conventions that govern 
 
 ## Modules
 
-Use `package use <module>` to execute another `.tl` file in a namespaced scope. Modules are resolved relative to the current script’s `base_dir`, so `package use utils/helpers` loads `utils/helpers.tl` next to the caller. Any functions defined inside the module are invoked with a qualified name:
+TechLang has a powerful Python-like module system that supports both file-based modules and folder-based packages.
+
+### Basic Module Import
+
+Use `package use <module>` to execute another `.tl` file in a namespaced scope. Modules are resolved relative to the current script's `base_dir`, so `package use utils/helpers` loads `utils/helpers.tl` next to the caller. Any functions defined inside the module are invoked with a qualified name:
 
 ```techlang
 package use utils.helpers
 call utils.helpers::greet
 call utils.helpers.greet   # double-colon or dot both work
+```
+
+### Python-like Imports
+
+TechLang also supports Python-style import syntax for more flexibility:
+
+#### Import Module
+
+```techlang
+import mymodule              # Load mymodule.tl or mymodule/__init__.tl
+import mymodule as m         # Load with alias
+import parent.child          # Load parent/child.tl or parent/child/__init__.tl
+```
+
+#### From Import
+
+```techlang
+from mymodule import func1            # Import specific function
+from mymodule import func1 as f       # Import with alias
+from mymodule import func1 func2      # Import multiple
+from mymodule import *                # Import all exported functions
+from mypackage import submodule       # Import submodule from package
+```
+
+### Folder-Based Packages
+
+Create a folder with an `__init__.tl` file to make it a package:
+
+```
+myutils/
+├── __init__.tl       # Package initialization file
+├── math.tl           # Submodule
+├── text.tl           # Submodule
+└── helpers/          # Subpackage
+    └── __init__.tl
+```
+
+```techlang
+import myutils                    # Loads myutils/__init__.tl
+import myutils.math               # Loads myutils/math.tl
+from myutils import text          # Loads myutils/text.tl as 'text'
+from myutils import helpers       # Loads myutils/helpers/__init__.tl as 'helpers'
+```
+
+### Exporting Functions
+
+Functions defined in modules are private by default. Use `export` to make them available:
+
+```techlang
+# In mymodule.tl
+def public_function x
+    add x 1
+    return x
+end
+export public_function
+
+def private_function
+    # This cannot be called from outside
+end
 ```
 
 Modules run in a child `InterpreterState` that shares variables, strings, arrays, dictionaries, structs, and output with the caller. The runtime keeps `state.modules` / `state.loaded_modules` so each module is evaluated once per run.

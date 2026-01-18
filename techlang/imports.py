@@ -1,31 +1,375 @@
 import os
 from dataclasses import dataclass
-from typing import List, Callable
+from typing import List, Callable, Optional, Tuple
+from pathlib import Path
 from .core import InterpreterState
 from .parser import parse
+
+
+def get_package_search_paths(base_dir: str) -> List[str]:
+    """
+    Get list of directories to search for packages.
+    Order: current dir -> tl_packages -> global packages -> stl
+    """
+    paths = [base_dir]
+    
+    # Project-local packages (tl_packages/)
+    local_packages = os.path.join(base_dir, "tl_packages")
+    if os.path.isdir(local_packages):
+        paths.append(local_packages)
+    
+    # Global packages (~/.techlang/packages/)
+    home = os.path.expanduser("~")
+    global_packages = os.path.join(home, ".techlang", "packages")
+    if os.path.isdir(global_packages):
+        paths.append(global_packages)
+    
+    # Built-in stl
+    stl_dir = os.path.join(os.path.dirname(__file__), "..", "stl")
+    if os.path.isdir(stl_dir):
+        paths.append(os.path.abspath(stl_dir))
+    
+    return paths
 
 
 class ImportHandler:
     # Import .tl files safely and inline their tokens
     
     @staticmethod
+    def _resolve_relative_import(module_name: str, base_dir: str) -> str:
+        """
+        Resolve relative imports like . and .. to absolute module paths.
+        
+        Examples:
+        - "." -> current directory module
+        - ".sibling" -> sibling module in same directory
+        - ".." -> parent directory module
+        - "..parent_sibling" -> sibling of parent
+        """
+        # Count leading dots
+        dots = 0
+        for c in module_name:
+            if c == '.':
+                dots += 1
+            else:
+                break
+        
+        remainder = module_name[dots:]  # The part after the dots
+        
+        # Start from base_dir and go up (dots - 1) levels
+        current_path = Path(base_dir).resolve()
+        for _ in range(dots - 1):
+            current_path = current_path.parent
+        
+        # Build the module name based on the resolved path
+        if remainder:
+            # .module or ..module
+            return remainder
+        else:
+            # Just . or .. - import from that directory's __init__.tl
+            return current_path.name
+    
+    @staticmethod
     def handle_import(state: InterpreterState, tokens: List[str], index: int, base_dir: str) -> int:
+        """
+        Handle Python-like import statements:
+        - import module_name          (loads module_name.tl or module_name/__init__.tl)
+        - import module_name as alias (loads module and creates alias)
+        - import module.submodule     (loads module/submodule.tl or module/submodule/__init__.tl)
+        """
         if index + 1 >= len(tokens):
-            state.add_error("Invalid 'import' command. Use: import <filename>")
+            state.add_error("Invalid 'import' command. Use: import <module_name> [as <alias>]")
             return 0
         
-        filename_token = tokens[index + 1]
-        imported_tokens = ImportHandler._import_file(filename_token, state, base_dir)
+        module_name = tokens[index + 1]
+        consumed = 1
         
-        # If import was successful, insert the imported tokens into the current block
-        if imported_tokens and not any(token.startswith("[IMPORT ERROR") for token in imported_tokens):
-            tokens[index+2:index+2] = imported_tokens
-            return 1  # Consume filename token
-        else:
-            for token in imported_tokens:
-                state.add_output(token)
-            return 1  # Consume filename token
+        # Check for "as" alias
+        alias_name = None
+        if index + 3 < len(tokens) and tokens[index + 2] == "as":
+            alias_name = tokens[index + 3]
+            consumed = 3
+        
+        # Try to load as package (folder with __init__.tl) or as module file
+        success = ImportHandler._load_module_or_package(state, module_name, base_dir, alias_name)
+        
+        if not success:
+            # Fallback to old behavior - inline tokens (for backwards compatibility)
+            imported_tokens = ImportHandler._import_file(module_name, state, base_dir)
+            if imported_tokens and not any(token.startswith("[IMPORT ERROR") for token in imported_tokens):
+                tokens[index + consumed + 1:index + consumed + 1] = imported_tokens
+            else:
+                for token in imported_tokens:
+                    state.add_output(token)
+        
+        return consumed
     
+    @staticmethod
+    def _load_module_or_package(state: InterpreterState, module_name: str, base_dir: str, 
+                                  alias_name: Optional[str] = None) -> bool:
+        """
+        Try to load module as:
+        1. A folder package (folder_name/__init__.tl)
+        2. A single file (module_name.tl)
+        3. A nested package (parent/child/__init__.tl or parent/child.tl)
+        
+        Searches in: current dir -> tl_packages -> global packages -> stl
+        """
+        # Normalize module name: module.submodule -> module/submodule
+        path_parts = module_name.replace("::", ".").replace(".", os.sep).split(os.sep)
+        relative_path = os.sep.join(path_parts)
+        
+        # Search in all package paths
+        search_paths = get_package_search_paths(base_dir)
+        
+        target_path = None
+        is_package = False
+        found_in_dir = None
+        
+        for search_dir in search_paths:
+            # Check for package (folder with __init__.tl)
+            package_init_path = os.path.join(search_dir, relative_path, "__init__.tl")
+            module_file_path = os.path.join(search_dir, relative_path + ".tl")
+            
+            if os.path.isfile(package_init_path):
+                target_path = package_init_path
+                is_package = True
+                found_in_dir = search_dir
+                break
+            elif os.path.isfile(module_file_path):
+                target_path = module_file_path
+                is_package = False
+                found_in_dir = search_dir
+                break
+        
+        if target_path is None:
+            return False  # Neither package nor module found in any path
+        
+        full_path = os.path.abspath(target_path)
+        
+        # Load the module
+        normalized_name = module_name.replace("::", ".").replace("/", ".").replace(os.sep, ".")
+        register_name = alias_name if alias_name else normalized_name
+        
+        # Check if already loaded
+        if normalized_name in state.loaded_modules:
+            # If alias requested, just add the alias
+            if alias_name and normalized_name in state.modules:
+                state.modules[alias_name] = state.modules[normalized_name]
+            return True
+        
+        # Load module using ModuleHandler
+        ModuleHandler._load_module_from_path(state, normalized_name, full_path, found_in_dir, register_name, is_package)
+        return True
+    
+    @staticmethod
+    def handle_from_import(state: InterpreterState, tokens: List[str], index: int, base_dir: str) -> int:
+        """
+        Handle Python-like from...import statements:
+        - from module import func1, func2    (import specific functions)
+        - from module import *               (import all exported functions)
+        - from module import submodule       (import submodule from package)
+        - from module import func as alias   (import with alias)
+        - from . import sibling              (relative import from current package)
+        - from .. import parent              (relative import from parent package)
+        - from .submodule import func        (relative import from submodule)
+        """
+        # Syntax: from <module> import <target1> [as alias1], <target2> [as alias2], ...
+        if index + 3 >= len(tokens):
+            state.add_error("Invalid 'from' command. Use: from <module> import <name> [, <name2>, ...]")
+            return 0
+        
+        module_name = tokens[index + 1]
+        
+        # Handle relative imports (. and ..)
+        if module_name.startswith("."):
+            module_name = ImportHandler._resolve_relative_import(module_name, base_dir)
+        
+        if tokens[index + 2] != "import":
+            state.add_error(f"Expected 'import' after 'from {module_name}', got '{tokens[index + 2]}'")
+            return 1
+        
+        consumed = 2  # module_name + "import"
+        
+        # Collect targets to import
+        targets = []
+        i = index + 3
+        while i < len(tokens):
+            target = tokens[i]
+            
+            # Stop at known commands
+            from .basic_commands import BasicCommandHandler
+            if target in BasicCommandHandler.KNOWN_COMMANDS and target not in ["as"]:
+                break
+            
+            alias = None
+            consumed += 1
+            
+            # Check for "as" alias
+            if i + 2 < len(tokens) and tokens[i + 1] == "as":
+                alias = tokens[i + 2]
+                consumed += 2
+                i += 3
+            else:
+                i += 1
+            
+            # Skip commas (optional separator)
+            if i < len(tokens) and tokens[i] == ",":
+                consumed += 1
+                i += 1
+            
+            targets.append((target, alias))
+            
+            # Stop if we hit a newline-equivalent (next command)
+            if i < len(tokens) and tokens[i] in BasicCommandHandler.KNOWN_COMMANDS:
+                break
+        
+        if not targets:
+            state.add_error("No targets specified for 'from...import'. Use: from <module> import <name>")
+            return consumed
+        
+        # Process the import
+        ImportHandler._process_from_import(state, module_name, targets, base_dir)
+        
+        return consumed
+    
+    @staticmethod
+    def _process_from_import(state: InterpreterState, module_name: str, 
+                               targets: List[Tuple[str, Optional[str]]], base_dir: str) -> None:
+        """Process a from...import statement"""
+        
+        # First, check if it's a package or module
+        normalized_name = module_name.replace("::", ".").replace("/", ".")
+        path_parts = normalized_name.split(".")
+        relative_path = os.sep.join(path_parts)
+        
+        # Search in all package paths
+        search_paths = get_package_search_paths(base_dir)
+        
+        package_dir = None
+        package_init = None
+        module_file = None
+        is_package = False
+        found_dir = base_dir
+        
+        for search_dir in search_paths:
+            check_package_dir = os.path.join(search_dir, relative_path)
+            check_package_init = os.path.join(check_package_dir, "__init__.tl")
+            check_module_file = os.path.join(search_dir, relative_path + ".tl")
+            
+            if os.path.isdir(check_package_dir) and os.path.isfile(check_package_init):
+                package_dir = check_package_dir
+                package_init = check_package_init
+                is_package = True
+                found_dir = search_dir
+                break
+            elif os.path.isfile(check_module_file):
+                module_file = check_module_file
+                found_dir = search_dir
+                break
+        
+        # Handle each target
+        for target, alias in targets:
+            register_name = alias if alias else target
+            
+            if target == "*":
+                # Import all exported functions from module
+                ImportHandler._import_star(state, module_name, base_dir)
+            elif is_package and package_dir and os.path.isdir(os.path.join(package_dir, target)):
+                # Target is a subpackage
+                subpackage_name = f"{normalized_name}.{target}"
+                ImportHandler._load_module_or_package(state, subpackage_name, base_dir, register_name)
+            elif is_package and package_dir and os.path.isfile(os.path.join(package_dir, target + ".tl")):
+                # Target is a submodule file
+                submodule_name = f"{normalized_name}.{target}"
+                ImportHandler._load_module_or_package(state, submodule_name, base_dir, register_name)
+            elif is_package and package_init:
+                # Target is a function/variable from the package's __init__.tl
+                ImportHandler._import_names_from_module(state, module_name, [(target, alias)], base_dir)
+            elif module_file:
+                # Target is a function/variable from module
+                ImportHandler._import_names_from_module(state, module_name, [(target, alias)], base_dir)
+            else:
+                state.add_error(f"Cannot import '{target}' from '{module_name}': not found")
+    
+    @staticmethod
+    def _import_star(state: InterpreterState, module_name: str, base_dir: str) -> None:
+        """Import all exported functions from a module (respects __all__ if defined)"""
+        # First ensure module is loaded
+        ImportHandler._load_module_or_package(state, module_name, base_dir, None)
+        
+        normalized_name = module_name.replace("::", ".").replace("/", ".")
+        module_info = state.modules.get(normalized_name)
+        
+        if module_info is None:
+            state.add_error(f"Module '{module_name}' could not be loaded")
+            return
+        
+        module_state = module_info.state
+        
+        # Check for __all__ array which defines public API
+        if "__all__" in module_state.arrays:
+            allowed_names = set(module_state.arrays["__all__"])
+        else:
+            # Fallback to exported_functions
+            allowed_names = module_state.exported_functions
+        
+        # Import functions
+        for func_name in allowed_names:
+            if func_name in module_state.functions:
+                state.functions[func_name] = module_state.functions[func_name]
+                state.exported_functions.add(func_name)
+        
+        # Import variables (if in __all__)
+        if "__all__" in module_state.arrays:
+            for name in allowed_names:
+                if name in module_state.variables and name not in module_state.functions:
+                    state.variables[name] = module_state.variables[name]
+                if name in module_state.strings:
+                    state.strings[name] = module_state.strings[name]
+                if name in module_state.arrays and name != "__all__":
+                    state.arrays[name] = module_state.arrays[name]
+                if name in module_state.dictionaries:
+                    state.dictionaries[name] = module_state.dictionaries[name]
+    
+    @staticmethod
+    def _import_names_from_module(state: InterpreterState, module_name: str, 
+                                    targets: List[Tuple[str, Optional[str]]], base_dir: str) -> None:
+        """Import specific names from a module"""
+        # First ensure module is loaded
+        ImportHandler._load_module_or_package(state, module_name, base_dir, None)
+        
+        normalized_name = module_name.replace("::", ".").replace("/", ".")
+        module_info = state.modules.get(normalized_name)
+        
+        if module_info is None:
+            state.add_error(f"Module '{module_name}' could not be loaded")
+            return
+        
+        module_state = module_info.state
+        
+        for target, alias in targets:
+            register_name = alias if alias else target
+            
+            # Check if it's an exported function
+            if target in module_state.exported_functions and target in module_state.functions:
+                state.functions[register_name] = module_state.functions[target]
+                state.exported_functions.add(register_name)
+            # Check if it's a variable
+            elif target in module_state.variables:
+                state.variables[register_name] = module_state.variables[target]
+            # Check if it's a string
+            elif target in module_state.strings:
+                state.strings[register_name] = module_state.strings[target]
+            # Check if it's an array
+            elif target in module_state.arrays:
+                state.arrays[register_name] = module_state.arrays[target]
+            # Check if it's a dict
+            elif target in module_state.dictionaries:
+                state.dictionaries[register_name] = module_state.dictionaries[target]
+            else:
+                state.add_error(f"Cannot import '{target}' from '{module_name}': name not found or not exported")
+
     @staticmethod
     def _import_file(filename_token: str, state: InterpreterState, base_dir: str) -> List[str]:
         # Ensure .tl extension and resolve within allowed base directory
@@ -138,6 +482,59 @@ class ModuleHandler:
             base_dir=module_base_dir,
             state=module_state,
         )
+
+    @staticmethod
+    def _load_module_from_path(state: InterpreterState, normalized_name: str, full_path: str, 
+                                 base_dir: str, register_name: str, is_package: bool = False) -> None:
+        """Load a module from a specific file path (used by new import system)"""
+        
+        if normalized_name in state.loaded_modules:
+            # Just add alias if needed
+            if register_name != normalized_name and normalized_name in state.modules:
+                state.modules[register_name] = state.modules[normalized_name]
+            return
+        
+        try:
+            with open(full_path, "r", encoding="utf-8") as f:
+                source = f.read()
+        except (OSError, IOError) as exc:
+            state.add_error(f"[Module Error: Cannot read module '{normalized_name}': {exc}]")
+            return
+        
+        module_tokens = parse(source)
+        
+        # For packages, base_dir is the package folder; for modules, it's the parent folder
+        if is_package:
+            module_base_dir = os.path.dirname(full_path)
+        else:
+            module_base_dir = os.path.dirname(full_path)
+        
+        module_state = InterpreterState()
+        ModuleHandler._bridge_state(module_state, state)
+        
+        # Remove optional 'package name <id>' header
+        module_tokens = ModuleHandler._strip_header(module_tokens, normalized_name, state)
+        module_tokens = ModuleHandler._expand_aliases(module_tokens, module_state)
+        
+        from .executor import CommandExecutor
+        
+        state.loaded_modules.add(normalized_name)
+        executor = CommandExecutor(module_state, module_base_dir)
+        executor.execute_block(module_tokens)
+        ModuleHandler._sync_back(module_state, state)
+        
+        module_info = ModuleInfo(
+            name=normalized_name,
+            path=full_path,
+            base_dir=module_base_dir,
+            state=module_state,
+        )
+        
+        state.modules[normalized_name] = module_info
+        
+        # Also register with alias name if different
+        if register_name != normalized_name:
+            state.modules[register_name] = module_info
 
     @staticmethod
     def _strip_header(tokens: List[str], expected_name: str, state: InterpreterState) -> List[str]:

@@ -1,0 +1,11 @@
+requests
+Pillow
+
+[dev]
+pytest
+
+[gui]
+customtkinter
+
+[web]
+flask

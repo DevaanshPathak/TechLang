@@ -16,6 +16,8 @@ class BasicCommandHandler:
         "boot", "ping", "crash", "reboot", "print", "upload",
     "download", "debug", "hack", "lag", "sleep", "yield", "fork", "set", "add",
     "mul", "sub", "div", "loop", "while", "switch", "match", "try", "catch", "default", "case", "end", "if", "def", "call", "input", "alias", "import", "package", "struct", "macro", "inline", "do",
+    # Python-like module imports
+    "from", "as",
     "else", "finally", "with",  # Extended try/catch and context managers
         "db_create", "db_insert", "db_select", "db_update", "db_delete", "db_execute", "db_close",
         # Advanced DB

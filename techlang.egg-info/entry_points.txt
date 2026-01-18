@@ -1,0 +1,3 @@
+[console_scripts]
+tl = cli:main
+tlpm = tlpm:main

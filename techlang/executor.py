@@ -209,6 +209,8 @@ class CommandExecutor:
             # File operations - loading other TechLang files
             elif token == "import":
                 consumed = ImportHandler.handle_import(self.state, tokens, i, self.base_dir)
+            elif token == "from":
+                consumed = ImportHandler.handle_from_import(self.state, tokens, i, self.base_dir)
             elif token == "package":
                 consumed = ModuleHandler.handle_package(self.state, tokens, i, self.base_dir)
             

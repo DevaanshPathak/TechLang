@@ -1,0 +1,19 @@
+Metadata-Version: 2.4
+Name: techlang
+Version: 1.0.0
+Summary: A hacker-themed, stack-based programming language
+Author: TechLang Team
+Requires-Python: >=3.8
+Requires-Dist: requests
+Requires-Dist: Pillow
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Provides-Extra: gui
+Requires-Dist: customtkinter; extra == "gui"
+Provides-Extra: web
+Requires-Dist: flask; extra == "web"
+Dynamic: author
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

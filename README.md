@@ -252,6 +252,23 @@ Three styles supported: `#` single-line, `//` C-style single-line, `/* */` multi
 - **Command History**: Full readline support with persistent history
 - See [REPL Guide](docs/repl-guide.md) for complete reference
 
+### Python-like Imports ✨ NEW
+- **Basic Import**: `import module` or `import module as alias`
+- **From Import**: `from package import name` or `from package import name as alias`
+- **Star Import**: `from package import *` imports all exported functions
+- **Folder Packages**: Create a folder with `__init__.tl` to make it importable
+- **Nested Packages**: `from mypackage import subpackage` for subfolder modules
+- See [General Documentation](docs/general.md#modules) for complete reference
+
+### Package Manager (tlpm) ✨ NEW
+- **Initialize Projects**: `tlpm init` creates project with `tlpackage.json`
+- **Install Packages**: `tlpm install ./mylib` or `tlpm install https://github.com/user/pkg.git`
+- **Global Packages**: `tlpm install -g ./mylib` for system-wide availability
+- **Manage Dependencies**: `tlpm list`, `tlpm uninstall`, `tlpm info`
+- **Run Scripts**: `tlpm run start` executes scripts from manifest
+- **Development**: `tlpm link` for local package development
+- See [Package Manager Guide](docs/package-manager.md) for complete reference
+
 ### Data Types
 - Arrays: `array_create`, `array_set`, `array_get`, `array_push`, `array_pop`, `array_map`, `array_filter`
 - Strings: `str_create`, `str_concat`, `str_length`, `str_substring`, `str_split`, `str_replace`, `str_trim`, `str_upper`, `str_lower`, `str_contains`, `str_reverse`
@@ -492,9 +509,10 @@ Comprehensive command reference grouped by category. For detailed documentation,
 
 ### Modules & Macros
 - **Modules**: `package use module`, `call module.function`
+- **Python-like Imports** ✨ NEW: `import module`, `import module as alias`, `from package import name`, `from package import *`
+- **Folder Packages**: Create folder with `__init__.tl` to make importable packages
 - **Macros**: `macro name params do ... end`, `inline name args`
 - **Aliases**: `alias short command`
-- **Imports**: `import name`
 
 ### Comments
 - Single-line: `# comment` or `// comment`
