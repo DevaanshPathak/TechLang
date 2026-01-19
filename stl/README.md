@@ -6,7 +6,7 @@ The TechLang STL provides reusable modules for common programming tasks. All mod
 - `package use stdlib/validation` (or `stl/validation`)
 - `call stdlib.validation.is_positive` (or `stl.validation.is_positive`)
 
-## ✅ Runtime Assumptions (STL Compatibility)
+## Runtime Assumptions (STL Compatibility)
 
 Some STL modules rely on “store into target” forms of core commands (so helpers can avoid printing intermediate values):
 
@@ -25,9 +25,9 @@ Control-flow also accepts operator synonyms used in examples:
 
 - `eq/ne/gt/lt/ge/le` map to `==/!=/>/</>=/<=`.
 
-## 📚 Available Modules
+## Available Modules
 
-### 🔤 strings.tl - String Utilities
+### strings.tl - String Utilities
 Advanced string manipulation functions.
 
 **Functions:**
@@ -60,7 +60,7 @@ print padded  # Output: 00042
 
 ---
 
-### 🔢 math.tl - Math Utilities
+### math.tl - Math Utilities
 Mathematical helper functions.
 
 **Functions:**
@@ -102,7 +102,7 @@ print result  # Output: 120
 
 ---
 
-### 📦 collections.tl - Collections Utilities
+### collections.tl - Collections Utilities
 Array and dictionary helper functions.
 
 **Array Functions:**
@@ -147,7 +147,7 @@ print idx  # Output: 2
 
 ---
 
-### ✅ validation.tl - Validation Utilities
+### validation.tl - Validation Utilities
 Input validation and type checking functions.
 
 **Numeric Validation:**
@@ -202,7 +202,7 @@ print meets_min  # Output: 1
 
 ---
 
-### 🧾 json.tl - JSON Utilities
+### json.tl - JSON Utilities
 Thin wrappers over core `json_*` commands.
 
 **Functions:**
@@ -229,7 +229,7 @@ print ok  # Output: 0
 
 ---
 
-### 🌐 net.tl - Network Utilities
+### net.tl - Network Utilities
 Convenience wrappers over core `http_*` commands.
 
 **Functions:**
@@ -251,7 +251,7 @@ call stl.net.get_json url obj status
 print status
 ```
 
-## 🎯 Usage Patterns
+## Usage Patterns
 
 ### Loading Multiple Modules
 ```techlang
@@ -291,7 +291,7 @@ print user_input
 
 ---
 
-## 📖 Design Philosophy
+## Design Philosophy
 
 ### Private by Default
 All helper functions (prefixed with `_`) are private and not exported. Only documented public API functions are accessible.
@@ -309,7 +309,7 @@ Functions return values explicitly using the `return` statement. Side effects ar
 
 ---
 
-## 🛠️ Extending the Standard Library
+## Extending the Standard Library
 
 ### Adding a New Module
 
@@ -342,7 +342,7 @@ Add tests in `tests/test_stl/py` to verify functionality.
 
 ---
 
-## 🧪 Testing
+## Testing
 
 To test stl modules, create a test file that loads and exercises each function:
 
@@ -367,7 +367,7 @@ python run_tests.py
 
 ---
 
-## 📝 Notes
+## Notes
 
 ### Placeholder Functions
 Some functions (like `dict_count`, `is_numeric_string`) are placeholders waiting for core TechLang features:
@@ -384,7 +384,7 @@ These will be fully implemented when the core language supports the required pri
 
 ---
 
-## 🚀 Future Enhancements
+## Future Enhancements
 
 - **stl/io.tl** - Advanced file I/O helpers
 - **stl/json.tl** - JSON parsing/manipulation utilities

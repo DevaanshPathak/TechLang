@@ -1,10 +1,10 @@
-# 🖥️ TechLang
+# TechLang
 
 **TechLang** is a hacker-themed, stack-based programming language implemented in Python. It features its own custom interpreter, language parser, and playful syntax (`ping`, `crash`, `upload`, etc.). The project includes a CLI, a GUI, and a web-based playground.
 
 ---
 
-## 🧠 What is TechLang?
+## What is TechLang?
 
 TechLang is designed for experimenting with:
 
@@ -15,7 +15,7 @@ TechLang is designed for experimenting with:
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 TechLang/
@@ -140,7 +140,7 @@ TechLang/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Clone the Repository
 
@@ -164,9 +164,9 @@ pip install -r requirements.txt
 
 ---
 
-## ▶️ Running TechLang
+## Running TechLang
 
-### ✅ Option 1: Interpreter via Python
+### Option 1: Interpreter via Python
 
 ```python
 from techlang.interpreter import run
@@ -175,7 +175,7 @@ code = "boot ping ping print"
 print(run(code))  # Output: 2
 ```
 
-### ✅ Option 2: Command-Line Interface
+### Option 2: Command-Line Interface
 
 ```bash
 # Using the bundled script
@@ -191,7 +191,7 @@ tl -i
 tl -v examples/hello.tl
 ```
 
-### ✅ Option 3: Web Playground (Flask)
+### Option 3: Web Playground (Flask)
 
 ```bash
 cd techlang_web
@@ -201,7 +201,7 @@ python app.py
 * Visit: `http://localhost:8080`
 * Paste or upload `.tl` code and see output
 
-### ✅ Option 4: GUI (Tkinter)
+### Option 4: GUI (Tkinter)
 
 ```bash
 python playground/gui.py
@@ -216,7 +216,7 @@ python playground/gui.py
 
 ---
 
-## 🧪 Running Tests
+## Running Tests
 
 ```bash
 python run_tests.py
@@ -226,7 +226,7 @@ python run_tests.py
 
 ---
 
-## ✨ Language Features (Highlights)
+## Language Features (Highlights)
 
 ### Core & Variables
 `boot`, `ping`, `crash`, `print`, `set`, `add`, `sub`, `mul`, `div`, `input`, `upload`, `download`, `debug`, `import`, `alias`, `hack`
@@ -237,14 +237,14 @@ Three styles supported: `#` single-line, `//` C-style single-line, `/* */` multi
 ### Control Flow
 `loop ... end`, `if ... end`, `while ... end`, `switch/case/default`, `try/catch`, `def ... end`, `call`
 
-### Macro System ✨ NEW
+### Macro System (NEW)
 - **Conditional Macros**: `macro name if condition param do ... end` - Expand only when condition is true
 - **Nested Macros**: Macros can invoke other macros with full parameter substitution
 - **Macro Libraries**: Load reusable macro collections from external files
 - **REPL Integration**: `:loadmacro` command for interactive macro loading
 - See [Advanced Macro Guide](docs/macros-advanced.md) for details
 
-### Enhanced REPL ✨ NEW
+### Enhanced REPL (NEW)
 - **Persistent State**: Variables, functions, and macros persist across commands
 - **Introspection**: `:state` shows all variables, `:macros` lists macros
 - **State Management**: `:reset` clears state without restarting
@@ -305,7 +305,7 @@ Processes: `proc_spawn`, `proc_wait`, `proc_kill`
 ### Debugger
 `breakpoint`, `step`, `continue`, `inspect`, `watch`, `unwatch`, `clear_breakpoints`
 
-### Object-Oriented Programming ✨ NEW
+### Object-Oriented Programming (NEW)
 - **Classes**: `class Name ... end` with fields, methods, and constructors
 - **Inheritance**: `class Child extends Parent` with method overriding
 - **Instance Methods**: `method name params ... end` with `self` reference
@@ -314,7 +314,7 @@ Processes: `proc_spawn`, `proc_wait`, `proc_kill`
 - **Type Checking**: `instanceof` for runtime type checks
 - See [OOP Guide](docs/oop.md) for complete reference
 
-### First-Class Functions & Closures ✨ NEW
+### First-Class Functions & Closures (NEW)
 - **Function Values**: `fn name params do ... end` creates callable values
 - **Closures**: Functions capture outer scope variables
 - **Function References**: `fn_ref funcName var` gets reference to existing function
@@ -324,13 +324,13 @@ Processes: `proc_spawn`, `proc_wait`, `proc_kill`
 - **Lambda Expressions**: `lambda name param "expr"` for simple transforms
 - See [Functions Guide](docs/functions.md) for complete reference
 
-### Decorators ✨ NEW
+### Decorators (NEW)
 - **Decorator Definition**: `decorator name mode do ... end` (mode: before/after/both)
 - **Apply Decorator**: `decorate func decorator` wraps function with decorator
 - **Built-in Decorators**: `@log` and `@time` for common use cases
 - See [Decorators Guide](docs/decorators.md) for complete reference
 
-### Context Managers ✨ NEW
+### Context Managers (NEW)
 - **Built-in Contexts**: `with timer do ... end`, `with suppress do ... end`
 - **File Context**: `with file "path" do ... end` for automatic file handling
 - **Lock Context**: `with lock mutex do ... end` for thread safety
@@ -338,7 +338,7 @@ Processes: `proc_spawn`, `proc_wait`, `proc_kill`
 - **Custom Contexts**: `context name enter exit do ... end`
 - See [Context Managers Guide](docs/context-managers.md) for complete reference
 
-### Async/Await ✨ NEW
+### Async/Await (NEW)
 - **Async Functions**: `async def name do ... end` for coroutines
 - **Await**: `await coroutine -> result` for async results
 - **Task Spawning**: `spawn coroutine -> task_id` for background tasks
@@ -356,7 +356,7 @@ Processes: `proc_spawn`, `proc_wait`, `proc_kill`
 
 ---
 
-## 📂 Example Programs
+## Example Programs
 
 All in the `examples/` folder:
 
@@ -403,7 +403,7 @@ Or try them in the web playground.
 
 ---
 
-## 📦 Requirements
+## Requirements
 
 * Python 3.10+
 * `flask` (for web)
@@ -419,13 +419,13 @@ pip install -r requirements.txt
 
 ---
 
-## 🤖 Future Ideas
+## Future Ideas
 
-* ✅ ~~Database transactions and schema introspection~~ (Completed)
-* ✅ ~~Debugger with breakpoints and stepping~~ (Completed)
-* ✅ ~~JSON support for modern data interchange~~ (Completed)
-* ✅ ~~String manipulation operations~~ (Completed)
-* ✅ ~~Multi-line comments~~ (Completed)
+* Database transactions and schema introspection (Completed)
+* Debugger with breakpoints and stepping (Completed)
+* JSON support for modern data interchange (Completed)
+* String manipulation operations (Completed)
+* Multi-line comments (Completed)
 * Error highlighting in web playground
 * Bytecode version of TechLang
 * Language transpiler to Python
@@ -435,13 +435,13 @@ pip install -r requirements.txt
 
 ---
 
-## ❤️ Credits
+## Credits
 
 Crafted for hackers, students, and language lovers who want to build something weird, beautiful, and programmable.
 
 ---
 
-## 📖 Quick Command Reference
+## Quick Command Reference
 
 Comprehensive command reference grouped by category. For detailed documentation, see [DOCUMENTATION.md](DOCUMENTATION.md).
 
